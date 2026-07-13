@@ -1,0 +1,347 @@
+@{
+    ViewData["Title"] = "Author Operating System";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - StoryVerse</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #13A8A6;
+            --secondary: #2B4CB6;
+            --bg-color: #f8fafc;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* NO SCROLLING */
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .hero-section {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 1rem;
+            z-index: 1;
+            box-sizing: border-box;
+        }
+
+        /* Animated Background Elements */
+        .ambient-light {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            z-index: -1;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+
+        .light-1 {
+            width: 40vw;
+            height: 40vw;
+            background: rgba(19, 168, 166, 0.15);
+            top: -10%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+
+        .light-2 {
+            width: 50vw;
+            height: 50vw;
+            background: rgba(43, 76, 182, 0.15);
+            bottom: -20%;
+            right: -10%;
+            animation-delay: -5s;
+        }
+        
+        .light-3 {
+            width: 30vw;
+            height: 30vw;
+            background: rgba(139, 92, 246, 0.1);
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -2s;
+        }
+
+        @@keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, -50px) scale(1.1); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            animation: fadeUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        @@keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-large {
+            width: 260px; /* Reduced to fit better */
+            margin-bottom: 2rem;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.05));
+            transition: transform 0.5s ease, filter 0.5s ease;
+        }
+
+        .logo-large:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 15px 25px rgba(19, 168, 166, 0.2));
+        }
+
+        .hero-title {
+            font-size: 4.5rem; /* Reduced to fit better */
+            font-family: 'Playfair Display', serif;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #102B5E;
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #13A8A6, #8b5cf6, #2B4CB6);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 6s linear infinite;
+        }
+
+        @@keyframes shine {
+            to {
+                background-position: 300% center;
+            }
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        .btn-group-custom {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-start {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #13A8A6, #2B4CB6);
+            color: white;
+            padding: 1.1rem 2.8rem;
+            border-radius: 3rem;
+            font-weight: 600;
+            font-size: 1.125rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px -5px rgba(19, 168, 166, 0.3);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-start::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .btn-start:hover::before {
+            left: 100%;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px -5px rgba(19, 168, 166, 0.4);
+            color: white;
+        }
+
+        .btn-start svg {
+            margin-left: 0.75rem;
+            width: 1.25rem;
+            height: 1.25rem;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-start:hover svg {
+            transform: translateX(5px);
+        }
+
+        .btn-signin {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.6);
+            color: var(--text-dark);
+            padding: 1.1rem 2.8rem;
+            border-radius: 3rem;
+            font-weight: 600;
+            font-size: 1.125rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-signin:hover {
+            background: white;
+            color: var(--primary);
+            transform: translateY(-3px);
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Floating particles */
+        .particles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: rise linear infinite;
+        }
+
+        @@keyframes rise {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 0.3; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        @@media (max-width: 768px) {
+            .hero-title { font-size: 3rem; }
+            .hero-subtitle { font-size: 1.1rem; }
+            .btn-group-custom { flex-direction: column; width: 100%; }
+            .btn-group-custom a { width: 100%; max-width: 300px; }
+            .logo-large { width: 220px; }
+            body, html { overflow-y: auto; } /* Allow scrolling on very small screens if necessary */
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero-section">
+    <!-- Ambient glowing backgrounds -->
+    <div class="ambient-light light-1"></div>
+    <div class="ambient-light light-2"></div>
+    <div class="ambient-light light-3"></div>
+
+    <!-- Particles container -->
+    <div class="particles" id="particles"></div>
+
+    <div class="hero-content">
+        <img src="~/images/Logo_Transparent.PNG" alt="StoryVerse" class="logo-large mx-auto d-block" />
+        
+        <h1 class="hero-title">
+            Your stories.<br />
+            <span class="text-gradient">Your universe.</span>
+        </h1>
+        
+        <p class="hero-subtitle">
+            The premium author operating system. Organize your ideas, craft unforgettable characters, build timelines, and write your next masterpiece.
+        </p>
+        
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="btn-group-custom">
+                <a asp-controller="Dashboard" asp-action="Index" class="btn-start">
+                    Continue Writing
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="btn-group-custom">
+                <a asp-area="Identity" asp-controller="Account" asp-action="Register" class="btn-start">
+                    Start Writing For Free
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </a>
+                <a asp-area="Identity" asp-controller="Account" asp-action="Login" class="btn-signin">
+                    Sign In
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Create animated particles
+    document.addEventListener("DOMContentLoaded", function() {
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 20;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            
+            // Random properties
+            const size = Math.random() * 4 + 2;
+            const left = Math.random() * 100;
+            const duration = Math.random() * 12 + 8;
+            const delay = Math.random() * 5;
+            
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${left}%`;
+            particle.style.animationDuration = `${duration}s`;
+            particle.style.animationDelay = `${delay}s`;
+            
+            particlesContainer.appendChild(particle);
+        }
+    });
+</script>
+</body>
+</html>

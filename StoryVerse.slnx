@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="StoryVerse.Application/StoryVerse.Application.csproj" />
+  <Project Path="StoryVerse.Core/StoryVerse.Core.csproj" />
+  <Project Path="StoryVerse.Infrastructure/StoryVerse.Infrastructure.csproj" />
+  <Project Path="StoryVerse.Shared/StoryVerse.Shared.csproj" />
+  <Project Path="StoryVerse.Web/StoryVerse.Web.csproj" />
+</Solution>

@@ -1,0 +1,46 @@
+@model StoryVerse.Core.Entities.Character
+@{
+    var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
+    ViewData["Title"] = $"Edit Character - {Model.Name}";
+}
+
+<div class="w-full pb-5 relative z-10 font-sans text-slate-800">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Back arrow -->
+            <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="text-secondary text-decoration-none d-inline-flex align-items-center mb-4 small fw-semibold hover-lift-subtle" style="color: var(--forest-green-dark);">
+                <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Back to Cast
+            </a>
+
+            <div class="dashboard-glass-panel p-5" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <h3 class="font-serif fw-bold text-peacock-dark mb-2">Edit Character Info</h3>
+                <p class="text-secondary small mb-4">Modify character details and roles.</p>
+
+                <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="StoryId" />
+                    <input type="hidden" asp-for="CreatedAt" />
+
+                    <div class="mb-4">
+                        <label asp-for="Name" class="form-label fw-bold text-slate-700 small text-uppercase tracking-wider">Character Name</label>
+                        <input asp-for="Name" class="form-control rounded-3 border-slate-200 py-2.5 px-3" required />
+                        <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Role" class="form-label fw-bold text-slate-700 small text-uppercase tracking-wider">Role / Archetype</label>
+                        <input asp-for="Role" class="form-control rounded-3 border-slate-200 py-2.5 px-3" required />
+                        <span asp-validation-for="Role" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3 mt-5">
+                        <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="btn btn-outline-secondary rounded-pill px-4" style="border-color: var(--parchment-border) !important;">Cancel</a>
+                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold shadow-xs hover-lift-subtle" 
+                                style="background: var(--peacock-gradient); border: none;">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

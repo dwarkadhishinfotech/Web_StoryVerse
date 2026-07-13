@@ -1,0 +1,163 @@
+@{
+    var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
+    ViewData["Title"] = $"Timeline - {story?.Title}";
+}
+
+<div class="w-full pb-5 relative z-10 font-sans text-slate-800">
+    <!-- Header Section -->
+    <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+        <div>
+            <h2 class="font-serif fw-bold text-slate-900 mb-1" style="font-size: 28px; color: var(--forest-green-dark);">
+                Timeline <span class="text-warning fs-4">✦</span>
+            </h2>
+            <p class="text-secondary mb-0" style="font-size: 0.875rem;">Visualize the chronological flow of your story events.</p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Details", "Stories", new { id = story?.Id })" class="btn btn-outline-secondary rounded-pill px-4 py-2 d-flex align-items-center hover-lift-subtle" style="font-size: 0.85rem; font-weight: 700; border-color: var(--parchment-border) !important;">
+                <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Story Overview
+            </a>
+
+            <button class="btn text-white rounded-pill px-4 py-2 d-flex align-items-center shadow-sm hover-lift-subtle" 
+                    style="background: var(--peacock-gradient); font-size: 0.85rem; font-weight: 700; border: none;"
+                    data-bs-toggle="modal" data-bs-target="#addEventModal">
+                <i data-lucide="plus" class="me-1.5" style="width: 16px; height: 16px;"></i> Add Event
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Summary Grid -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Total Events</span>
+                <h3 class="fw-bold text-slate-800 mb-0 font-serif">8</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Narrative Arcs</span>
+                <h3 class="fw-bold text-slate-800 mb-0 font-serif">3</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Timeline Span</span>
+                <h3 class="fw-bold text-slate-800 mb-0 font-serif">4 Years</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Active Arc</span>
+                <h3 class="fw-bold text-slate-800 mb-0 font-serif" style="color: var(--forest-green);">Rising Action</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Workspace -->
+    <div class="row g-4">
+        <!-- Event List Chronological -->
+        <div class="col-lg-8">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <h5 class="font-serif fw-bold text-peacock-dark mb-4">Chronological Stream</h5>
+                
+                <div class="position-relative ps-4 border-start border-2" style="border-color: var(--parchment-border) !important; margin-left: 20px;">
+                    <!-- Event 1 -->
+                    <div class="position-relative mb-5">
+                        <div class="position-absolute rounded-circle bg-white border border-4 border-teal-500" style="width: 16px; height: 16px; left: -29px; top: 4px;"></div>
+                        <div class="bg-white p-4 rounded-4 border shadow-xs">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-teal-subtle text-teal-700 px-2.5 py-1.5 rounded text-uppercase" style="font-size: 9px; font-weight: 700;">Prologue</span>
+                                <span class="text-muted small font-monospace">Year 1, Spring</span>
+                            </div>
+                            <h6 class="fw-bold text-slate-800 font-serif">The Royal Banquet Discovery</h6>
+                            <p class="text-secondary mb-0 small">Kaelen stumbles upon the secret treaty plans hidden beneath the ambassador's desk during the autumn gala banquet.</p>
+                        </div>
+                    </div>
+
+                    <!-- Event 2 -->
+                    <div class="position-relative mb-5">
+                        <div class="position-absolute rounded-circle bg-white border border-4 border-primary" style="width: 16px; height: 16px; left: -29px; top: 4px;"></div>
+                        <div class="bg-white p-4 rounded-4 border shadow-xs">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded text-uppercase" style="font-size: 9px; font-weight: 700;">Inciting Incident</span>
+                                <span class="text-muted small font-monospace">Year 1, Summer</span>
+                            </div>
+                            <h6 class="fw-bold text-slate-800 font-serif">The Crow's Call Message</h6>
+                            <p class="text-secondary mb-0 small">A coded message arrives at midnight via a black-feathered courier hawk, warning of the council's treachery.</p>
+                        </div>
+                    </div>
+
+                    <!-- Event 3 -->
+                    <div class="position-relative mb-2">
+                        <div class="position-absolute rounded-circle bg-white border border-4 border-warning" style="width: 16px; height: 16px; left: -29px; top: 4px;"></div>
+                        <div class="bg-white p-4 rounded-4 border shadow-xs">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-warning-subtle text-warning-emphasis px-2.5 py-1.5 rounded text-uppercase" style="font-size: 9px; font-weight: 700;">Rising Action</span>
+                                <span class="text-muted small font-monospace">Year 2, Winter</span>
+                            </div>
+                            <h6 class="fw-bold text-slate-800 font-serif">Betrayal at High Peak Pass</h6>
+                            <p class="text-secondary mb-0 small">Amara leads the vanguard into an ambush in the narrow high passes, forcing them to retreat to the low valleys.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar panels -->
+        <div class="col-lg-4">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <h5 class="font-serif fw-bold text-peacock mb-3">Narrative Arcs</h5>
+                <div class="d-flex flex-column gap-3">
+                    <div class="p-3 bg-white border rounded-4 shadow-xs">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-slate-800 small">Arc 1: The Secret Treaty</span>
+                            <span class="badge bg-success-subtle text-success border font-bold" style="font-size: 9px;">Completed</span>
+                        </div>
+                        <p class="text-secondary small mb-0">Initial discovery of political schemes within the inner circles.</p>
+                    </div>
+
+                    <div class="p-3 bg-white border rounded-4 shadow-xs">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-slate-800 small">Arc 2: High Pass Journey</span>
+                            <span class="badge bg-teal-subtle text-teal-700 border font-bold" style="font-size: 9px;">In Progress</span>
+                        </div>
+                        <p class="text-secondary small mb-0">Survival and escape of Kaelen and the refugees through the mountain peaks.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="p-4">
+                <h4 class="font-serif fw-bold text-slate-800 mb-2">Add Timeline Event</h4>
+                <p class="text-secondary small mb-4">Introduce a new milestone event or scene reference to the story flow.</p>
+                
+                <form onsubmit="event.preventDefault(); bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Event Title</label>
+                        <input type="text" class="form-control rounded-3" placeholder="e.g. Battle of Red Valley" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Time / Period</label>
+                        <input type="text" class="form-control rounded-3" placeholder="e.g. Year 2, Spring" required />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Brief Description</label>
+                        <textarea class="form-control rounded-3" rows="3" placeholder="Describe what happens..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold" style="background: var(--peacock-gradient); border: none;">Save Event</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

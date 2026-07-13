@@ -1,0 +1,69 @@
+@model dynamic
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - StoryVerse</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <div class="auth-layout-container">
+        <!-- Premium Glass Overlay -->
+        <div class="overlay-glass"></div>
+        <div class="overlay-gradient"></div>
+
+        <div class="auth-content-wrapper">
+            <!-- Left Content Side -->
+            <div class="auth-left-side">
+                <div style="max-width: 36rem;">
+                    @await Html.PartialAsync("Components/_Logo")
+
+                    @if (ViewData["IsRegister"] is bool isRegister && isRegister)
+                    {
+                        <div class="mb-4">
+                            <h1 class="display-3 font-serif" style="color: #102B5E; line-height: 1.1;">Begin your</h1>
+                            <h1 class="display-3 font-serif text-gradient" style="line-height: 1.1;">story today.</h1>
+                        </div>
+                        <p class="lead" style="color: #6B7280; font-size: 1.125rem;">
+                            Create your workspace and <br/> start writing your masterpiece.
+                        </p>
+                    }
+                    else
+                    {
+                        <div class="mb-4">
+                            <h1 class="display-2 font-serif d-flex align-items-center" style="line-height: 1;">
+                                <span style="color: #102B5E;">Story</span>
+                                <span class="text-gradient">Verse</span>
+                            </h1>
+                            <p class="text-uppercase fw-semibold tracking-widest mt-3" style="color: #6B7280; font-size: 0.85rem; letter-spacing: 0.25em;">
+                                Author Operating System
+                            </p>
+                        </div>
+                        <div class="mb-4">
+                            <h2 class="display-5 font-serif" style="color: #102B5E; line-height: 1.1;">Your stories.</h2>
+                            <h2 class="display-5 font-serif text-gradient" style="line-height: 1.1;">Your universe.</h2>
+                        </div>
+                        <p class="lead" style="color: #6B7280; font-size: 0.95rem; max-width: 380px;">
+                            Organize your ideas, craft unforgettable characters,
+                            build timelines, and write your next masterpiece
+                            without ever leaving the app.
+                        </p>
+                    }
+                </div>
+            </div>
+
+            <!-- Right Form Side -->
+            <div class="auth-right-side">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

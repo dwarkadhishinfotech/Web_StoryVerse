@@ -1,0 +1,156 @@
+@{
+    var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
+    ViewData["Title"] = $"Research Board - {story?.Title}";
+}
+
+<div class="w-full pb-5 relative z-10 font-sans text-slate-800">
+    <!-- Header Section -->
+    <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+        <div>
+            <h2 class="font-serif fw-bold text-slate-900 mb-1" style="font-size: 28px; color: var(--forest-green-dark);">
+                Research Board <span class="text-warning fs-4">✦</span>
+            </h2>
+            <p class="text-secondary mb-0" style="font-size: 0.875rem;">Manage research notes, categories, and references for world-building accuracy.</p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Details", "Stories", new { id = story?.Id })" class="btn btn-outline-secondary rounded-pill px-4 py-2 d-flex align-items-center hover-lift-subtle" style="font-size: 0.85rem; font-weight: 700; border-color: var(--parchment-border) !important;">
+                <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Story Overview
+            </a>
+
+            <button class="btn text-white rounded-pill px-4 py-2 d-flex align-items-center shadow-sm hover-lift-subtle" 
+                    style="background: var(--peacock-gradient); font-size: 0.85rem; font-weight: 700; border: none;"
+                    data-bs-toggle="modal" data-bs-target="#newNoteModal">
+                <i data-lucide="plus" class="me-1.5" style="width: 16px; height: 16px;"></i> Add Note
+            </button>
+        </div>
+    </div>
+
+    <!-- 3-Column Split Layout -->
+    <div class="row g-4">
+        <!-- Col 1: Categories Sidebar -->
+        <div class="col-lg-3">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <h6 class="font-serif fw-bold text-peacock mb-3">Categories</h6>
+                <div class="d-flex flex-column gap-2" id="categoryList">
+                    <button class="btn btn-light text-start w-100 rounded-3 py-2 px-3 fw-bold active-cat" style="font-size: 13px; border: none;">
+                        <i data-lucide="folder" class="me-2 text-peacock-teal" style="width: 14px; height: 14px; vertical-align: middle;"></i> All Reference Notes
+                    </button>
+                    <button class="btn btn-link text-start w-100 rounded-3 py-2 px-3 text-secondary text-decoration-none hover-bg-light" style="font-size: 13px;">
+                        <i data-lucide="folder" class="me-2" style="width: 14px; height: 14px; vertical-align: middle;"></i> Historical Setting
+                    </button>
+                    <button class="btn btn-link text-start w-100 rounded-3 py-2 px-3 text-secondary text-decoration-none hover-bg-light" style="font-size: 13px;">
+                        <i data-lucide="folder" class="me-2" style="width: 14px; height: 14px; vertical-align: middle;"></i> Scientific Reference
+                    </button>
+                    <button class="btn btn-link text-start w-100 rounded-3 py-2 px-3 text-secondary text-decoration-none hover-bg-light" style="font-size: 13px;">
+                        <i data-lucide="folder" class="me-2" style="width: 14px; height: 14px; vertical-align: middle;"></i> Miscellaneous Notes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Col 2: Research Grid -->
+        <div class="col-lg-6">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-serif fw-bold text-peacock-dark mb-0">Documents & Notes</h5>
+                    <div class="position-relative" style="max-width: 200px;">
+                        <i data-lucide="search" class="position-absolute text-muted" style="left: 10px; top: 10px; width: 14px; height: 14px;"></i>
+                        <input type="text" class="form-control rounded-3 py-1.5 ps-4 shadow-none" placeholder="Search..." style="font-size: 12px; border-color: var(--parchment-border) !important;" />
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <!-- Note 1 -->
+                    <div class="col-md-6">
+                        <div class="card border rounded-4 p-3 bg-white cursor-pointer hover-lift-subtle shadow-xs" style="border-color: #F1F5F9 !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-teal-subtle text-teal-700 font-bold" style="font-size: 8px;">HISTORICAL</span>
+                                <span class="text-muted" style="font-size: 10px;">1h ago</span>
+                            </div>
+                            <h6 class="fw-bold text-slate-800 font-serif mb-1">Medieval Armor Design</h6>
+                            <p class="text-secondary small mb-0 line-clamp-2">Detailed reference on chainmail density, plate weights, and blacksmithing terms during the late high middle ages.</p>
+                        </div>
+                    </div>
+
+                    <!-- Note 2 -->
+                    <div class="col-md-6">
+                        <div class="card border rounded-4 p-3 bg-white cursor-pointer hover-lift-subtle shadow-xs" style="border-color: #F1F5F9 !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-warning-subtle text-warning-emphasis font-bold" style="font-size: 8px;">SCIENTIFIC</span>
+                                <span class="text-muted" style="font-size: 10px;">3d ago</span>
+                            </div>
+                            <h6 class="fw-bold text-slate-800 font-serif mb-1">Star Constellations Navigation</h6>
+                            <p class="text-secondary small mb-0 line-clamp-2">Notes about stellar coordinates, astrolabes, and visual night sky maps for sea voyage realism.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Col 3: Research Details Panel -->
+        <div class="col-lg-3">
+            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <h5 class="font-serif fw-bold text-peacock mb-3">Detail Panel</h5>
+                <div class="bg-white p-3 rounded-4 border shadow-xs">
+                    <h6 class="fw-bold text-slate-800 font-serif mb-2">Medieval Armor Design</h6>
+                    <small class="text-muted d-block mb-3 border-bottom pb-2">Last modified: 1 hour ago</small>
+                    <p class="text-secondary small mb-3" style="line-height: 1.6;">
+                        A full plate harness typically weighed between 15 to 25 kg (33 to 55 lb). The knight's weight was distributed evenly, allowing for surprisingly high agility, contrary to modern film representation.
+                    </p>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3">Edit Note</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="newNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="p-4">
+                <h4 class="font-serif fw-bold text-slate-800 mb-2">Create Research Note</h4>
+                <p class="text-secondary small mb-4">Add a new document entry to organize your manuscript reference data.</p>
+                
+                <form onsubmit="event.preventDefault(); bootstrap.Modal.getInstance(document.getElementById('newNoteModal')).hide();">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Note Title</label>
+                        <input type="text" class="form-control rounded-3" placeholder="e.g. Castle Siege Tactics" required />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Content / References</label>
+                        <textarea class="form-control rounded-3" rows="5" placeholder="Jot down notes, URLs, or source details..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold" style="background: var(--peacock-gradient); border: none;">Save Note</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .active-cat {
+        background: var(--peacock-gradient) !important;
+        color: white !important;
+        box-shadow: 0 4px 10px rgba(19, 168, 166, 0.15);
+    }
+    .active-cat i {
+        color: white !important;
+    }
+    .hover-bg-light:hover {
+        background-color: rgba(0,0,0,0.02) !important;
+    }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+</style>

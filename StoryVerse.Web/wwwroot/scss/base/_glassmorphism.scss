@@ -1,0 +1,14 @@
+@mixin glass-panel {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: $shadow-glass;
+    border-radius: $radius-2xl;
+}
+
+@mixin glass-sidebar {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    border-right: 1px solid rgba(226, 232, 240, 0.5);
+}

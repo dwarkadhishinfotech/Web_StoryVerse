@@ -1,0 +1,182 @@
+@model StoryVerse.Core.Entities.Story
+@{
+    ViewData["Title"] = $"Edit {Model.Title}";
+}
+
+<div class="w-full relative font-sans">
+    
+    <!-- Decorative Peacock Blur Watermark -->
+    <div class="position-absolute" style="top: -80px; right: -80px; width: 500px; height: 500px; background: rgba(19, 168, 166, 0.04); border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 1;"></div>
+
+    <!-- Premium Navy Hero Banner -->
+    <div class="position-relative w-100 p-5 mb-4 mt-2 overflow-hidden shadow-sm text-white" 
+         style="background: #0B1528; border-radius: 20px; z-index: 10;">
+        <div class="position-absolute" style="top: 0; right: 0; width: 350px; height: 350px; background: rgba(19, 168, 166, 0.12); border-radius: 50%; filter: blur(60px); pointer-events: none; transform: translate(30%, -30%);"></div>
+        <div class="position-absolute" style="bottom: 0; left: 0; width: 250px; height: 250px; background: rgba(30, 67, 155, 0.12); border-radius: 50%; filter: blur(50px); pointer-events: none; transform: translate(-30%, 30%);"></div>
+
+        <div class="position-relative d-flex flex-column align-items-start">
+            <a href="@Url.Action("Details", "Stories", new { id = Model.Id })" 
+               class="text-decoration-none text-slate-300 hover-text-white d-inline-flex align-items-center mb-4 px-3 py-1.5 rounded-pill border" 
+               style="background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1) !important; font-size: 0.8rem; font-weight: 500; color: #CBD5E1;">
+                <i data-lucide="arrow-left" class="me-2" style="width: 14px; height: 14px;"></i> Back to Details
+            </a>
+            
+            <div class="d-flex align-items-center gap-2">
+                <h1 class="font-serif fw-bold text-white mb-0" style="font-size: 1.85rem; letter-spacing: -0.01em;">Edit Story Configuration</h1>
+                <i data-lucide="settings" class="text-info" style="width: 24px; height: 24px; color: #13A8A6 !important;"></i>
+            </div>
+            <p class="text-slate-300 mt-2 mb-0" style="font-size: 0.95rem; max-width: 600px; color: #94A3B8;">
+                Modify layout preferences, targets, and credentials for your creative story project workspace.
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <form asp-action="Edit" method="post" class="position-relative" style="z-index: 10;">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CurrentWordCount" />
+        <input type="hidden" asp-for="CreatedAt" />
+
+        <div class="row g-4">
+            
+            <!-- Left Column: Cover Image & Tips -->
+            <div class="col-lg-4 d-flex flex-column gap-4">
+                <!-- Cover Image Box -->
+                <div class="card border-0 p-4 shadow-xs" style="background: #ffffff; border: 1px solid #E2E8F0 !important; border-radius: 20px;">
+                    <h5 class="fw-bold mb-1 text-slate-900" style="font-size: 15px;">Cover Image</h5>
+                    <p class="text-secondary small mb-3">Update your story cover image reference URL.</p>
+
+                    <div class="mb-3">
+                        <input asp-for="CoverImageUrl" id="coverUrlInput" class="form-control" 
+                               placeholder="e.g. /images/covers/fantasy.png" 
+                               style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" />
+                        <span asp-validation-for="CoverImageUrl" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Cover Preview Box -->
+                    <div class="p-3 rounded-3 d-flex align-items-center gap-3 border bg-light bg-opacity-50" style="border-color: #E2E8F0 !important; border-radius: 12px !important;">
+                        <div class="rounded bg-secondary bg-opacity-10 overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center" 
+                             style="width: 48px; height: 64px; border: 1px solid #E2E8F0;" id="previewContainer">
+                            <i data-lucide="image" class="text-secondary opacity-50" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <span class="fw-bold text-slate-900" style="font-size: 13px;">Cover Preview</span>
+                            <span class="text-secondary" style="font-size: 11px;">Preview displays automatically</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Author Tips -->
+                <div class="card border-0 p-4 shadow-xs" 
+                     style="background: linear-gradient(135deg, rgba(19, 168, 166, 0.06), rgba(30, 67, 155, 0.04)); border: 1px solid rgba(19, 168, 166, 0.15) !important; border-radius: 20px;">
+                    <h6 class="fw-bold d-flex align-items-center gap-2 mb-2" style="color: #0F766E;">
+                        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Edit Mode
+                    </h6>
+                    <p class="text-secondary small mb-0 leading-relaxed" style="font-size: 12.5px; font-weight: 500;">
+                        Updating targets or genres resets active goals accordingly. All saved chapters and logs are fully preserved.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Column: Form Inputs -->
+            <div class="col-lg-8">
+                <div class="card border-0 p-4 p-md-5 shadow-xs" style="background: #ffffff; border: 1px solid #E2E8F0 !important; border-radius: 20px;">
+                    <h5 class="fw-bold mb-4 font-serif text-slate-900" style="font-size: 18px;">Story Details</h5>
+
+                    <div class="d-flex flex-column gap-3">
+                        
+                        <!-- Story Title -->
+                        <div>
+                            <label asp-for="Title" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Story Title <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" 
+                                   style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Genre and Target Words row -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Genre" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Genre <span class="text-danger">*</span></label>
+                                <select asp-for="Genre" class="form-select" 
+                                        style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required>
+                                    <option value="Fantasy">Fantasy</option>
+                                    <option value="Sci-Fi">Science Fiction</option>
+                                    <option value="Romance">Romance</option>
+                                    <option value="Mystery">Mystery & Thriller</option>
+                                    <option value="Horror">Horror</option>
+                                    <option value="Adventure">Adventure</option>
+                                </select>
+                                <span asp-validation-for="Genre" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="TargetWordCount" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Target Word Count <span class="text-danger">*</span></label>
+                                <input asp-for="TargetWordCount" type="number" class="form-control" 
+                                       style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required />
+                                <span asp-validation-for="TargetWordCount" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Writing Status -->
+                        <div>
+                            <label asp-for="Status" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Writing Status</label>
+                            <select asp-for="Status" class="form-select" 
+                                    style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required>
+                                <option value="Draft">Planning / Draft</option>
+                                <option value="InProgress">In Progress</option>
+                                <option value="Published">Completed / Published</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-end gap-3 mt-4">
+                            <a href="@Url.Action("Details", "Stories", new { id = Model.Id })" class="btn btn-outline-secondary px-4 py-2.5 fw-semibold" 
+                               style="font-size: 13px; border-radius: 12px; border-color: #E2E8F0;">Cancel</a>
+                            <button type="submit" class="btn text-white px-4 py-2.5 fw-bold shadow-sm" 
+                                    style="background-color: #115E59; border: none; font-size: 13px; border-radius: 12px;">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+
+    <!-- Danger Zone Panel -->
+    <div class="card border-0 p-4 shadow-sm mt-4 mb-5" 
+         style="background: #FFF5F5; border: 1px solid #FEB2B2 !important; border-radius: 20px; z-index: 10; position: relative;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h5 class="fw-bold mb-1" style="color: #9B2C2C; font-size: 15px;">Delete Story Workspace</h5>
+                <p class="text-secondary small mb-0" style="font-size: 12.5px; font-weight: 500;">Permanently delete this story and all its chapters, characters, and locations.</p>
+            </div>
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this story? This cannot be undone.');">
+                <button type="submit" class="btn btn-danger px-4 py-2.5 fw-bold" style="font-size: 13px; border-radius: 12px; border: none;">
+                    Delete Story
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const coverInput = document.getElementById("coverUrlInput");
+        const previewDiv = document.getElementById("previewContainer");
+
+        function updatePreview() {
+            const url = coverInput.value.trim();
+            if (url) {
+                previewDiv.innerHTML = `<img src="${url}" class="w-100 h-100 object-fit-cover" onerror="this.outerHTML='<i data-lucide=\\'image\\' class=\\'text-secondary opacity-50\\'></i>'; lucide.createIcons();" />`;
+            } else {
+                previewDiv.innerHTML = `<i data-lucide="image" class="text-secondary opacity-50" style="width: 20px; height: 20px;"></i>`;
+                lucide.createIcons();
+            }
+        }
+
+        coverInput.addEventListener("input", updatePreview);
+        updatePreview();
+    });
+</script>

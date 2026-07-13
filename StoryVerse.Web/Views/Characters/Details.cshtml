@@ -1,0 +1,104 @@
+@model StoryVerse.Core.Entities.Character
+@{
+    var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
+    ViewData["Title"] = $"{Model.Name} - Character Profile";
+}
+
+<div class="w-full pb-5 relative z-10 font-sans text-slate-800">
+    <!-- Back arrow -->
+    <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="text-secondary text-decoration-none d-inline-flex align-items-center mb-4 small fw-semibold hover-lift-subtle" style="color: var(--forest-green-dark);">
+        <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Back to Cast
+    </a>
+
+    <div class="row g-4">
+        <!-- Sidebar profile card -->
+        <div class="col-lg-4">
+            <div class="dashboard-glass-panel p-4 text-center d-flex flex-column align-items-center" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <!-- Initial circle -->
+                <div class="rounded-circle d-flex align-items-center justify-content-center font-serif text-white fw-bold mb-3 shadow shadow-teal-500/10" 
+                     style="width: 110px; height: 110px; background: var(--peacock-gradient); font-size: 3rem;">
+                    @(string.IsNullOrEmpty(Model.Name) ? "?" : Model.Name[0].ToString().ToUpper())
+                </div>
+
+                <h3 class="font-serif fw-bold text-slate-800 mb-1">@Model.Name</h3>
+                <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill text-uppercase mb-4" style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">
+                    @(string.IsNullOrEmpty(Model.Role) ? "Character" : Model.Role)
+                </span>
+
+                <div class="w-100 d-flex flex-column gap-3 pt-3 border-top" style="font-size: 13px;">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-secondary">Appears in</span>
+                        <span class="fw-bold">@story?.Title</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-secondary">Added on</span>
+                        <span class="fw-bold">@Model.CreatedAt.ToString("MM/dd/yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-secondary">Status</span>
+                        <span class="text-success fw-bold">Active</span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 w-100 mt-4">
+                    <a href="@Url.Action("Edit", "Characters", new { id = Model.Id })" class="btn btn-peacock flex-grow-1 rounded-pill py-2 fw-bold" style="font-size: 0.85rem;">
+                        <i data-lucide="edit-3" class="me-1" style="width: 14px; height: 14px; vertical-align: middle;"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail tabs pane -->
+        <div class="col-lg-8">
+            <div class="dashboard-glass-panel p-4 h-100" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
+                <h4 class="font-serif fw-bold text-peacock-dark mb-4">Character Biography Sheet</h4>
+                
+                <div class="d-flex flex-column gap-4">
+                    <div class="bg-white p-4 rounded-4 border">
+                        <h6 class="fw-bold text-peacock mb-2 small text-uppercase tracking-wider">Role & Summary</h6>
+                        <p class="text-slate-700 mb-0" style="font-size: 14px; line-height: 1.6;">
+                            @Model.Name is mapped as a key character within this narrative. They hold the position of <strong>@Model.Role</strong>, which shapes their connections, goals, and conflicts with other key figures in the story.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-4 border">
+                        <h6 class="fw-bold text-peacock mb-3 small text-uppercase tracking-wider">Visual & Aesthetic Profile</h6>
+                        <div class="row g-3" style="font-size: 13px;">
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded-3">
+                                    <span class="text-muted d-block mb-1">Aesthetic Archetype</span>
+                                    <span class="fw-bold">Classic Narrative</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded-3">
+                                    <span class="text-muted d-block mb-1">Conflict Association</span>
+                                    <span class="fw-bold">Central Plot-arc</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-gradient-to-r from-light to-white rounded-4 border">
+                        <h6 class="fw-bold text-secondary mb-2 small text-uppercase tracking-wider">Narrative Goals</h6>
+                        <p class="text-muted italic mb-0" style="font-size: 13px;">
+                            "To understand a character, look closely at their choices under pressure." - Mapped to the main conflicts of the story arcs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-peacock {
+        background: var(--peacock-gradient);
+        color: white;
+        border: none;
+    }
+    .btn-peacock:hover {
+        opacity: 0.95;
+        color: white;
+    }
+</style>

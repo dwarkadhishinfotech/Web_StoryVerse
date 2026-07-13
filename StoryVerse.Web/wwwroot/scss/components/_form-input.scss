@@ -1,0 +1,114 @@
+.form-group {
+    margin-bottom: 1rem;
+
+    label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #102B5E;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .input-wrapper {
+        position: relative;
+
+        .icon-left {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .icon-right {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+
+            &:hover {
+                color: #4B5563;
+            }
+        }
+
+        .form-control {
+            height: 42px;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #102B5E;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: $radius-lg;
+            padding-left: 2.25rem;
+            padding-right: 1rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+            &::placeholder {
+                color: #9CA3AF;
+            }
+
+            &:focus {
+                border-color: $primary;
+                box-shadow: 0 0 0 0.25rem rgba(20, 184, 166, 0.25);
+                outline: 0;
+            }
+
+            &.has-right-icon {
+                padding-right: 2.5rem;
+            }
+        }
+    }
+}
+
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    .form-check-input {
+        appearance: none;
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+        border: 1px solid #d1d5db;
+        border-radius: 0.25rem;
+        background-color: #ffffff;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 0;
+        position: relative;
+
+        &:checked {
+            background-image: $gradient-primary;
+            border-color: transparent;
+
+            &::after {
+                content: '';
+                position: absolute;
+                left: 4px;
+                top: 1px;
+                width: 5px;
+                height: 10px;
+                border: solid white;
+                border-width: 0 2px 2px 0;
+                transform: rotate(45deg);
+            }
+        }
+    }
+
+    .form-check-label {
+        font-size: 0.75rem;
+        color: #6B7280;
+        font-weight: 500;
+        cursor: pointer;
+        margin-left: 0.5rem;
+    }
+}

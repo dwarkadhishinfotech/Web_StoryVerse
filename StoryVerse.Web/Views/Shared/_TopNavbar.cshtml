@@ -1,0 +1,91 @@
+@inject UserManager<ApplicationUser> UserManager
+@inject StoryVerse.Infrastructure.Data.ApplicationDbContext DbContext
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var displayName = user?.DisplayName ?? user?.FirstName ?? user?.UserName ?? "Author";
+    var initials = !string.IsNullOrEmpty(displayName) ? displayName[0].ToString().ToUpper() : "A";
+
+    var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["Action"]?.ToString();
+    var isDashboard = controller == "Dashboard" && action == "Index";
+
+    // Query active or last modified story for this user
+    StoryVerse.Core.Entities.Story activeStory = null;
+    if (user != null)
+    {
+        activeStory = DbContext.Stories
+            .Where(s => s.UserId == user.Id && s.Status == "InProgress")
+            .OrderByDescending(s => s.UpdatedAt)
+            .FirstOrDefault() ?? DbContext.Stories
+            .Where(s => s.UserId == user.Id)
+            .OrderByDescending(s => s.UpdatedAt)
+            .FirstOrDefault();
+    }
+}
+
+@if (isDashboard)
+{
+    <header class="d-flex align-items-center justify-content-between py-3 mb-4 mt-2" style="background: transparent;">
+        <!-- Greeting on Left -->
+        <div>
+            <h1 class="font-serif fw-bold mb-1 d-flex align-items-center gap-2" style="font-size: 2.2rem; letter-spacing: -0.02em; color: #1E439B; font-family: 'Playfair Display', serif;">
+                Good morning, @displayName <span style="color: var(--gold-accent); font-size: 1.8rem; line-height: 1;">✦</span>
+            </h1>
+            <p class="text-secondary mb-0 fw-medium" style="font-size: 0.95rem; font-family: 'Playfair Display', serif; font-style: italic; opacity: 0.85;">
+                Every great story begins with a brave heart and a blank page.
+            </p>
+        </div>
+
+        <!-- Actions on Right -->
+        <div class="d-flex align-items-center gap-3">
+            <!-- New Story Button -->
+            <a href="@Url.Action("Create", "Stories")" class="btn px-4 py-2 rounded-pill fw-semibold d-inline-flex align-items-center gap-2 transition-all shadow-sm" 
+               style="background-color: white; border: 1px solid var(--parchment-border); color: #1E439B; font-size: 0.9rem; font-family: 'Inter', sans-serif;">
+                <i data-lucide="plus" style="width: 16px; height: 16px; color: #1E439B;"></i> New Story
+            </a>
+
+            <!-- Continue Writing Button -->
+            @if (activeStory != null)
+            {
+                <a href="@Url.Action("Details", "Stories", new { id = activeStory.Id })" class="btn px-4 py-2 rounded-pill text-white fw-semibold d-inline-flex align-items-center gap-2 transition-all shadow-sm" 
+                   style="background: var(--peacock-gradient); border: none; font-size: 0.9rem; font-family: 'Inter', sans-serif;">
+                    <i data-lucide="pen-tool" style="width: 16px; height: 16px; color: var(--gold-accent);"></i> Continue Writing
+                </a>
+            }
+            else
+            {
+                <a href="@Url.Action("Index", "Stories")" class="btn px-4 py-2 rounded-pill text-white fw-semibold d-inline-flex align-items-center gap-2 transition-all shadow-sm" 
+                   style="background: var(--peacock-gradient); border: none; font-size: 0.9rem; font-family: 'Inter', sans-serif;">
+                    <i data-lucide="pen-tool" style="width: 16px; height: 16px; color: var(--gold-accent);"></i> Continue Writing
+                </a>
+            }
+
+            <!-- Notification Icon -->
+            <button class="btn btn-white border rounded-circle shadow-sm bg-white bg-opacity-70 transition-all" style="border-color: var(--parchment-border) !important; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
+                <i data-lucide="bell" style="width: 20px; height: 20px; color: #64748B;"></i>
+            </button>
+
+            <!-- Mode Toggle Icon -->
+            <button class="btn btn-white border rounded-circle shadow-sm bg-white bg-opacity-70 transition-all" style="border-color: var(--parchment-border) !important; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
+                <i data-lucide="moon" style="width: 20px; height: 20px; color: #64748B;"></i>
+            </button>
+        </div>
+    </header>
+}
+else
+{
+    <!-- Compact Top bar for other pages -->
+    <header class="d-flex align-items-center justify-content-end py-2 mb-4" style="background: transparent;">
+        <div class="d-flex align-items-center gap-3">
+            <!-- Notification Icon -->
+            <button class="btn btn-white border border-secondary border-opacity-10 rounded-circle p-2 shadow-sm bg-white bg-opacity-70 transition-all">
+                <i data-lucide="bell" style="width: 20px; height: 20px;" class="text-secondary"></i>
+            </button>
+
+            <!-- Mode Toggle Icon -->
+            <button class="btn btn-white border border-secondary border-opacity-10 rounded-circle p-2 shadow-sm bg-white bg-opacity-70 transition-all">
+                <i data-lucide="moon" style="width: 20px; height: 20px;" class="text-secondary"></i>
+            </button>
+        </div>
+    </header>
+}

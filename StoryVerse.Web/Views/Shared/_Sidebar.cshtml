@@ -1,0 +1,282 @@
+@inject UserManager<ApplicationUser> UserManager
+@inject StoryVerse.Infrastructure.Data.ApplicationDbContext DbContext
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var displayName = user?.DisplayName ?? user?.FirstName ?? user?.UserName ?? "Author";
+    var initials = !string.IsNullOrEmpty(displayName) ? displayName[0].ToString().ToUpper() : "A";
+    var userAvatar = !string.IsNullOrEmpty(user?.ProfileImage) 
+        ? user.ProfileImage 
+        : $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(displayName)}&background=13A8A6&color=fff&size=128";
+
+    // Query actual user statistics
+    int activeStoriesCount = 0;
+    int totalWords = 0;
+    int streakDays = 0;
+    StoryVerse.Core.Entities.Story currentStory = null;
+
+    if (user != null)
+    {
+        activeStoriesCount = DbContext.Stories.Count(s => s.UserId == user.Id && s.Status == "InProgress");
+        totalWords = DbContext.Stories.Where(s => s.UserId == user.Id).Sum(s => s.CurrentWordCount);
+        
+        var userGoal = DbContext.UserGoals.FirstOrDefault(g => g.UserId == user.Id);
+        if (userGoal != null)
+        {
+            streakDays = userGoal.CurrentStreakDays;
+        }
+
+        // Active or last updated story
+        currentStory = DbContext.Stories
+            .Where(s => s.UserId == user.Id && s.Status == "InProgress")
+            .OrderByDescending(s => s.UpdatedAt)
+            .FirstOrDefault() ?? DbContext.Stories
+            .Where(s => s.UserId == user.Id)
+            .OrderByDescending(s => s.UpdatedAt)
+            .FirstOrDefault();
+    }
+
+    var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
+}
+
+<style>
+    .sidebar-glass {
+        background-image: url('/images/WritingSpace/Sidebar_bg_img.png') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+        position: relative;
+    }
+    .sidebar-glass::before, .sidebar-glass::after {
+        display: none !important;
+    }
+    .sidebar-nav-link {
+        color: rgba(255, 255, 255, 0.7) !important;
+        font-weight: 600 !important;
+        transition: all 0.25s ease;
+        z-index: 10;
+        position: relative;
+    }
+    .sidebar-nav-link i {
+        color: rgba(255, 255, 255, 0.7) !important;
+        opacity: 0.85;
+    }
+    .sidebar-nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        transform: translateX(4px);
+    }
+    .sidebar-nav-link:hover i {
+        color: white !important;
+        opacity: 1;
+    }
+    .sidebar-nav-link.active {
+        background: linear-gradient(90deg, #10A5C2 0%, #13A8A6 100%) !important;
+        color: white !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 12px rgba(16, 165, 194, 0.3) !important;
+    }
+    .sidebar-nav-link.active i {
+        color: white !important;
+        opacity: 1;
+    }
+    .text-peacock-teal {
+        color: #13A8A6 !important;
+    }
+    .sidebar-profile-card {
+        background: rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(10px);
+        color: white !important;
+    }
+    .sidebar-content-z {
+        position: relative;
+        z-index: 10;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        display: none !important;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+    }
+</style>
+
+<nav class="sidebar-glass no-scrollbar shadow-lg transition-transform duration-300 ease-in-out d-flex flex-column" style="width: 270px; height: 100vh;">
+    <!-- Dark overlays to let peacock/image show through vividly -->
+    <div class="position-absolute" style="top:0; left:0; right:0; bottom:0; background-color: #071324; opacity: 0.4; mix-blend-mode: multiply; pointer-events: none; z-index: 1;"></div>
+    <div class="position-absolute" style="top:0; left:0; right:0; bottom:0; background: linear-gradient(to bottom, rgba(7, 19, 36, 0.8), rgba(7, 19, 36, 0.6) 50%, rgba(7, 19, 36, 0.9)); pointer-events: none; z-index: 2;"></div>
+
+    <!-- Logo Section -->
+    <div class="px-4 pt-4 pb-3 d-flex align-items-center justify-content-between sidebar-content-z">
+        <div class="d-flex align-items-center gap-3">
+            <div style="height: 42px; width: 42px; position: relative;">
+                <img src="/images/Logo_Transparent.PNG" alt="StoryVerse Logo" class="img-fluid" />
+            </div>
+            <div class="d-flex flex-column">
+                <span class="font-serif fw-bold text-white" style="font-size: 24px; line-height: 1.1; letter-spacing: -0.02em; drop-shadow: 0 2px 4px rgba(0,0,0,0.5);">StoryVerse</span>
+                <span class="fw-bold text-uppercase" style="font-size: 0.55rem; letter-spacing: 0.12em; color: #13A8A6; drop-shadow: 0 1px 2px rgba(0,0,0,0.5);">Author OS</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Story Widget -->
+    <div class="px-3 mb-2 mt-2 sidebar-content-z">
+        <div class="text-uppercase fw-bold text-white opacity-50 px-2 mb-2" style="font-size: 10px; letter-spacing: 0.1em;">Current Story</div>
+        @if (currentStory != null)
+        {
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3 border cursor-pointer" style="background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1) !important;">
+                <div class="rounded overflow-hidden bg-light shadow-sm flex-shrink-0" style="height: 36px; width: 28px;">
+                    <img src="@(string.IsNullOrEmpty(currentStory.CoverImageUrl) ? "/images/dashboard/Story_cover.png" : currentStory.CoverImageUrl)" alt="Cover" class="w-100 h-100 object-fit-cover" onerror="this.src='/images/dashboard/Story_cover.png'" />
+                </div>
+                <div class="d-flex flex-column flex-grow-1 overflow-hidden" style="line-height: 1.2;">
+                    <span class="text-white fw-bold text-truncate" style="font-size: 0.8rem;">@currentStory.Title</span>
+                    <span class="text-white-50" style="font-size: 0.7rem; opacity: 0.75;">@currentStory.Genre</span>
+                </div>
+                <i data-lucide="chevron-down" class="text-white-50 me-1" style="width: 14px; height: 14px; opacity: 0.8;"></i>
+            </div>
+        }
+        else
+        {
+            <a href="@Url.Action("Index", "Stories")" class="d-flex align-items-center gap-2 p-2 rounded-3 border text-decoration-none text-white-50" style="background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1) !important;">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                <span style="font-size: 0.75rem;">Create a Story</span>
+            </a>
+        }
+    </div>
+
+    <!-- Navigation Menu -->
+    <div class="flex-grow-1 px-3 py-2 sidebar-content-z no-scrollbar" style="overflow-y: auto;">
+        <a href="@Url.Action("Index", "Dashboard")" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3 @(controller == "Dashboard" ? "active" : "")">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Dashboard</span>
+            </div>
+        </a>
+        
+        <a href="@Url.Action("Index", "Stories")" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3 @(controller == "Stories" ? "active" : "")">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Stories</span>
+            </div>
+        </a>
+
+        <a href="@(currentStory != null ? Url.Action("Index", "Chapters", new { storyId = currentStory.Id }) : Url.Action("Index", "Stories"))" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3 @(controller == "Chapters" ? "active" : "")">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="scroll" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Chapters</span>
+            </div>
+        </a>
+
+        <a href="@(currentStory != null ? Url.Action("Index", "Characters", new { storyId = currentStory.Id }) : Url.Action("Index", "Stories"))" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3 @(controller == "Characters" ? "active" : "")">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Characters</span>
+            </div>
+        </a>
+
+        <a href="@(currentStory != null ? Url.Action("Index", "Timeline", new { storyId = currentStory.Id }) : Url.Action("Index", "Stories"))" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3 @(controller == "Timeline" ? "active" : "")">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="clock" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Timeline</span>
+            </div>
+        </a>
+
+        <a href="@(currentStory != null ? Url.Action("Index", "WorldBuilding", new { storyId = currentStory.Id }) : Url.Action("Index", "Stories"))" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3 @(controller == "WorldBuilding" ? "active" : "")">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="globe-2" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">World Building</span>
+            </div>
+        </a>
+
+        <a href="@(currentStory != null ? Url.Action("Index", "Research", new { storyId = currentStory.Id }) : Url.Action("Index", "Stories"))" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3 @(controller == "Research" ? "active" : "")">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Research</span>
+            </div>
+        </a>
+
+        <a href="@Url.Action("Index", "Stories")" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="map" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Maps</span>
+            </div>
+        </a>
+
+        <a href="@Url.Action("Index", "Stories")" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="sticky-note" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Notes</span>
+            </div>
+        </a>
+
+        <a href="@Url.Action("Index", "Stories")" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="folder-open" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Assets</span>
+            </div>
+        </a>
+
+        <a href="@Url.Action("Index", "Stories")" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between px-3 py-2 mb-2 rounded-3">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i>
+                <span style="font-size: 0.875rem;" class="fw-medium">Analytics</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Writing Streak Panel -->
+    <div class="px-3 mb-2 sidebar-content-z">
+        <div class="d-flex flex-column rounded-3 p-3 text-white border" style="background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1) !important;">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="text-uppercase fw-semibold text-white-50" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.7; font-weight: 700;">WRITING STREAK</span>
+                <span class="text-warning fw-bold" style="font-size: 11px;">Keep it up!</span>
+            </div>
+            <div class="d-flex align-items-baseline gap-1 mb-2">
+                <span class="fw-bold fs-3 text-white" style="font-size: 2.2rem; line-height: 1;">@streakDays</span>
+                <span class="text-white-50 fw-semibold" style="font-size: 0.75rem; opacity: 0.7;">days</span>
+            </div>
+            <!-- Streak mini graph -->
+            <div class="d-flex justify-content-between text-center mt-1" style="font-size: 9px; font-weight: 700; opacity: 0.85; color: rgba(255, 255, 255, 0.75);">
+                <div><div class="rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center" style="width: 14px; height: 14px; color: white; background: #13A8A6 !important; font-size: 8px;">✔</div>M</div>
+                <div><div class="rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center" style="width: 14px; height: 14px; color: white; background: #13A8A6 !important; font-size: 8px;">✔</div>T</div>
+                <div><div class="rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center" style="width: 14px; height: 14px; color: white; background: #13A8A6 !important; font-size: 8px;">✔</div>W</div>
+                <div><div class="rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center" style="width: 14px; height: 14px; color: white; background: #13A8A6 !important; font-size: 8px;">✔</div>T</div>
+                <div><div class="rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center" style="width: 14px; height: 14px; color: white; background: #13A8A6 !important; font-size: 8px;">✔</div>F</div>
+                <div><div class="rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center" style="width: 14px; height: 14px; color: white; background: #13A8A6 !important; font-size: 8px;">✔</div>S</div>
+                <div><div class="rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center" style="width: 14px; height: 14px; color: white; background: #13A8A6 !important; font-size: 8px;">✔</div>S</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile Footer -->
+    <div class="p-3 mt-auto sidebar-content-z">
+        <div class="d-flex flex-column rounded-3 p-3 transition-all sidebar-profile-card">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle overflow-hidden border border-light shadow-sm" style="height: 40px; width: 40px; border-color: rgba(255, 255, 255, 0.2) !important;">
+                        <img src="@userAvatar" alt="@displayName" class="img-fluid w-100 h-100 object-fit-cover" />
+                    </div>
+                    <div class="d-flex flex-column">
+                        <span class="text-white fw-bold lh-sm text-truncate" style="font-size: 0.85rem; max-width: 110px;">@displayName</span>
+                        <span class="text-peacock-teal fw-bold mt-0.5" style="font-size: 10px; letter-spacing: 0.05em; color: #13A8A6 !important;">Author</span>
+                    </div>
+                </div>
+                <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home")" method="post" id="logoutForm" class="d-inline">
+                    <button type="submit" class="btn btn-link p-1 text-white opacity-50 text-decoration-none hover-opacity-100" title="Logout">
+                        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                    </button>
+                </form>
+            </div>
+            <div class="row g-2 pt-2 border-top border-light" style="border-color: rgba(255, 255, 255, 0.1) !important;">
+                <div class="col-6 d-flex flex-column">
+                    <span class="text-uppercase fw-semibold text-white-50 mb-0.5" style="font-size: 9px; opacity: 0.6; font-weight: 700; letter-spacing: 0.05em;">STORIES</span>
+                    <span class="text-white fw-bold" style="font-size: 11px;">@activeStoriesCount Active</span>
+                </div>
+                <div class="col-6 d-flex flex-column">
+                    <span class="text-uppercase fw-semibold text-white-50 mb-0.5" style="font-size: 9px; opacity: 0.6; font-weight: 700; letter-spacing: 0.05em;">WORDS WRITTEN</span>
+                    <span class="text-white fw-bold" style="font-size: 11px;">@((totalWords / 1000.0).ToString("0.#"))k Total</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,67 @@
+// StoryVerse - Luxury Light Theme Variables
+
+// Colors
+$sv-navy: #1C2B39;
+$sv-navy-light: #2A4054;
+$sv-teal: #2A9D8F;
+$sv-teal-hover: #21867a;
+$sv-gold: #E9C46A;
+$sv-gold-light: #F4E2B1;
+$sv-peacock-blue: #0E6BA8;
+$sv-white: #FFFFFF;
+$sv-off-white: #F8F9FA;
+$sv-gray-100: #F1F3F5;
+$sv-gray-200: #E9ECEF;
+$sv-text-dark: #212529;
+$sv-text-muted: #6C757D;
+
+// Typography
+$font-family-sans-serif: 'Inter', system-ui, -apple-system, sans-serif;
+$font-family-serif: 'Playfair Display', Georgia, serif;
+
+// Bootstrap Overrides
+$primary: $sv-teal;
+$secondary: $sv-navy;
+$success: #2E7D32;
+$info: $sv-peacock-blue;
+$warning: $sv-gold;
+$danger: #D32F2F;
+$light: $sv-off-white;
+$dark: $sv-navy;
+
+$body-bg: $sv-off-white;
+$body-color: $sv-text-dark;
+
+$border-radius: 24px;
+$border-radius-sm: 16px;
+$border-radius-lg: 32px;
+
+$box-shadow: 0 10px 30px rgba(28, 43, 57, 0.08);
+$box-shadow-sm: 0 4px 12px rgba(28, 43, 57, 0.05);
+$box-shadow-lg: 0 20px 40px rgba(28, 43, 57, 0.12);
+
+$enable-shadows: true;
+$enable-gradients: true;
+
+// Card
+$card-border-radius: $border-radius;
+$card-border-color: rgba(0,0,0,0.05);
+$card-box-shadow: $box-shadow-sm;
+
+// Button
+$btn-border-radius: $border-radius-sm;
+$btn-padding-y: 0.6rem;
+$btn-padding-x: 1.5rem;
+
+// Headings
+$headings-font-family: $font-family-serif;
+$headings-font-weight: 700;
+$headings-color: $sv-navy;
+
+// Glassmorphism Mixin
+@mixin glassmorphism {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}

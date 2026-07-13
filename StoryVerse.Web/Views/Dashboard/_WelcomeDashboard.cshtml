@@ -1,0 +1,246 @@
+@model StoryVerse.Web.Models.DashboardViewModel
+
+<div class="container-fluid p-0 welcome-state-animation">
+    
+    <!-- Hero Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-glass-panel p-5 position-relative overflow-hidden" 
+                 style="min-height: 280px; border: 1px solid var(--parchment-border); background: var(--parchment-card);">
+                <!-- Background Image decoration -->
+                <div class="position-absolute top-0 start-0 w-100 h-100 opacity-15" style="background-image: url('/images/dashboard/welcome_hero.png'); background-size: cover; background-position: center; mix-blend-mode: multiply;"></div>
+                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to right, rgba(250, 245, 237, 0.95) 30%, rgba(250, 245, 237, 0.2)); z-index: 5;"></div>
+                
+                <div class="position-relative d-flex flex-column justify-content-center h-100" style="z-index: 10; max-width: 600px;">
+                    <h1 class="font-serif fw-bold text-peacock-dark mb-3" style="font-size: 3rem; color: var(--forest-green);">Welcome to StoryVerse <span style="color: var(--gold-accent);">✦</span></h1>
+                    <p class="text-secondary fw-medium mb-4 fs-5" style="font-family: 'Playfair Display', serif; font-style: italic;">
+                        Every masterpiece starts with a single page.<br />
+                        Let's create your first world.
+                    </p>
+                    
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="@Url.Action("Index", "Stories")" class="btn btn-primary px-4 py-3 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow" style="background-color: var(--forest-green); border: none; font-size: 1rem;">
+                            <i data-lucide="book-plus" style="width: 20px; height: 20px; color: var(--gold-accent);"></i> Create Your First Story
+                        </a>
+                        <button class="btn btn-white px-4 py-3 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm border bg-white text-peacock-dark" style="font-size: 1rem; border-color: var(--parchment-border) !important;">
+                            <i data-lucide="play-circle" style="width: 20px; height: 20px; color: var(--gold-accent);"></i> Watch 2 Minute Tour
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Journey Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Card 1 -->
+        <div class="col-md-3 col-sm-6">
+            <a href="@Url.Action("Index", "Stories")" class="text-decoration-none dashboard-glass-panel p-4 h-100 d-flex flex-column hover-lift border" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
+                <div class="mb-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background-color: rgba(10, 92, 90, 0.1);">
+                        <i data-lucide="book-open" style="color: var(--forest-green); width: 24px; height: 24px;"></i>
+                    </div>
+                </div>
+                <h4 class="font-serif fw-bold mb-2" style="color: var(--forest-green);">Create your first story</h4>
+                <p class="text-secondary fw-medium mb-4 flex-grow-1" style="font-size: 0.85rem;">Begin your next masterpiece.</p>
+                <div class="d-flex align-items-center gap-2 text-secondary fw-bold" style="font-size: 0.75rem;">
+                    <i data-lucide="circle" style="width: 14px; height: 14px;"></i> Not Started
+                </div>
+            </a>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="col-md-3 col-sm-6">
+            <a href="@Url.Action("Index", "Stories")" class="text-decoration-none dashboard-glass-panel p-4 h-100 d-flex flex-column hover-lift border" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
+                <div class="mb-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background-color: rgba(197, 168, 128, 0.1);">
+                        <i data-lucide="users" style="width: 24px; height: 24px; color: var(--gold-accent);"></i>
+                    </div>
+                </div>
+                <h4 class="font-serif fw-bold mb-2" style="color: var(--forest-green);">Create a character</h4>
+                <p class="text-secondary fw-medium mb-4 flex-grow-1" style="font-size: 0.85rem;">Every unforgettable story begins with someone worth remembering.</p>
+                <div class="d-flex align-items-center gap-2 text-secondary fw-bold" style="font-size: 0.75rem;">
+                    <i data-lucide="circle" style="width: 14px; height: 14px;"></i> Not Started
+                </div>
+            </a>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="col-md-3 col-sm-6">
+            <a href="@Url.Action("Index", "Stories")" class="text-decoration-none dashboard-glass-panel p-4 h-100 d-flex flex-column hover-lift border" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
+                <div class="mb-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background-color: rgba(10, 92, 90, 0.1);">
+                        <i data-lucide="clock" style="width: 24px; height: 24px; color: var(--forest-green);"></i>
+                    </div>
+                </div>
+                <h4 class="font-serif fw-bold mb-2" style="color: var(--forest-green);">Build your timeline</h4>
+                <p class="text-secondary fw-medium mb-4 flex-grow-1" style="font-size: 0.85rem;">Keep every event in perfect order.</p>
+                <div class="d-flex align-items-center gap-2 text-secondary fw-bold" style="font-size: 0.75rem;">
+                    <i data-lucide="circle" style="width: 14px; height: 14px;"></i> Not Started
+                </div>
+            </a>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="col-md-3 col-sm-6">
+            <a href="@Url.Action("Index", "Stories")" class="text-decoration-none dashboard-glass-panel p-4 h-100 d-flex flex-column hover-lift border" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
+                <div class="mb-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background-color: rgba(100, 116, 139, 0.1);">
+                        <i data-lucide="globe" style="width: 24px; height: 24px; color: #64748B;"></i>
+                    </div>
+                </div>
+                <h4 class="font-serif fw-bold mb-2" style="color: var(--forest-green);">Build your world</h4>
+                <p class="text-secondary fw-medium mb-4 flex-grow-1" style="font-size: 0.85rem;">Cities, kingdoms, crime scenes or galaxies.</p>
+                <div class="d-flex align-items-center gap-2 text-secondary fw-bold" style="font-size: 0.75rem;">
+                    <i data-lucide="circle" style="width: 14px; height: 14px;"></i> Not Started
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Row 3: Main Guidance Section -->
+    <div class="row g-4 mb-4">
+        <!-- Empty Bookshelf -->
+        <div class="col-lg-5">
+            <div class="dashboard-glass-panel p-0 overflow-hidden d-flex flex-column h-100" style="min-height: 360px; background: var(--parchment-card); border-color: var(--parchment-border) !important;">
+                <div class="p-4 pb-2 bg-white bg-opacity-40">
+                    <h3 class="font-serif fw-bold m-0" style="color: var(--forest-green);">My Stories</h3>
+                </div>
+                
+                <div class="flex-grow-1 position-relative d-flex align-items-center justify-content-center" style="background-color: #3e2723;">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 opacity-75" style="background-image: url('/images/dashboard/empty_shelf.png'); background-size: cover; background-position: center;"></div>
+                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+                    
+                    <div class="position-relative text-center p-4" style="z-index: 10;">
+                        <div class="mx-auto mb-4 rounded-3 border border-2 border-dashed border-light d-flex align-items-center justify-content-center" style="width: 120px; aspect-ratio: 4/5; background: rgba(255,255,255,0.1); backdrop-filter: blur(4px);">
+                            <i data-lucide="plus" class="text-white opacity-50" style="width: 40px; height: 40px;"></i>
+                        </div>
+                        
+                        <a href="@Url.Action("Index", "Stories")" class="btn btn-light px-4 py-2 rounded-pill fw-bold shadow-sm">
+                            <i data-lucide="book" style="width: 16px; height: 16px;" class="me-2"></i> Add First Story
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty Analytics -->
+        <div class="col-lg-4">
+            <div class="dashboard-glass-panel p-4 d-flex flex-column align-items-center justify-content-center h-100 text-center" style="min-height: 360px; background: var(--parchment-card); border-color: var(--parchment-border) !important;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px; background-color: rgba(10, 92, 90, 0.08);">
+                    <i data-lucide="bar-chart-2" style="width: 40px; height: 40px; color: var(--forest-green);"></i>
+                </div>
+                <h3 class="font-serif fw-bold mb-3" style="color: var(--forest-green);">Analytics Locked</h3>
+                <p class="text-secondary fw-medium px-3">
+                    Do not worry about the numbers yet.<br />
+                    Your analytics engine will unlock automatically after you write your first chapter.
+                </p>
+            </div>
+        </div>
+
+        <!-- Inspiration Panel -->
+        <div class="col-lg-3">
+            <div class="dashboard-glass-panel p-4 d-flex flex-column justify-content-between h-100 position-relative overflow-hidden" 
+                 style="background-color: var(--forest-green); color: white; border-color: var(--forest-green) !important;">
+                <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                    <i data-lucide="quote" style="width: 60px; height: 60px;"></i>
+                </div>
+                
+                <div>
+                    <span class="badge bg-white text-peacock-dark bg-opacity-20 px-2 py-1 mb-4" style="color: var(--gold-accent) !important;">INSPIRATION</span>
+                    <h3 class="font-serif fw-bold mb-4" style="font-size: 1.5rem; line-height: 1.4; color: var(--parchment-bg);">
+                        "You don't start with perfection.<br />
+                        You start with a sentence."
+                    </h3>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-light border-opacity-25">
+                    <span class="fw-medium opacity-75" style="font-size: 0.85rem;">StoryVerse Wisdom</span>
+                    <button class="btn btn-link text-white p-0 opacity-75 hover-opacity-100">
+                        <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 4: Achievements & Timeline -->
+    <div class="row g-4">
+        <!-- Achievements -->
+        <div class="col-lg-8">
+            <div class="dashboard-glass-panel p-4 h-100" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
+                <h3 class="font-serif fw-bold mb-4" style="font-size: 1.125rem; color: var(--forest-green);">Milestones to Unlock</h3>
+                
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="border rounded-3 p-3 text-center bg-light opacity-75" style="border-color: var(--parchment-border) !important;">
+                            <div class="mb-2">
+                                <i data-lucide="lock" class="text-secondary" style="width: 24px; height: 24px;"></i>
+                            </div>
+                            <span class="fw-bold text-secondary d-block" style="font-size: 0.85rem;">First Story</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="border rounded-3 p-3 text-center bg-light opacity-75" style="border-color: var(--parchment-border) !important;">
+                            <div class="mb-2">
+                                <i data-lucide="lock" class="text-secondary" style="width: 24px; height: 24px;"></i>
+                            </div>
+                            <span class="fw-bold text-secondary d-block" style="font-size: 0.85rem;">First Chapter</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="border rounded-3 p-3 text-center bg-light opacity-75" style="border-color: var(--parchment-border) !important;">
+                            <div class="mb-2">
+                                <i data-lucide="lock" class="text-secondary" style="width: 24px; height: 24px;"></i>
+                            </div>
+                            <span class="fw-bold text-secondary d-block" style="font-size: 0.85rem;">First Character</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="border rounded-3 p-3 text-center bg-light opacity-75" style="border-color: var(--parchment-border) !important;">
+                            <div class="mb-2">
+                                <i data-lucide="lock" class="text-secondary" style="width: 24px; height: 24px;"></i>
+                            </div>
+                            <span class="fw-bold text-secondary d-block" style="font-size: 0.85rem;">10K Words</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Timeline Guide -->
+        <div class="col-lg-4">
+            <div class="dashboard-glass-panel p-4 h-100 d-flex flex-column justify-content-center text-center position-relative overflow-hidden" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
+                <div class="position-absolute top-50 start-50 translate-middle opacity-10 w-100 h-100" style="background-image: url('/images/dashboard/silhouette.png'); background-size: cover; background-position: center; pointer-events: none;"></div>
+                
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 48px; height: 48px;">
+                    <i data-lucide="compass" class="text-secondary" style="width: 24px; height: 24px;"></i>
+                </div>
+                <h4 class="font-serif fw-bold mb-2" style="color: var(--forest-green);">Your Journey</h4>
+                <p class="text-secondary fw-medium mb-4" style="font-size: 0.85rem;">
+                    Everything you create, write, and world-build will appear in your timeline right here.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .welcome-state-animation {
+        animation: fadeIn 0.8s ease-in-out;
+    }
+    
+    .hover-lift {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+    }
+    
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>

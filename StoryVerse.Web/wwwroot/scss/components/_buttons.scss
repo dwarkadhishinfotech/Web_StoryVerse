@@ -1,0 +1,68 @@
+.btn-primary-gradient {
+    height: 46px;
+    background: $gradient-primary;
+    color: #ffffff;
+    border: none;
+    border-radius: $radius-lg;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    box-shadow: 0 4px 6px rgba(14, 155, 154, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+
+    &:hover, &:focus {
+        opacity: 0.9;
+        color: #ffffff;
+    }
+
+    .icon-left {
+        position: absolute;
+        left: 1rem;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .icon-right {
+        position: absolute;
+        right: 1rem;
+        opacity: 0.7;
+        transition: all 0.2s;
+    }
+
+    &:hover {
+        .icon-left { opacity: 1; }
+        .icon-right { 
+            opacity: 1; 
+            transform: translateX(4px);
+        }
+    }
+}
+
+.btn-social-outline {
+    height: 46px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #4B5563;
+    font-weight: 500;
+    border-radius: $radius-lg;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: #f9fafb;
+        color: #4B5563;
+    }
+
+    svg {
+        margin-right: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+    }
+}
