@@ -92,7 +92,7 @@
 
                         <!-- Actions -->
                         <div class="col-2 d-flex justify-content-end gap-2">
-                            <a href="@Url.Action("Editor", "Chapters", new { storyId = story.Id, chapterId = chapter.Id })" 
+                            <a href="@Url.Action("Editor", "Chapters", new { storyId = chapter.StoryId, chapterId = chapter.Id })" 
                                class="btn btn-white border rounded-3 p-2 d-flex align-items-center justify-content-center text-secondary hover-lift-subtle shadow-xs" 
                                style="width: 36px; height: 36px; border-color: var(--parchment-border) !important;" title="Edit Chapter">
                                 <i data-lucide="pen-tool" class="text-peacock-teal" style="width: 16px; height: 16px;"></i>

@@ -24,20 +24,34 @@ namespace StoryVerse.Web.Controllers
         }
 
         // GET: Characters?storyId=...
-        public async Task<IActionResult> Index(Guid storyId)
+        public async Task<IActionResult> Index(Guid? storyId)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            var story = await _context.Stories
-                .Include(s => s.Characters)
-                .FirstOrDefaultAsync(s => s.Id == storyId && s.UserId == user.Id);
+            if (storyId.HasValue && storyId.Value != Guid.Empty)
+            {
+                var story = await _context.Stories
+                    .Include(s => s.Characters)
+                    .FirstOrDefaultAsync(s => s.Id == storyId.Value && s.UserId == user.Id);
 
-            if (story == null) return NotFound();
+                if (story == null) return NotFound();
 
-            ViewBag.Story = story;
-            var characters = story.Characters.ToList();
-            return View(characters);
+                ViewBag.Story = story;
+                var characters = story.Characters.ToList();
+                return View(characters);
+            }
+            else
+            {
+                ViewBag.Story = null;
+                var allCharacters = await _context.Characters
+                    .Include(c => c.Story)
+                    .Where(c => c.Story.UserId == user.Id)
+                    .OrderBy(c => c.Story.Title)
+                    .ThenBy(c => c.Name)
+                    .ToListAsync();
+                return View(allCharacters);
+            }
         }
 
         // GET: Characters/Details/5

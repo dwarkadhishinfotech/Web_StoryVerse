@@ -22,17 +22,24 @@ namespace StoryVerse.Web.Controllers
         }
 
         // GET: Timeline?storyId=...
-        public async Task<IActionResult> Index(Guid storyId)
+        public async Task<IActionResult> Index(Guid? storyId)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            var story = await _context.Stories
-                .FirstOrDefaultAsync(s => s.Id == storyId && s.UserId == user.Id);
+            if (storyId.HasValue && storyId.Value != Guid.Empty)
+            {
+                var story = await _context.Stories
+                    .FirstOrDefaultAsync(s => s.Id == storyId.Value && s.UserId == user.Id);
 
-            if (story == null) return NotFound();
+                if (story == null) return NotFound();
+                ViewBag.Story = story;
+            }
+            else
+            {
+                ViewBag.Story = null;
+            }
 
-            ViewBag.Story = story;
             return View();
         }
     }
