@@ -20,6 +20,7 @@ try
 
     // Add services to the container.
     builder.Services.AddControllersWithViews();
+    builder.Services.AddScoped<StoryVerse.Web.Services.IDropdownService, StoryVerse.Web.Services.DropdownService>();
 
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");

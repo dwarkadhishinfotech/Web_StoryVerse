@@ -1,167 +1,1453 @@
 @model StoryVerse.Core.Entities.Story
 @{
-    ViewData["Title"] = "Create Story";
+    ViewData["Title"] = "Create New Story";
 }
 
-<div class="w-full relative font-sans">
+<style>
+    .stories-page {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: #334155;
+    }
+    .font-serif { 
+        font-family: 'Playfair Display', Georgia, serif; 
+    }
+    .btn-teal { 
+        background-color: #0d9488; 
+        color: white; 
+        border: none;
+    }
+    .btn-teal:hover { 
+        background-color: #0f766e; 
+        color: white; 
+    }
+    .btn-outline-teal { 
+        border: 1px solid #0d9488; 
+        color: #0d9488; 
+        background: white; 
+    }
+    .btn-outline-teal:hover { 
+        background-color: #f0fdfa; 
+        color: #0d9488; 
+    }
+    .card-rounded { 
+        border-radius: 16px; 
+        border: 1px solid #e2e8f0; 
+        background: white; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .top-action-btn {
+        border-radius: 24px !important;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px 20px;
+    }
+    .icon-circle-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid #e2e8f0;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+    .icon-circle-btn:hover {
+        background: #f8fafc;
+        color: #334155;
+    }
+    .breadcrumb-link {
+        color: #0d9488;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 13.5px;
+    }
+    .breadcrumb-link:hover {
+        text-decoration: underline;
+    }
     
-    <!-- Decorative Peacock Blur Watermark -->
-    <div class="position-absolute" style="top: -80px; right: -80px; width: 500px; height: 500px; background: rgba(19, 168, 166, 0.04); border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 1;"></div>
+    .form-control, .form-select {
+        border-color: #e2e8f0;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #0d9488;
+        box-shadow: 0 0 0 0.2rem rgba(13, 148, 136, 0.1);
+    }
+    
+    /* Select2 Theme Overrides */
+    .select2-container--default .select2-selection--single {
+        height: auto;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        font-size: 13.5px;
+        display: flex;
+        align-items: center;
+        background-color: white;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 100%;
+        top: 0;
+        right: 12px;
+    }
+    .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: #0d9488;
+        box-shadow: 0 0 0 0.2rem rgba(13, 148, 136, 0.1);
+    }
+    .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+        background-color: #f0fdfa;
+        color: #0f172a;
+    }
+    .genre-card:hover {
+        border-color: #94a3b8 !important;
+    }
 
-    <!-- Premium Navy Hero Banner -->
-    <div class="position-relative w-100 p-5 mb-4 mt-2 overflow-hidden shadow-sm text-white" 
-         style="background: #0B1528; border-radius: 20px; z-index: 10;">
-        <div class="position-absolute" style="top: 0; right: 0; width: 350px; height: 350px; background: rgba(19, 168, 166, 0.12); border-radius: 50%; filter: blur(60px); pointer-events: none; transform: translate(30%, -30%);"></div>
-        <div class="position-absolute" style="bottom: 0; left: 0; width: 250px; height: 250px; background: rgba(30, 67, 155, 0.12); border-radius: 50%; filter: blur(50px); pointer-events: none; transform: translate(-30%, 30%);"></div>
+    .theme-pill-label {
+        font-size: 13.5px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .theme-pill-label.unselected {
+        background-color: transparent;
+        color: #64748b;
+        border: 1px solid transparent;
+    }
+    .theme-pill-label.unselected:hover {
+        color: #0f172a;
+    }
+    .theme-pill-label.selected {
+        background-color: #0d9488;
+        color: white;
+        border: 1px solid #0d9488;
+    }
+    .is-invalid {
+        border-color: #ef4444 !important;
+    }
+    .is-invalid:focus {
+        box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.25) !important;
+    }
+    
+    .custom-switch-teal .form-check-input:checked {
+        background-color: #0d9488;
+        border-color: #0d9488;
+    }
+</style>
 
-        <div class="position-relative d-flex flex-column align-items-start">
-            <a href="@Url.Action("Index", "Stories")" 
-               class="text-decoration-none text-slate-300 hover-text-white d-inline-flex align-items-center mb-4 px-3 py-1.5 rounded-pill border" 
-               style="background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1) !important; font-size: 0.8rem; font-weight: 500; color: #CBD5E1;">
-                <i data-lucide="arrow-left" class="me-2" style="width: 14px; height: 14px;"></i> Back to Library
+<div class="stories-page py-4 px-2 w-100">
+    <!-- Breadcrumbs & Header Row -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-3" style="color: #64748b; font-size: 13.5px;">
+            <a href="@Url.Action("Index", "Stories")" class="breadcrumb-link d-flex align-items-center">
+                <i data-lucide="arrow-left" class="me-1" style="width: 14px; height: 14px;"></i> Stories
             </a>
-            
-            <div class="d-flex align-items-center gap-2">
-                <h1 class="font-serif fw-bold text-white mb-0" style="font-size: 1.85rem; letter-spacing: -0.01em;">Create Your Next Masterpiece</h1>
-                <i data-lucide="sparkles" class="text-info" style="width: 24px; height: 24px; color: #13A8A6 !important;"></i>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <span class="text-slate-700 fw-medium">Create New Story</span>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h1 class="font-serif fw-bold mb-1 d-flex align-items-center gap-2" style="font-size: 34px; color: #1e293b;">
+                    Create New Story
+                    <span style="color: #d97706; font-size: 24px; line-height: 1;">✦</span>
+                </h1>
+                <p class="mb-0" style="font-size: 16px; font-style: italic; color: #64748b; font-family: 'Playfair Display', serif;">Every great story begins with an idea. Let's bring yours to life.</p>
             </div>
-            <p class="text-slate-300 mt-2 mb-0" style="font-size: 0.95rem; max-width: 600px; color: #94A3B8;">
-                Set the foundation for your story. Fill in the details below to initialize your new workspace.
-            </p>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <a href="@Url.Action("Create", "Stories")" class="btn btn-outline-teal top-action-btn d-flex align-items-center text-decoration-none">
+                    <i data-lucide="plus" class="me-1.5" style="width: 16px; height: 16px;"></i> New Story
+                </a>
+                <a href="#" class="btn btn-teal top-action-btn d-flex align-items-center text-decoration-none">
+                    <i data-lucide="pen-tool" class="me-2" style="width: 16px; height: 16px;"></i> Continue Writing
+                </a>
+                <button class="icon-circle-btn">
+                    <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                </button>
+                <button class="icon-circle-btn">
+                    <i data-lucide="moon" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Main Creation Form -->
-    <form asp-action="Create" method="post" class="position-relative" style="z-index: 10;">
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-        <div class="row g-4">
-            
-            <!-- Left Column: Cover Image & Tips -->
-            <div class="col-lg-4 d-flex flex-column gap-4">
-                <!-- Cover Image Box -->
-                <div class="card border-0 p-4 shadow-xs" style="background: #ffffff; border: 1px solid #E2E8F0 !important; border-radius: 20px;">
-                    <h5 class="fw-bold mb-1 text-slate-900" style="font-size: 15px;">Cover Image</h5>
-                    <p class="text-secondary small mb-3">Add a cover image URL to visualize your story.</p>
-
-                    <!-- Text input for Cover URL -->
-                    <div class="mb-3">
-                        <input asp-for="CoverImageUrl" id="coverUrlInput" class="form-control" 
-                               placeholder="e.g. /images/covers/fantasy.png" 
-                               style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" />
-                        <span asp-validation-for="CoverImageUrl" class="text-danger small"></span>
+    <div class="row g-4">
+        <!-- Left Column: Form -->
+        <div class="col-xl-8">
+            <div class="card-rounded p-4 p-md-5 bg-white h-100">
+                <!-- Stepper -->
+                <div class="d-flex justify-content-between position-relative mb-5" style="max-width: 500px; margin: 0 auto;">
+                    <div class="position-absolute top-50 start-0 end-0 translate-middle-y" style="height: 2px; background-color: #e2e8f0; z-index: 1; left: 10% !important; right: 10% !important;"></div>
+                    
+                    <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-1">
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #0d9488; color: white; font-size: 14px; border: 2px solid white;">
+                            <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 500; color: #64748b;">Basic Details</div>
+                    </div>
+                    
+                    <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-2">
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #0d9488; color: white; font-size: 14px; border: 2px solid white;">2</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 700; color: #0d9488;">Genre & Theme</div>
+                    </div>
+                    
+                    <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-3">
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #f1f5f9; color: #64748b; font-size: 14px; border: 2px solid white;">3</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 600; color: #64748b;">Settings</div>
                     </div>
 
-                    <!-- Cover Preview Box -->
-                    <div class="p-3 rounded-3 d-flex align-items-center gap-3 border bg-light bg-opacity-50" style="border-color: #E2E8F0 !important; border-radius: 12px !important;">
-                        <div class="rounded bg-secondary bg-opacity-10 overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center" 
-                             style="width: 48px; height: 64px; border: 1px solid #E2E8F0;" id="previewContainer">
-                            <i data-lucide="image" class="text-secondary opacity-50" style="width: 20px; height: 20px;"></i>
-                        </div>
-                        <div class="d-flex flex-column">
-                            <span class="fw-bold text-slate-900" style="font-size: 13px;">Cover Preview</span>
-                            <span class="text-secondary" style="font-size: 11px;">Enter URL to see preview</span>
-                        </div>
+                    <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-4">
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #f1f5f9; color: #64748b; font-size: 14px; border: 2px solid white;">4</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 600; color: #64748b;">Review</div>
                     </div>
                 </div>
 
-                <!-- Author Tips -->
-                <div class="card border-0 p-4 shadow-xs" 
-                     style="background: linear-gradient(135deg, rgba(19, 168, 166, 0.06), rgba(30, 67, 155, 0.04)); border: 1px solid rgba(19, 168, 166, 0.15) !important; border-radius: 20px;">
-                    <h6 class="fw-bold d-flex align-items-center gap-2 mb-2" style="color: #0F766E;">
-                        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Author Tip
-                    </h6>
-                    <p class="text-secondary small mb-0 leading-relaxed" style="font-size: 12.5px; font-weight: 500;">
-                        A compelling cover and clear synopsis are the first steps to making your story real. You can always refine these details later in your story settings.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Right Column: Form Inputs -->
-            <div class="col-lg-8">
-                <div class="card border-0 p-4 p-md-5 shadow-xs" style="background: #ffffff; border: 1px solid #E2E8F0 !important; border-radius: 20px;">
-                    <h5 class="fw-bold mb-4 font-serif text-slate-900" style="font-size: 18px;">Story Details</h5>
-
-                    <div class="d-flex flex-column gap-3">
+                <form id="storyForm">
+                    <!-- Step 1: Basic Details -->
+                    <div id="step-1" class="step-content d-none">
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <i data-lucide="clipboard-list" style="width: 22px; height: 22px; color: #475569;"></i>
+                            <h4 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 20px;">Basic Details</h4>
+                        </div>
+                        <p class="text-muted mb-4" style="font-size: 13.5px;">Give your story a name and the foundation it deserves.</p>
                         
-                        <!-- Story Title -->
-                        <div>
-                            <label asp-for="Title" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Story Title <span class="text-danger">*</span></label>
-                            <input asp-for="Title" class="form-control" 
-                                   placeholder="Enter your story title" 
-                                   style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required />
-                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex justify-content-between" style="font-size: 13px; color: #0f172a;">
+                                    <span>Story Title <span class="text-danger">*</span></span>
+                                </label>
+                                <input type="text" class="form-control text-slate-800" name="Title" required placeholder="Enter your story title..." style="font-size: 13.5px; padding: 10px 14px; border-radius: 8px;">
+                                <div class="text-end text-muted mt-1.5" style="font-size: 10.5px; font-weight: 600;">0/120</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex justify-content-between" style="font-size: 13px; color: #0f172a;">
+                                    <span>Tagline (Optional)</span>
+                                </label>
+                                <input type="text" name="Tagline" class="form-control text-slate-800" placeholder="A short tagline for your story..." style="font-size: 13.5px; padding: 10px 14px; border-radius: 8px;">
+                                <div class="text-end text-muted mt-1.5" style="font-size: 10.5px; font-weight: 600;">0/150</div>
+                            </div>
                         </div>
 
-                        <!-- Genre and Target Words row -->
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label asp-for="Genre" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Genre <span class="text-danger">*</span></label>
-                                <select asp-for="Genre" class="form-select" 
-                                        style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required>
-                                    <option value="">Select a genre</option>
-                                    <option value="Fantasy">Fantasy</option>
-                                    <option value="Sci-Fi">Science Fiction</option>
-                                    <option value="Romance">Romance</option>
-                                    <option value="Mystery">Mystery & Thriller</option>
-                                    <option value="Horror">Horror</option>
-                                    <option value="Adventure">Adventure</option>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Synopsis <span class="text-danger ms-1">*</span> 
+                                <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                            </label>
+                            <textarea class="form-control text-slate-800" name="Synopsis" required rows="4" placeholder="Write a brief synopsis of your story..." style="font-size: 13.5px; padding: 12px 14px; border-radius: 8px; resize: none;"></textarea>
+                            <div class="text-end text-muted mt-1.5" style="font-size: 10.5px; font-weight: 600;">0/1000</div>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Story Type <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="Genre" data-placeholder="Select story type...">
+                                    <option value=""></option>
+                                    @if (ViewBag.StoryTypes != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.StoryTypes) {
+                                            <option value="@opt.Value" data-description="@opt.Description">@opt.Text</option>
+                                        }
+                                    }
                                 </select>
-                                <span asp-validation-for="Genre" class="text-danger small"></span>
                             </div>
+                        </div>
 
+                        <div class="row g-4 mb-5">
                             <div class="col-md-6">
-                                <label asp-for="TargetWordCount" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Target Word Count <span class="text-danger">*</span></label>
-                                <input asp-for="TargetWordCount" type="number" class="form-control" 
-                                       placeholder="e.g. 50000" 
-                                       style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required />
-                                <span asp-validation-for="TargetWordCount" class="text-danger small"></span>
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Target Audience <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="TargetAudience" data-placeholder="Select target audience...">
+                                    <option value=""></option>
+                                    @if (ViewBag.TargetAudiences != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.TargetAudiences) {
+                                            <option value="@opt.Value" data-description="@opt.Description">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2" style="font-size: 13px; color: #0f172a;">Language</label>
+                                <select class="form-select select2-themed" name="Language" data-placeholder="Select language...">
+                                    <option value=""></option>
+                                    @if (ViewBag.Languages != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.Languages) {
+                                            <option value="@opt.Value" data-description="@opt.Description">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
                             </div>
                         </div>
 
-                        <!-- Writing Status -->
-                        <div>
-                            <label asp-for="Status" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Writing Status</label>
-                            <select asp-for="Status" class="form-select" 
-                                    style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required>
-                                <option value="Draft">Planning / Draft</option>
-                                <option value="InProgress">In Progress</option>
-                                <option value="Published">Completed / Published</option>
-                            </select>
-                            <span asp-validation-for="Status" class="text-danger small"></span>
+                        <div class="mb-5">
+                            <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Cover Image (Optional) <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                            </label>
+                            <div class="row g-4">
+                                <div class="col-md-7">
+                                    <div class="border border-2 border-dashed rounded-3 p-4 text-center d-flex flex-column align-items-center justify-content-center h-100" style="border-color: #cbd5e1 !important; background-color: #f8fafc; transition: all 0.2s; cursor: pointer;">
+                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border mb-3" style="width: 48px; height: 48px; border-color: #e2e8f0;">
+                                            <i data-lucide="image" style="width: 20px; height: 20px; color: #0d9488;"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-1" style="color: #0f172a; font-size: 13px;">Drag & drop your cover here</h6>
+                                        <p class="text-teal mb-1.5 fw-semibold" style="font-size: 12px; color: #0d9488;">or click to browse</p>
+                                        <p class="text-muted mb-0" style="font-size: 11px;">Recommended: 1200x1600px or 3:4 ratio</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="rounded-3 p-4 h-100 border" style="background-color: #f0fdfa; border-color: #ccfbf1 !important;">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h6 class="fw-bold mb-0" style="color: #0d9488; font-size: 13px;">Tips for a great cover</h6>
+                                            <i data-lucide="lightbulb" style="width: 16px; height: 16px; color: #0d9488;"></i>
+                                        </div>
+                                        <ul class="list-unstyled mb-0 d-flex flex-column gap-2" style="font-size: 12.5px; color: #334155; font-weight: 500;">
+                                            <li class="d-flex align-items-center gap-2"><i data-lucide="check" style="width: 14px; height: 14px; color: #0d9488;"></i> Use high quality images</li>
+                                            <li class="d-flex align-items-center gap-2"><i data-lucide="check" style="width: 14px; height: 14px; color: #0d9488;"></i> 3:4 ratio works best</li>
+                                            <li class="d-flex align-items-center gap-2"><i data-lucide="check" style="width: 14px; height: 14px; color: #0d9488;"></i> Min. size 1200x1600px</li>
+                                            <li class="d-flex align-items-center gap-2"><i data-lucide="check" style="width: 14px; height: 14px; color: #0d9488;"></i> You can change it later</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Submit Buttons -->
-                        <div class="d-flex justify-content-end gap-3 mt-4">
-                            <a href="@Url.Action("Index", "Stories")" class="btn btn-outline-secondary px-4 py-2.5 fw-semibold" 
-                               style="font-size: 13px; border-radius: 12px; border-color: #E2E8F0;">Cancel</a>
-                            <button type="submit" class="btn text-white px-4 py-2.5 fw-bold shadow-sm" 
-                                    style="background-color: #115E59; border: none; font-size: 13px; border-radius: 12px;">Create Story</button>
+                        <!-- Footer actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-2" style="border-color: #f1f5f9 !important;">
+                            <a href="@Url.Action("Index", "Stories")" class="btn btn-white border fw-bold text-slate-700 px-4 py-2 bg-white" style="border-radius: 8px; font-size: 14px; border-color: #e2e8f0 !important;">Cancel</a>
+                            <button type="button" class="btn btn-teal fw-bold px-4 py-2 d-flex align-items-center shadow-sm btn-next" data-next="2" style="border-radius: 8px; font-size: 14px;">
+                                Save & Continue <i data-lucide="arrow-right" class="ms-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Genre & Theme -->
+                    <div id="step-2" class="step-content">
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <i data-lucide="feather" style="width: 22px; height: 22px; color: #475569;"></i>
+                            <h4 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 20px;">Genre & Theme</h4>
+                        </div>
+                        <p class="text-muted mb-4" style="font-size: 13.5px;">Choose the genre and theme that best represent your story. You can select more than one.</p>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-1 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Primary Genre <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                            </label>
+                            <p class="text-muted mb-3" style="font-size: 12px;">Select the main genre of your story</p>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100" style="cursor: pointer; background-color: #f0fdfa; border: 1px solid #0d9488; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Fantasy" class="d-none" checked>
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #ccfbf1; color: #0d9488;">
+                                                <i data-lucide="castle" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Fantasy</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Magic, mythical creatures, and imaginary worlds.</p>
+                                    </label>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Science Fiction" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="rocket" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Science Fiction</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Futuristic, space, technology, and advanced worlds.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Mystery" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Mystery</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Puzzles, crime, secrets, and investigations.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Romance" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="heart" style="width: 16px; height: 16px; color: #f43f5e;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Romance</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Love, relationships, and emotional journeys.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Thriller" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="theater" style="width: 16px; height: 16px; color: #22c55e;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Thriller</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Suspense, tension, and edge of the seat.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Historical Fiction" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="landmark" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a; line-height: 1.1;">Historical Fiction</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Stories set in the past with real or imagined events.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Horror" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="ghost" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Horror</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Dark, eerie, and supernatural themes.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Comedy" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="smile" style="width: 16px; height: 16px; color: #eab308;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Comedy</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Humor, light-hearted and feel-good stories.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Adventure" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="compass" style="width: 16px; height: 16px; color: #22c55e;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Adventure</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Exciting journeys, quests, and daring challenges.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Drama" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="clapperboard" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Drama</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Character-driven stories with emotional depth.</p>
+                                    </label>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="PrimaryGenre" value="Other" class="d-none">
+                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Other</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">My genre is not listed here.</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 pt-2">
+                            <label class="form-label fw-bold mb-3 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Themes <span class="text-muted fw-normal ms-1">(Select all that apply)</span>
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @{
+                                    var themes = new[] { "Friendship", "Betrayal", "Redemption", "Power", "Love", "Identity", "Survival", "Courage", "Justice", "Destiny", "Family", "Sacrifice", "Growth", "Hope", "Freedom", "Vengeance", "Other" };
+                                    foreach (var theme in themes)
+                                    {
+                                        bool isSelected = theme == "Friendship";
+                                        <label class="theme-pill" style="cursor: pointer;">
+                                            <input type="checkbox" name="Themes" value="@theme" class="d-none" @(isSelected ? "checked" : "")>
+                                            <div class="theme-pill-label px-3 py-1.5 rounded-pill d-flex align-items-center gap-2 @(isSelected ? "selected" : "unselected")">
+                                                @theme <i data-lucide="@(isSelected ? "x" : "plus")" class="theme-icon" style="width: 14px; height: 14px; @(isSelected ? "" : "color: #94a3b8;")"></i>
+                                            </div>
+                                        </label>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mb-5 pt-2">
+                            <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Mood <span class="text-muted fw-normal ms-1">(Optional)</span>
+                            </label>
+                            <select class="form-select select2-themed" name="Mood" data-placeholder="Select the overall mood of your story...">
+                                <option value=""></option>
+                                <option value="Lighthearted">Lighthearted</option>
+                                <option value="Dark">Dark</option>
+                                <option value="Suspenseful">Suspenseful</option>
+                                <option value="Romantic">Romantic</option>
+                                <option value="Melancholy">Melancholy</option>
+                                <option value="Inspiring">Inspiring</option>
+                            </select>
+                        </div>
+
+                        <!-- Footer actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-2" style="border-color: #f1f5f9 !important;">
+                            <button type="button" class="btn btn-white border fw-bold text-slate-700 px-4 py-2 bg-white d-flex align-items-center btn-back" data-prev="1" style="border-radius: 8px; font-size: 14px; border-color: #e2e8f0 !important;">
+                                <i data-lucide="arrow-left" class="me-2" style="width: 16px; height: 16px;"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-teal fw-bold px-4 py-2 d-flex align-items-center shadow-sm btn-next" data-next="3" style="border-radius: 8px; font-size: 14px;">
+                                Save & Continue <i data-lucide="arrow-right" class="ms-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Settings -->
+                    <div id="step-3" class="step-content d-none">
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <h4 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 20px;">Story Settings</h4>
+                        </div>
+                        <p class="text-muted mb-4" style="font-size: 13.5px;">Configure your writing goals, privacy settings, and advanced preferences.</p>
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Project Status <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="Status" data-placeholder="Select status...">
+                                    <option value=""></option>
+                                    @if (ViewBag.ProjectStatuses != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.ProjectStatuses) {
+                                            <option value="@opt.Value" data-description="@opt.Description">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <div class="text-muted mt-1.5" style="font-size: 11.5px;">You can change this later.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Writing Style <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="WritingStyle" data-placeholder="Select writing style...">
+                                    <option value=""></option>
+                                    @if (ViewBag.WritingStyles != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.WritingStyles) {
+                                            <option value="@opt.Value" data-description="@opt.Description">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <div class="text-muted mt-1.5" style="font-size: 11.5px;">This will help us personalize your experience.</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Point of View <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="PointOfView" data-placeholder="Select point of view...">
+                                    <option value=""></option>
+                                    @if (ViewBag.PointsOfView != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.PointsOfView) {
+                                            <option value="@opt.Value" data-description="@opt.Description">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <div class="text-muted mt-1.5" style="font-size: 11.5px;">Who is telling this story?</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Tense <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="Tense" data-placeholder="Select tense...">
+                                    <option value=""></option>
+                                    @if (ViewBag.Tenses != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.Tenses) {
+                                            <option value="@opt.Value" data-description="@opt.Description">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <div class="text-muted mt-1.5" style="font-size: 11.5px;">The time perspective of your story.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="mb-2 d-flex align-items-center gap-2 pt-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                    <i data-lucide="target" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 15px;">Writing Goals <span class="text-muted fw-normal ms-1" style="font-size: 13px;">(Optional)</span></h6>
+                            </div>
+                            <p class="text-muted mb-3" style="font-size: 12.5px;">Set your goals to stay motivated and track your progress.</p>
+                            
+                            <div class="row g-4">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold mb-2" style="font-size: 12px; color: #0f172a;">Daily Word Goal</label>
+                                    <div class="input-group">
+                                        <input type="number" name="DailyWordGoal" class="form-control" placeholder="0" style="font-size: 13.5px; border-right: none;">
+                                        <span class="input-group-text bg-white text-muted" style="font-size: 12.5px; border-left: none;">words</span>
+                                    </div>
+                                    <div class="text-muted mt-1.5" style="font-size: 11.5px;">Set to 0 to disable</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold mb-2" style="font-size: 12px; color: #0f172a;">Target Word Count</label>
+                                    <div class="input-group">
+                                        <input type="number" name="TargetWordCount" class="form-control" placeholder="e.g., 80000" style="font-size: 13.5px; border-right: none;">
+                                        <span class="input-group-text bg-white text-muted" style="font-size: 12.5px; border-left: none;">words</span>
+                                    </div>
+                                    <div class="text-muted mt-1.5" style="font-size: 11.5px;">Set your target word count</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold mb-2" style="font-size: 12px; color: #0f172a;">Target Completion Date</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white text-muted"><i data-lucide="calendar" style="width: 14px; height: 14px;"></i></span>
+                                        <input type="text" name="TargetCompletionDate" class="form-control" placeholder="Select date" style="font-size: 13.5px;">
+                                    </div>
+                                    <div class="text-muted mt-1.5" style="font-size: 11.5px;">No deadline is also a good deadline.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="mb-2 d-flex align-items-center gap-2 pt-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                    <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 15px;">Privacy & Access</h6>
+                            </div>
+                            
+                            <div class="row g-3 mt-1">
+                                <div class="col-md-4">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100" style="cursor: pointer; background-color: #f0fdfa; border: 1px solid #0d9488; transition: all 0.2s;">
+                                        <input type="radio" name="Privacy" value="Private" class="d-none" checked>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #ccfbf1; color: #0d9488;">
+                                                <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0d9488;">Private</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11.5px; line-height: 1.4;">Only you can see this story.</p>
+                                    </label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="Privacy" value="Unlisted" class="d-none">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="link" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Unlisted</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11.5px; line-height: 1.4;">Anyone with the link can view.</p>
+                                    </label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                                        <input type="radio" name="Privacy" value="Public" class="d-none">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                <i data-lucide="globe" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Public</h6>
+                                        </div>
+                                        <p class="text-muted mb-0" style="font-size: 11.5px; line-height: 1.4;">Anyone can discover and view.</p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <div class="mb-3 d-flex align-items-center gap-2 pt-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                    <i data-lucide="sliders" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 15px;">Advanced Options</h6>
+                            </div>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f8fafc; color: #64748b;">
+                                                <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 13px; color: #0f172a;">
+                                                    Enable AI Writing Assistant <i data-lucide="help-circle" style="width: 12px; height: 12px; color: #94a3b8;"></i>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 11px;">Get writing suggestions and ideas.</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch custom-switch-teal">
+                                            <input class="form-check-input" name="AiAssistant" type="checkbox" role="switch" checked style="width: 36px; height: 20px; cursor: pointer;">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f8fafc; color: #64748b;">
+                                                <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 13px; color: #0f172a;">
+                                                    Auto-Save <i data-lucide="help-circle" style="width: 12px; height: 12px; color: #94a3b8;"></i>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 11px;">Automatically save your work.</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch custom-switch-teal">
+                                            <input class="form-check-input" name="AutoSave" type="checkbox" role="switch" checked style="width: 36px; height: 20px; cursor: pointer;">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f8fafc; color: #64748b;">
+                                                <i data-lucide="hash" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 13px; color: #0f172a;">
+                                                    Show Word Count in Editor <i data-lucide="help-circle" style="width: 12px; height: 12px; color: #94a3b8;"></i>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 11px;">Display word count while writing.</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch custom-switch-teal">
+                                            <input class="form-check-input" name="ShowWordCount" type="checkbox" role="switch" checked style="width: 36px; height: 20px; cursor: pointer;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f8fafc; color: #64748b;">
+                                                <i data-lucide="message-square" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 13px; color: #0f172a;">
+                                                    Allow Comments (Future) <i data-lucide="help-circle" style="width: 12px; height: 12px; color: #94a3b8;"></i>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 11px;">Allow feedback on your chapters.</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch custom-switch-teal">
+                                            <input class="form-check-input" name="AllowComments" type="checkbox" role="switch" style="width: 36px; height: 20px; cursor: pointer;">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f8fafc; color: #64748b;">
+                                                <i data-lucide="pie-chart" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 13px; color: #0f172a;">
+                                                    Include in Analytics <i data-lucide="help-circle" style="width: 12px; height: 12px; color: #94a3b8;"></i>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 11px;">Help us improve by sharing anonymous data.</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch custom-switch-teal">
+                                            <input class="form-check-input" name="IncludeAnalytics" type="checkbox" role="switch" checked style="width: 36px; height: 20px; cursor: pointer;">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f8fafc; color: #64748b;">
+                                                <i data-lucide="layout" style="width: 16px; height: 16px;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 13px; color: #0f172a;">
+                                                    Template for New Chapters <i data-lucide="help-circle" style="width: 12px; height: 12px; color: #94a3b8;"></i>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 11px;">Use a template when creating chapters.</div>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch custom-switch-teal">
+                                            <input class="form-check-input" name="UseTemplate" type="checkbox" role="switch" style="width: 36px; height: 20px; cursor: pointer;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-2" style="border-color: #f1f5f9 !important;">
+                            <button type="button" class="btn btn-white border fw-bold text-slate-700 px-4 py-2 bg-white d-flex align-items-center btn-back" data-prev="2" style="border-radius: 8px; font-size: 14px; border-color: #e2e8f0 !important;">
+                                <i data-lucide="arrow-left" class="me-2" style="width: 16px; height: 16px;"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-teal fw-bold px-4 py-2 d-flex align-items-center shadow-sm btn-next" data-next="4" style="border-radius: 8px; font-size: 14px;">
+                                Save & Continue <i data-lucide="arrow-right" class="ms-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Review -->
+                    <div id="step-4" class="step-content d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h4 class="font-serif fw-bold mb-1" style="color: #0f172a; font-size: 20px;">Review Your Story</h4>
+                                <p class="text-muted mb-0" style="font-size: 13.5px;">Please review all the details. You can go back and edit anything before creating your story.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline-teal bg-white d-flex align-items-center fw-medium px-3 py-1.5 btn-edit" data-step="1" style="border-radius: 6px; font-size: 13px;">
+                                <i data-lucide="edit-3" class="me-1.5" style="width: 14px; height: 14px;"></i> Edit All
+                            </button>
+                        </div>
+                        
+                        <div class="row g-4 mt-1">
+                            <!-- Basic Details -->
+                            <div class="col-md-6">
+                                <div class="card-rounded p-4 h-100 position-relative">
+                                    <button type="button" class="btn btn-link text-teal p-0 position-absolute top-0 end-0 mt-4 me-4 d-flex align-items-center text-decoration-none fw-medium btn-edit" data-step="1" style="font-size: 12.5px;">
+                                        <i data-lucide="edit-2" class="me-1.5" style="width: 12px; height: 12px;"></i> Edit
+                                    </button>
+                                    <div class="d-flex align-items-center gap-2 mb-4">
+                                        <i data-lucide="file-text" style="width: 18px; height: 18px; color: #475569;"></i>
+                                        <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 14.5px;">Basic Details</h6>
+                                    </div>
+                                    <div class="d-flex flex-column gap-3" style="font-size: 12.5px;">
+                                        <div class="row">
+                                            <div class="col-4 text-muted fw-medium">Story Title</div>
+                                            <div class="col-8 text-slate-800" id="review-title"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-4 text-muted fw-medium">Tagline</div>
+                                            <div class="col-8 text-slate-800" id="review-tagline"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-4 text-muted fw-medium">Synopsis</div>
+                                            <div class="col-8 text-slate-800" id="review-synopsis"></div>
+                                        </div>
+                                        <div class="row pt-2">
+                                            <div class="col-4 text-muted fw-medium">Story Type</div>
+                                            <div class="col-8 text-slate-800" id="review-type"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-4 text-muted fw-medium">Target Audience</div>
+                                            <div class="col-8 text-slate-800" id="review-audience"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-4 text-muted fw-medium">Language</div>
+                                            <div class="col-8 text-slate-800" id="review-language"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-4 text-muted fw-medium pt-1">Cover Image</div>
+                                            <div class="col-8 d-flex align-items-center gap-2" id="review-cover">
+                                                <span class="text-muted fst-italic">Not set</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Genre & Theme -->
+                            <div class="col-md-6">
+                                <div class="card-rounded p-4 h-100 position-relative">
+                                    <button type="button" class="btn btn-link text-teal p-0 position-absolute top-0 end-0 mt-4 me-4 d-flex align-items-center text-decoration-none fw-medium btn-edit" data-step="2" style="font-size: 12.5px;">
+                                        <i data-lucide="edit-2" class="me-1.5" style="width: 12px; height: 12px;"></i> Edit
+                                    </button>
+                                    <div class="d-flex align-items-center gap-2 mb-4">
+                                        <i data-lucide="palette" style="width: 18px; height: 18px; color: #475569;"></i>
+                                        <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 14.5px;">Genre & Theme</h6>
+                                    </div>
+                                    <div class="d-flex flex-column gap-3" style="font-size: 12.5px;">
+                                        <div class="row align-items-center">
+                                            <div class="col-5 text-muted fw-medium">Primary Genre</div>
+                                            <div class="col-7 text-slate-800" id="review-primary-genre"></div>
+                                        </div>
+                                        <div class="row pt-1 pb-1">
+                                            <div class="col-5 text-muted fw-medium pt-1">Themes</div>
+                                            <div class="col-7" id="review-themes">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Mood</div>
+                                            <div class="col-7 text-slate-800" id="review-mood"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Writing Style</div>
+                                            <div class="col-7 text-slate-800" id="review-writing-style"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Point of View</div>
+                                            <div class="col-7 text-slate-800" id="review-pov"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Tense</div>
+                                            <div class="col-7 text-slate-800" id="review-tense"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Story Settings -->
+                            <div class="col-md-6">
+                                <div class="card-rounded p-4 h-100 position-relative">
+                                    <button type="button" class="btn btn-link text-teal p-0 position-absolute top-0 end-0 mt-4 me-4 d-flex align-items-center text-decoration-none fw-medium btn-edit" data-step="3" style="font-size: 12.5px;">
+                                        <i data-lucide="edit-2" class="me-1.5" style="width: 12px; height: 12px;"></i> Edit
+                                    </button>
+                                    <div class="d-flex align-items-center gap-2 mb-4">
+                                        <i data-lucide="settings" style="width: 18px; height: 18px; color: #475569;"></i>
+                                        <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 14.5px;">Story Settings</h6>
+                                    </div>
+                                    <div class="d-flex flex-column gap-3" style="font-size: 12.5px;">
+                                        <div class="row align-items-center">
+                                            <div class="col-6 text-muted fw-medium">Project Status</div>
+                                            <div class="col-6 d-flex" id="review-status">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 text-muted fw-medium">Writing Goals</div>
+                                            <div class="col-6 text-slate-800" id="review-daily-goal"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 text-muted fw-medium">Target Word Count</div>
+                                            <div class="col-6 text-slate-800" id="review-target-word-count"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 text-muted fw-medium">Target Completion Date</div>
+                                            <div class="col-6 text-slate-800" id="review-target-date"></div>
+                                        </div>
+                                        <div class="row align-items-center">
+                                            <div class="col-6 text-muted fw-medium">Privacy</div>
+                                            <div class="col-6 text-slate-800" id="review-privacy">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 text-muted fw-medium">AI Writing Assistant</div>
+                                            <div class="col-6 text-slate-800" id="review-ai"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 text-muted fw-medium">Auto-Save</div>
+                                            <div class="col-6 text-slate-800" id="review-autosave"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 text-muted fw-medium">Allow Comments (Future)</div>
+                                            <div class="col-6 text-slate-800" id="review-comments"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- What Happens Next? -->
+                            <div class="col-md-6">
+                                <div class="card-rounded p-4 h-100 text-center d-flex flex-column align-items-center justify-content-center pt-5 pb-5">
+                                    <div class="d-flex align-items-center gap-2 mb-4 justify-content-center w-100 mt-2">
+                                        <i data-lucide="sparkles" style="width: 18px; height: 18px; color: #d97706;"></i>
+                                        <h6 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 16px;">What Happens Next?</h6>
+                                    </div>
+                                    <div class="mb-4 d-flex justify-content-center">
+                                        <div style="width: 240px; height: 160px;">
+                                            <img src="~/images/empty-states/book-feather-new.png" class="w-100 h-100" style="object-fit: contain; mix-blend-mode: multiply;" alt="Book and Feather" />
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-3" style="font-size: 13px; line-height: 1.6; padding: 0 16px;">
+                                        Once you create your story, you can start adding chapters,<br/> characters, world details, and much more.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-4" style="border-color: #f1f5f9 !important;">
+                            <button type="button" class="btn btn-white border fw-bold text-slate-700 px-4 py-2 bg-white d-flex align-items-center btn-back" data-prev="3" style="border-radius: 8px; font-size: 14px; border-color: #e2e8f0 !important;">
+                                <i data-lucide="arrow-left" class="me-2" style="width: 16px; height: 16px;"></i> Back
+                            </button>
+                            <div class="d-flex flex-column align-items-end">
+                                <button type="submit" class="btn btn-teal fw-bold px-5 py-2.5 d-flex align-items-center shadow-sm" style="border-radius: 8px; font-size: 14px;">
+                                    Create Story <i data-lucide="sparkles" class="ms-2" style="width: 16px; height: 16px;"></i>
+                                </button>
+                                <span class="text-muted mt-1.5" style="font-size: 11.5px;">You can always edit these details later.</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Live Preview & What's Next -->
+        <div class="col-xl-4 d-flex flex-column gap-4">
+            <!-- Live Preview -->
+            <div class="card-rounded p-4 bg-white text-center">
+                <h6 class="fw-bold text-start mb-4" style="color: #0f172a; font-size: 15px;">Live Preview</h6>
+                
+                <div class="mb-4 d-flex justify-content-center">
+                    <div style="width: 240px; height: 200px;">
+                        <img src="~/images/empty-states/live_preview_book.png" class="w-100 h-100" style="object-fit: contain; mix-blend-mode: multiply;" alt="Preview Book" />
+                    </div>
+                </div>
+
+                <h4 class="font-serif fw-bold mb-2" id="live-preview-title" style="color: #0f172a; font-size: 22px;">Untitled Story</h4>
+                <div class="mb-3 d-flex justify-content-center" id="live-preview-status-container">
+                    <div class="bg-light rounded-pill px-2.5 py-1.5 d-flex align-items-center gap-2 border" id="live-preview-status" style="font-size: 11px; font-weight: 700; color: #475569; border-color: #e2e8f0 !important; background-color: #f8fafc !important;">
+                        <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #f59e0b;"></div> Planning
+                    </div>
+                </div>
+                
+                <p class="text-muted mb-4 px-3" id="live-preview-synopsis" style="font-size: 13px;">Your story synopsis will appear here...</p>
+
+                <div class="row g-0 pt-3 border-top" style="border-color: #f1f5f9 !important;">
+                    <div class="col-3 border-end" style="border-color: #f1f5f9 !important;">
+                        <div class="d-flex flex-column align-items-center">
+                            <i data-lucide="book-open" class="mb-1.5" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span class="fw-bold text-slate-800" style="font-size: 13px; line-height: 1;">0</span>
+                            <span class="text-muted mt-0.5" style="font-size: 10px;">Chapters</span>
+                        </div>
+                    </div>
+                    <div class="col-3 border-end" style="border-color: #f1f5f9 !important;">
+                        <div class="d-flex flex-column align-items-center">
+                            <i data-lucide="feather" class="mb-1.5" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span class="fw-bold text-slate-800" style="font-size: 13px; line-height: 1;">0</span>
+                            <span class="text-muted mt-0.5" style="font-size: 10px;">Words</span>
+                        </div>
+                    </div>
+                    <div class="col-3 border-end" style="border-color: #f1f5f9 !important;">
+                        <div class="d-flex flex-column align-items-center">
+                            <i data-lucide="users" class="mb-1.5" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span class="fw-bold text-slate-800" style="font-size: 13px; line-height: 1;">0</span>
+                            <span class="text-muted mt-0.5" style="font-size: 10px;">Characters</span>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="d-flex flex-column align-items-center">
+                            <i data-lucide="globe" class="mb-1.5" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span class="fw-bold text-slate-800" id="live-preview-language" style="font-size: 13px; line-height: 1;">English</span>
+                            <span class="text-muted mt-0.5" style="font-size: 10px;">Language</span>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- What's Next -->
+            <div id="right-whats-next" class="card-rounded p-4 bg-white flex-grow-1">
+                <h6 class="fw-bold mb-4 pb-2" style="color: #0f172a; font-size: 15px;">What's Next?</h6>
+                
+                <div class="position-relative ps-4 ms-2">
+                    <!-- Vertical Line -->
+                    <div class="position-absolute top-0 bottom-0" style="left: 0; width: 2px; background-color: #f1f5f9; margin-left: -1px; z-index: 1;"></div>
+                    
+                    <!-- Steps -->
+                    <div class="d-flex mb-4 position-relative z-2 align-items-start" id="side-stepper-1">
+                        <div class="side-step-icon position-absolute rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 26px; height: 26px; background-color: #0d9488; left: -29px; top: -2px; font-size: 11px; border: 4px solid white;">
+                            <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                        </div>
+                        <div class="ms-1">
+                            <h6 class="fw-bold mb-1" style="font-size: 13px; color: #0f172a;">Basic Details</h6>
+                            <p class="text-muted mb-0" style="font-size: 12px; line-height: 1.4;">Add the fundamental information about your story.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-4 position-relative z-2 align-items-start" id="side-stepper-2">
+                        <div class="side-step-icon position-absolute rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 26px; height: 26px; background-color: #0d9488; left: -29px; top: -2px; font-size: 11px; border: 4px solid white;">2</div>
+                        <div class="ms-1">
+                            <h6 class="fw-bold mb-1" style="font-size: 13px; color: #0f172a;">Genre & Theme</h6>
+                            <p class="text-muted mb-0" style="font-size: 12px; line-height: 1.4;">Choose genre, themes and key elements.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-4 position-relative z-2 align-items-start" id="side-stepper-3">
+                        <div class="side-step-icon position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 26px; height: 26px; background-color: #f1f5f9; color: #64748b; left: -29px; top: -2px; font-size: 11px; border: 4px solid white;">3</div>
+                        <div class="ms-1">
+                            <h6 class="fw-bold mb-1" style="font-size: 13px; color: #0f172a;">Settings</h6>
+                            <p class="text-muted mb-0" style="font-size: 12px; line-height: 1.4;">Configure writing goals and privacy settings.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex position-relative z-2 align-items-start" id="side-stepper-4">
+                        <div class="side-step-icon position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 26px; height: 26px; background-color: #f1f5f9; color: #64748b; left: -29px; top: -2px; font-size: 11px; border: 4px solid white;">4</div>
+                        <div class="ms-1">
+                            <h6 class="fw-bold mb-1" style="font-size: 13px; color: #0f172a;">Review</h6>
+                            <p class="text-muted mb-0" style="font-size: 12px; line-height: 1.4;">Review your story details before creating.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Checklist -->
+            <div id="right-review-checklist" class="d-none flex-column gap-4 flex-grow-1">
+                <div class="card-rounded p-4 bg-white flex-grow-1">
+                    <h6 class="fw-bold mb-4" style="color: #0f172a; font-size: 15px;">Review Checklist</h6>
+                    <div class="d-flex flex-column gap-3.5">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-teal bg-white" style="width: 20px; height: 20px; border: 1.5px solid #0d9488;">
+                                <i data-lucide="check" style="width: 12px; height: 12px; stroke-width: 3;"></i>
+                            </div>
+                            <span class="text-slate-700" style="font-size: 13.5px; font-weight: 500;">Basic details look good</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-teal bg-white" style="width: 20px; height: 20px; border: 1.5px solid #0d9488;">
+                                <i data-lucide="check" style="width: 12px; height: 12px; stroke-width: 3;"></i>
+                            </div>
+                            <span class="text-slate-700" style="font-size: 13.5px; font-weight: 500;">Genre and theme selected</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-teal bg-white" style="width: 20px; height: 20px; border: 1.5px solid #0d9488;">
+                                <i data-lucide="check" style="width: 12px; height: 12px; stroke-width: 3;"></i>
+                            </div>
+                            <span class="text-slate-700" style="font-size: 13.5px; font-weight: 500;">Settings configured</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-teal bg-white" style="width: 20px; height: 20px; border: 1.5px solid #0d9488;">
+                                <i data-lucide="check" style="width: 12px; height: 12px; stroke-width: 3;"></i>
+                            </div>
+                            <span class="text-slate-700" style="font-size: 13.5px; font-weight: 500;">Privacy and goals set</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-rounded p-3 bg-white" style="border-color: #ccfbf1 !important; background-color: #f0fdfa !important;">
+                    <div class="d-flex align-items-start gap-2.5">
+                        <i data-lucide="sparkles" class="mt-0.5" style="width: 18px; height: 18px; color: #f59e0b;"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: #0f172a; font-size: 13px;">All set! Your story is ready to be created.</h6>
+                            <p class="text-muted mb-0" style="font-size: 11.5px;">Click 'Create Story' to begin your writing journey.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
+    </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const coverInput = document.getElementById("coverUrlInput");
-        const previewDiv = document.getElementById("previewContainer");
-
-        function updatePreview() {
-            const url = coverInput.value.trim();
-            if (url) {
-                previewDiv.innerHTML = `<img src="${url}" class="w-100 h-100 object-fit-cover" onerror="this.outerHTML='<i data-lucide=\\'image\\' class=\\'text-secondary opacity-50\\'></i>'; lucide.createIcons();" />`;
-            } else {
-                previewDiv.innerHTML = `<i data-lucide="image" class="text-secondary opacity-50" style="width: 20px; height: 20px;"></i>`;
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-        }
+            
+            function formatOption(opt) {
+                if (!opt.id) {
+                    return opt.text;
+                }
+                var description = $(opt.element).data('description') || '';
+                if (description) {
+                    return $(
+                        '<div><div class="fw-bold text-slate-800" style="font-size: 13px;">' + opt.text + '</div>' +
+                        '<div class="text-muted mt-1" style="font-size: 11px;">' + description + '</div></div>'
+                    );
+                }
+                return opt.text;
+            }
 
-        coverInput.addEventListener("input", updatePreview);
-        updatePreview();
-    });
-</script>
+            $('.select2-themed').select2({
+                templateResult: formatOption,
+                width: '100%'
+            });
+            
+            // Genre Selection
+            $('.genre-card input[type="radio"]').on('change', function() {
+                $('.genre-card').css({
+                    'background-color': '#ffffff',
+                    'border-color': '#e2e8f0'
+                });
+                $('.genre-card .check-icon').addClass('d-none');
+                $('.genre-card .icon-container').css({
+                    'background-color': '#f1f5f9',
+                    'color': '#64748b'
+                });
+
+                if ($(this).is(':checked')) {
+                    var $card = $(this).closest('.genre-card');
+                    $card.css({
+                        'background-color': '#f0fdfa',
+                        'border-color': '#0d9488'
+                    });
+                    $card.find('.check-icon').removeClass('d-none');
+                    $card.find('.icon-container').css({
+                        'background-color': '#ccfbf1',
+                        'color': '#0d9488'
+                    });
+                }
+            });
+
+            // Theme Selection
+            $('.theme-pill input[type="checkbox"]').on('change', function() {
+                var $pill = $(this).siblings('.theme-pill-label');
+                if ($(this).is(':checked')) {
+                    $pill.removeClass('unselected').addClass('selected');
+                    var iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x theme-icon"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+                    $pill.find('svg, i').replaceWith(iconHtml);
+                } else {
+                    $pill.removeClass('selected').addClass('unselected');
+                    var iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus theme-icon" style="color: #94a3b8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
+                    $pill.find('svg, i').replaceWith(iconHtml);
+                }
+            });
+
+            // Step Navigation Logic
+            function updateSteppers(currentStep) {
+                // Reset all
+                for (let i = 1; i <= 4; i++) {
+                    let topStep = $('#top-stepper-' + i);
+                    let sideStep = $('#side-stepper-' + i);
+                    
+                    if (i < currentStep) {
+                        // Completed
+                        topStep.find('.top-step-icon').html('<i data-lucide="check" style="width: 18px; height: 18px;"></i>').css({
+                            'background-color': '#0d9488',
+                            'color': 'white'
+                        });
+                        topStep.find('.top-step-label').css({'font-weight': '500', 'color': '#64748b'});
+                        
+                        sideStep.find('.side-step-icon').html('<i data-lucide="check" style="width: 12px; height: 12px;"></i>').css({
+                            'background-color': '#0d9488',
+                            'color': 'white'
+                        }).removeClass('text-slate-500').addClass('text-white shadow-sm');
+                    } else if (i == currentStep) {
+                        // Active
+                        topStep.find('.top-step-icon').html(i).css({
+                            'background-color': '#0d9488',
+                            'color': 'white'
+                        });
+                        topStep.find('.top-step-label').css({'font-weight': '700', 'color': '#0d9488'});
+                        
+                        sideStep.find('.side-step-icon').html(i).css({
+                            'background-color': '#0d9488',
+                            'color': 'white'
+                        }).removeClass('text-slate-500').addClass('text-white shadow-sm');
+                    } else {
+                        // Pending
+                        topStep.find('.top-step-icon').html(i).css({
+                            'background-color': '#f1f5f9',
+                            'color': '#64748b'
+                        });
+                        topStep.find('.top-step-label').css({'font-weight': '600', 'color': '#64748b'});
+                        
+                        sideStep.find('.side-step-icon').html(i).css({
+                            'background-color': '#f1f5f9',
+                            'color': '#64748b'
+                        }).removeClass('text-white shadow-sm');
+                    }
+                }
+                
+                // Right Sidebar Toggle
+                if (currentStep == 4) {
+                    $('#right-whats-next').addClass('d-none');
+                    $('#right-review-checklist').removeClass('d-none').addClass('d-flex');
+                    updateReviewData();
+                } else {
+                    $('#right-whats-next').removeClass('d-none');
+                    $('#right-review-checklist').addClass('d-none').removeClass('d-flex');
+                }
+
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            function updateReviewData() {
+                function getText(selector) {
+                    var el = $(selector);
+                    if (el.is('select')) {
+                        var val = el.val();
+                        if (!val) return '';
+                        return el.find('option:selected').text();
+                    }
+                    return el.val();
+                }
+                function setVal(id, val) {
+                    if (!val || val.trim() === '') {
+                        $(id).html('<span class="text-muted fst-italic">Not set</span>');
+                    } else {
+                        $(id).text(val);
+                    }
+                }
+                
+                var title = getText('input[name="Title"]');
+                setVal('#review-title', title);
+                setVal('#review-tagline', getText('input[name="Tagline"]'));
+                setVal('#review-synopsis', getText('textarea[name="Synopsis"]'));
+                setVal('#review-type', getText('select[name="Genre"]'));
+                setVal('#review-audience', getText('select[name="TargetAudience"]'));
+                setVal('#review-language', getText('select[name="Language"]'));
+                
+                var primaryGenre = $('input[name="PrimaryGenre"]:checked').val();
+                setVal('#review-primary-genre', primaryGenre);
+                
+                var themes = [];
+                $('input[name="Themes"]:checked').each(function() {
+                    themes.push($(this).val());
+                });
+                if (themes.length > 0) {
+                    var themesHtml = '<div class="d-flex flex-wrap gap-1.5">';
+                    themes.forEach(function(t) {
+                        themesHtml += '<span class="bg-light text-slate-700 px-2 py-1 rounded" style="font-size: 11px; font-weight: 500;">' + t + '</span>';
+                    });
+                    themesHtml += '</div>';
+                    $('#review-themes').html(themesHtml);
+                } else {
+                    $('#review-themes').html('<span class="text-muted fst-italic">Not set</span>');
+                }
+                
+                setVal('#review-mood', getText('select[name="Mood"]'));
+                setVal('#review-writing-style', getText('select[name="WritingStyle"]'));
+                setVal('#review-pov', getText('select[name="PointOfView"]'));
+                setVal('#review-tense', getText('select[name="Tense"]'));
+                
+                var statusText = getText('select[name="Status"]');
+                if (!statusText || statusText.trim() === '') {
+                    $('#review-status').html('<span class="text-muted fst-italic">Not set</span>');
+                    $('#live-preview-status-container').addClass('d-none');
+                } else {
+                    $('#review-status').html('<div class="bg-light rounded-pill px-2 py-0.5 d-flex align-items-center gap-1.5 border d-inline-flex" style="font-size: 11px; font-weight: 600; color: #475569;"><div class="rounded-circle" style="width: 6px; height: 6px; background-color: #f59e0b;"></div> ' + statusText + '</div>');
+                    $('#live-preview-status').html('<div class="rounded-circle" style="width: 6px; height: 6px; background-color: #f59e0b;"></div> ' + statusText);
+                    $('#live-preview-status-container').removeClass('d-none');
+                }
+                
+                var dailyGoal = getText('input[name="DailyWordGoal"]');
+                setVal('#review-daily-goal', dailyGoal ? dailyGoal + ' words per day' : '');
+                
+                var targetWordCount = getText('input[name="TargetWordCount"]');
+                setVal('#review-target-word-count', targetWordCount ? targetWordCount + ' words' : '');
+                
+                setVal('#review-target-date', getText('input[name="TargetCompletionDate"]'));
+                
+                var privacy = $('input[name="Privacy"]:checked').val();
+                if (privacy) {
+                    $('#review-privacy').html('<div class="d-flex align-items-center gap-1.5"><i data-lucide="lock" style="width: 12px; height: 12px;"></i> ' + privacy + '</div>');
+                } else {
+                    setVal('#review-privacy', '');
+                }
+                
+                $('#review-ai').text($('input[name="AiAssistant"]').is(':checked') ? 'Enabled' : 'Disabled');
+                $('#review-autosave').text($('input[name="AutoSave"]').is(':checked') ? 'Enabled' : 'Disabled');
+                $('#review-comments').text($('input[name="AllowComments"]').is(':checked') ? 'Enabled' : 'Disabled');
+                
+                // Live preview updates
+                $('#live-preview-title').text(title && title.trim() !== '' ? title : 'Untitled Story');
+                $('#live-preview-synopsis').text(getText('textarea[name="Synopsis"]') || 'Your story synopsis will appear here...');
+                $('#live-preview-language').text(getText('select[name="Language"]') || 'English');
+            }
+            
+            function validateStep(stepIndex) {
+                let isValid = true;
+                let $step = $('#step-' + stepIndex);
+                
+                $step.find('.text-danger.validation-message').remove();
+                $step.find('.is-invalid').removeClass('is-invalid');
+                
+                $step.find('input[required], textarea[required], select[required]').each(function() {
+                    if (!$(this).val() || $(this).val().trim() === '') {
+                        isValid = false;
+                        $(this).addClass('is-invalid');
+                        $(this).after('<div class="text-danger validation-message mt-1 fw-medium" style="font-size: 12px;">This field is required.</div>');
+                    }
+                });
+                
+                return isValid;
+            }
+
+            $('.btn-next').on('click', function() {
+                var currentStep = $(this).closest('.step-content').attr('id').split('-')[1];
+                if (!validateStep(currentStep)) {
+                    return;
+                }
+
+                var nextStep = $(this).data('next');
+                $('.step-content').addClass('d-none');
+                $('#step-' + nextStep).removeClass('d-none');
+                updateSteppers(nextStep);
+            });
+
+            $('.btn-back').on('click', function() {
+                var prevStep = $(this).data('prev');
+                $('.step-content').addClass('d-none');
+                $('#step-' + prevStep).removeClass('d-none');
+                updateSteppers(prevStep);
+            });
+            
+            $('.btn-edit').on('click', function() {
+                var targetStep = $(this).data('step');
+                $('.step-content').addClass('d-none');
+                $('#step-' + targetStep).removeClass('d-none');
+                updateSteppers(targetStep);
+            });
+            
+            // Initialize on step 4 for display
+            updateSteppers(4);
+            $('.step-content').addClass('d-none');
+            $('#step-4').removeClass('d-none');
+        });
+    </script>
+}

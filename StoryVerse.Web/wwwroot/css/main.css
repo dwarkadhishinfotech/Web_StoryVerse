@@ -19,9 +19,9 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.text-peacock-dark { color: #0F1E36; }
-.text-peacock-teal { color: #0A5C5A; }
-.text-peacock-gold { color: #C5A880; }
+.text-peacock-dark { color: #1E439B !important; }
+.text-peacock-teal { color: #0A5C5A !important; }
+.text-peacock-gold { color: #C5A880 !important; }
 .bg-peacock-dark { background-color: #0F1E36; }
 .bg-peacock-teal { background-color: #0A5C5A; }
 
@@ -65,9 +65,10 @@
     transform: translateX(4px);
 }
 .sidebar-nav-link.active {
-    background: linear-gradient(to right, #14B8A6, #2563EB);
+    background: linear-gradient(90deg, #10A5C2 0%, #13A8A6 100%);
     color: white !important;
-    box-shadow: 0 10px 15px -3px rgba(20, 184, 166, 0.2);
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(16, 165, 194, 0.3);
 }
 
 .header-glass {

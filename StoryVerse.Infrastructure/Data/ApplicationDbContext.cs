@@ -19,6 +19,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Location> Locations { get; set; }
     public DbSet<ActivityLog> ActivityLogs { get; set; }
     public DbSet<UserGoal> UserGoals { get; set; }
+    public DbSet<DropdownOption> DropdownOptions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -107,6 +108,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithOne()
                 .HasForeignKey<UserGoal>(ug => ug.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DropdownOption>(entity =>
+        {
+            entity.ToTable("DI_MST_DropdownOptions");
+            entity.HasKey(d => d.Id);
+            entity.HasIndex(d => d.Category);
         });
     }
 }

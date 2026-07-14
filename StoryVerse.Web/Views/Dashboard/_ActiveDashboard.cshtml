@@ -1,559 +1,684 @@
 @model StoryVerse.Web.Models.DashboardViewModel
-@inject UserManager<ApplicationUser> UserManager
-@inject StoryVerse.Infrastructure.Data.ApplicationDbContext DbContext
 @{
-    var currentUser = await UserManager.GetUserAsync(User);
-    var currentUserId = currentUser?.Id;
-
-    // Get live database counts
-    var totalChaptersCount = DbContext.Chapters.Count(c => c.Story.UserId == currentUserId);
-    
-    // We can simulate weekly growth dynamically or show actual calculations
-    var totalStories = Model.RecentStories.Count;
-    
-    // Quick Actions routes
-    var defaultStoryId = Model.ActiveStory?.Id;
+    // Empty state for exact screenshot match
 }
 
-<div class="container-fluid p-0">
-    <!-- Row 1: Premium Stats Cards -->
+<style>
+    /* Ensure the dashboard area has no opaque background so the site body texture shows through */
+    .dashboard-container {
+        background-color: transparent !important;
+        min-height: 100vh;
+        padding-top: 10px;
+    }
+    
+    .db-card {
+        background: #FFFFFF;
+        border: 1px solid rgba(226, 232, 240, 0.6);
+        border-radius: 20px;
+        padding: 28px;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    }
+    
+    /* Top row stat card specific styling */
+    .stat-card-left {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 48px;
+    }
+    
+    .stat-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-bottom: 8px;
+    }
+    
+    .stat-decorative-line {
+        width: 1px;
+        height: 24px;
+        background-color: rgba(226, 232, 240, 0.8);
+        margin-bottom: 4px;
+    }
+    
+    .stat-decorative-diamond {
+        width: 6px;
+        height: 6px;
+        transform: rotate(45deg);
+    }
+    
+    .stat-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #1E293B;
+    }
+    
+    .stat-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #1E3A8A; /* Dark navy */
+        line-height: 1;
+        margin-top: 4px;
+        margin-bottom: 8px;
+    }
+    
+    .stat-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #64748B;
+        line-height: 1.5;
+    }
+    
+    .btn-teal {
+        background-color: #13A8A6;
+        color: white;
+        border: none;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        border-radius: 9999px;
+        padding: 10px 24px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(19, 168, 166, 0.2);
+    }
+    .btn-teal:hover {
+        background-color: #10918F;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-outline-custom {
+        background-color: white;
+        color: #1E293B;
+        border: 1px solid #E2E8F0;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        border-radius: 9999px;
+        padding: 10px 24px;
+        transition: all 0.2s ease;
+    }
+    .btn-outline-custom:hover {
+        background-color: #F8FAFC;
+        transform: translateY(-1px);
+    }
+    
+    /* Stepper Styling */
+    .stepper-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        position: relative;
+        padding-top: 10px;
+    }
+    
+    .stepper-line {
+        position: absolute;
+        top: 36px;
+        left: 10%;
+        right: 10%;
+        height: 1px;
+        background-image: linear-gradient(to right, #E2E8F0 40%, rgba(255, 255, 255, 0) 20%);
+        background-position: top;
+        background-size: 8px 1px;
+        background-repeat: repeat-x;
+        z-index: 1;
+    }
+    
+    .stepper-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+        width: 80px;
+    }
+    
+    .stepper-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        border: 2px solid #E2E8F0;
+    }
+    
+    .stepper-icon.active {
+        border-color: #13A8A6;
+        background: #FFFFFF;
+    }
+    
+    .stepper-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #1E293B;
+        margin-bottom: 4px;
+    }
+    
+    .stepper-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 9px;
+        color: #94A3B8;
+        line-height: 1.4;
+    }
+    
+    .section-title {
+        color: #1E3A8A; 
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+    }
+    
+    .title-star {
+        color: #D4AF37; 
+        font-size: 14px;
+    }
+    
+    .decorative-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .decorative-line::before, .decorative-line::after {
+        content: '';
+        height: 1px;
+        background-color: #D4AF37;
+        width: 30px;
+        opacity: 0.5;
+    }
+    
+    /* CSS Bookshelf */
+    .css-bookshelf-container {
+        position: relative;
+        width: 180px;
+        height: 110px;
+        margin: 0 auto;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 12px;
+    }
+    
+    .css-shelf {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 10px;
+        background: linear-gradient(to bottom, #d4a373 0%, #a27242 100%);
+        border-radius: 4px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.2);
+    }
+    
+    .css-shelf::before, .css-shelf::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        width: 12px;
+        height: 6px;
+        background: #795548;
+        border-radius: 0 0 4px 4px;
+    }
+    .css-shelf::before { left: 10px; }
+    .css-shelf::after { right: 10px; }
+    
+    .css-books {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        position: relative;
+        z-index: 1;
+        padding: 0 16px;
+    }
+    
+    /* Empty State Books */
+    .css-book-empty {
+        width: 22px;
+        height: 70px;
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 2px 4px 4px 2px;
+        box-shadow: -2px 0 4px rgba(0,0,0,0.02);
+    }
+    .css-book-empty:nth-child(1) { height: 75px; width: 24px; }
+    .css-book-empty:nth-child(2) { height: 68px; }
+    .css-book-empty:nth-child(3) { height: 78px; width: 26px; transform: rotate(10deg); transform-origin: bottom left; margin-left: 6px; }
+    .css-book-empty:nth-child(4) { height: 62px; margin-left: 8px; }
+    .css-book-empty:nth-child(5) { height: 72px; width: 20px; }
+    
+    /* Real Books */
+    .css-book-real {
+        width: 28px;
+        height: 85px;
+        border-radius: 2px 4px 4px 2px;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .css-book-real:hover { transform: translateY(-4px); }
+    .css-book-real .book-spine {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        color: rgba(255,255,255,0.95);
+        font-size: 10px;
+        font-weight: 700;
+        font-family: 'Inter', sans-serif;
+        padding: 6px 0;
+        text-align: center;
+        transform: rotate(180deg);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: 100%;
+    }
+    
+    .book-color-0 { background: linear-gradient(to right, #1E3A8A, #2563EB); border-left: 2px solid #1e40af; }
+    .book-color-1 { background: linear-gradient(to right, #13A8A6, #2DD4BF); border-left: 2px solid #0f766e; }
+    .book-color-2 { background: linear-gradient(to right, #D4AF37, #FDE047); border-left: 2px solid #a16207; }
+    .book-color-3 { background: linear-gradient(to right, #BE123C, #F43F5E); border-left: 2px solid #9f1239; }
+    .book-color-4 { background: linear-gradient(to right, #4338CA, #6366F1); border-left: 2px solid #3730a3; }
+</style>
+
+<div class="container-fluid p-0 dashboard-container">
+    
+    <!-- Top Row: Stats -->
     <div class="row g-4 mb-4">
-        <!-- Card 1: Total Words -->
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4 d-flex align-items-center justify-content-between position-relative overflow-hidden h-100 shadow-sm" 
-                 style="background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 border d-flex align-items-center justify-content-center bg-white bg-opacity-85 shadow-xs" style="width: 58px; height: 58px; border-color: #ECE6D5 !important;">
-                        <img src="/images/dashboard/book_open.png" alt="Words" style="width: 38px; height: 38px; object-fit: contain;" />
+        <!-- Words Written -->
+        <div class="col-md-3">
+            <div class="db-card h-100 d-flex gap-4 p-4">
+                <div class="stat-card-left">
+                    <div class="stat-card-icon" style="background: rgba(19, 168, 166, 0.08);">
+                        <i data-lucide="feather" style="color: #13A8A6; width: 20px; height: 20px;"></i>
                     </div>
-                    <div>
-                        <span class="text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.08em; font-weight: 700; color: #64748B;">TOTAL WORDS</span>
-                        <h3 class="m-0" style="font-size: 2.2rem; color: #0A5C5A; font-family: 'Playfair Display', serif; font-weight: 700; line-height: 1.1;">@Model.TotalWords.ToString("N0")</h3>
-                        <span class="fw-bold" style="font-size: 11px; color: #13A8A6;">+2,450 this week</span>
-                    </div>
+                    <div class="stat-decorative-line"></div>
+                    <div class="stat-decorative-diamond" style="background: #E2E8F0;"></div>
+                </div>
+                <div>
+                    <div class="stat-title">Words Written</div>
+                    <div class="stat-value">@(Model?.TotalWords ?? 0)</div>
+                    <div class="stat-desc">Start writing to see your<br/>word count here.</div>
                 </div>
             </div>
         </div>
-
-        <!-- Card 2: Total Chapters -->
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4 d-flex align-items-center justify-content-between position-relative overflow-hidden h-100 shadow-sm" 
-                 style="background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 border d-flex align-items-center justify-content-center bg-white bg-opacity-85 shadow-xs" style="width: 58px; height: 58px; border-color: #ECE6D5 !important;">
-                        <img src="/images/dashboard/book_stack.png" alt="Chapters" style="width: 38px; height: 38px; object-fit: contain;" />
+        <!-- Stories Created -->
+        <div class="col-md-3">
+            <div class="db-card h-100 d-flex gap-4 p-4">
+                <div class="stat-card-left">
+                    <div class="stat-card-icon" style="background: rgba(30, 58, 138, 0.06);">
+                        <i data-lucide="book-open" style="color: #1E3A8A; width: 20px; height: 20px;"></i>
                     </div>
-                    <div>
-                        <span class="text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.08em; font-weight: 700; color: #64748B;">TOTAL CHAPTERS</span>
-                        <h3 class="m-0" style="font-size: 2.2rem; color: #0A5C5A; font-family: 'Playfair Display', serif; font-weight: 700; line-height: 1.1;">@totalChaptersCount</h3>
-                        <span class="fw-bold" style="font-size: 11px; color: #13A8A6;">+2 this week</span>
-                    </div>
+                    <div class="stat-decorative-line"></div>
+                    <div class="stat-decorative-diamond" style="background: #E2E8F0;"></div>
+                </div>
+                <div>
+                    <div class="stat-title">Active Stories</div>
+                    <div class="stat-value">@(Model?.ActiveStoriesCount ?? 0)</div>
+                    <div class="stat-desc">Your stories will appear<br/>here.</div>
                 </div>
             </div>
         </div>
-
-        <!-- Card 3: Characters -->
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4 d-flex align-items-center justify-content-between position-relative overflow-hidden h-100 shadow-sm" 
-                 style="background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 border d-flex align-items-center justify-content-center bg-white bg-opacity-85 shadow-xs" style="width: 58px; height: 58px; border-color: #ECE6D5 !important;">
-                        <img src="/images/dashboard/quill_ink.png" alt="Characters" style="width: 38px; height: 38px; object-fit: contain;" />
+        <!-- Characters Created -->
+        <div class="col-md-3">
+            <div class="db-card h-100 d-flex gap-4 p-4">
+                <div class="stat-card-left">
+                    <div class="stat-card-icon" style="background: rgba(100, 116, 139, 0.08);">
+                        <i data-lucide="users" style="color: #475569; width: 20px; height: 20px;"></i>
                     </div>
-                    <div>
-                        <span class="text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.08em; font-weight: 700; color: #64748B;">CHARACTERS</span>
-                        <h3 class="m-0" style="font-size: 2.2rem; color: #0A5C5A; font-family: 'Playfair Display', serif; font-weight: 700; line-height: 1.1;">@Model.CharactersCount</h3>
-                        <span class="fw-bold" style="font-size: 11px; color: #13A8A6;">+3 this week</span>
-                    </div>
+                    <div class="stat-decorative-line"></div>
+                    <div class="stat-decorative-diamond" style="background: #E2E8F0;"></div>
+                </div>
+                <div>
+                    <div class="stat-title">Characters Created</div>
+                    <div class="stat-value">@(Model?.CharactersCount ?? 0)</div>
+                    <div class="stat-desc">Your characters will come<br/>to life here.</div>
                 </div>
             </div>
         </div>
-
-        <!-- Card 4: Worlds Created -->
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4 d-flex align-items-center justify-content-between position-relative overflow-hidden h-100 shadow-sm" 
-                 style="background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 border d-flex align-items-center justify-content-center bg-white bg-opacity-85 shadow-xs" style="width: 58px; height: 58px; border-color: #ECE6D5 !important;">
-                        <img src="/images/dashboard/globe.png" alt="Worlds" style="width: 38px; height: 38px; object-fit: contain;" />
+        <!-- Worlds Built -->
+        <div class="col-md-3">
+            <div class="db-card h-100 d-flex gap-4 p-4">
+                <div class="stat-card-left">
+                    <div class="stat-card-icon" style="background: rgba(16, 185, 129, 0.08);">
+                        <i data-lucide="globe-2" style="color: #10B981; width: 20px; height: 20px;"></i>
                     </div>
-                    <div>
-                        <span class="text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.08em; font-weight: 700; color: #64748B;">WORLDS CREATED</span>
-                        <h3 class="m-0" style="font-size: 2.2rem; color: #0A5C5A; font-family: 'Playfair Display', serif; font-weight: 700; line-height: 1.1;">@Model.LocationsCount</h3>
-                        <span class="fw-bold text-secondary" style="font-size: 11px;">+0 this week</span>
-                    </div>
+                    <div class="stat-decorative-line"></div>
+                    <div class="stat-decorative-diamond" style="background: #E2E8F0;"></div>
+                </div>
+                <div>
+                    <div class="stat-title">Locations Built</div>
+                    <div class="stat-value">@(Model?.LocationsCount ?? 0)</div>
+                    <div class="stat-desc">Build your world piece<br/>by piece.</div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Row 2: Graph, Activity, Current Story -->
+    
+    <!-- Middle Row: Welcome & Progress -->
     <div class="row g-4 mb-4">
-        <!-- Writing Progress -->
-        <div class="col-lg-5">
-            <div class="dashboard-glass-panel p-4 d-flex flex-column h-100 shadow-sm" style="min-height: 380px; background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="d-flex align-items-center justify-content-between mb-4">
-                    <h3 class="font-serif fw-bold m-0" style="font-size: 1.25rem; color: #0A5C5A; font-family: 'Playfair Display', serif;">Writing Progress</h3>
-                    <div class="d-flex align-items-center gap-1">
-                        <select class="form-select form-select-sm border-0 bg-transparent text-secondary fw-bold w-auto" style="font-size: 0.8rem; box-shadow: none; font-family: 'Inter', sans-serif;">
-                            <option>This Month</option>
-                            <option>Last Month</option>
-                            <option>This Year</option>
-                        </select>
-                        <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #64748B;"></i>
-                    </div>
-                </div>
-                <div class="flex-grow-1 position-relative mt-2" style="height: 200px;">
-                    <!-- Faint watermark background -->
-                    <div class="position-absolute bottom-0 end-0" style="opacity: 0.12; width: 140px; z-index: 1; pointer-events: none;">
-                        <img src="/images/dashboard/silhouette.png" class="img-fluid" />
-                    </div>
-
-                    <!-- Graph Plot -->
-                    <div class="w-100 h-100 d-flex flex-column justify-content-between pb-4" style="position: relative; z-index: 2;">
-                        <div class="border-bottom border-dashed border-secondary border-opacity-10 flex-grow-1"></div>
-                        <div class="border-bottom border-dashed border-secondary border-opacity-10 flex-grow-1"></div>
-                        <div class="border-bottom border-dashed border-secondary border-opacity-10 flex-grow-1"></div>
-                        <div class="border-bottom border-dashed border-secondary border-opacity-10 flex-grow-1"></div>
-                        <div class="border-bottom border-dashed border-secondary border-opacity-10 flex-grow-1"></div>
-                        <div class="border-bottom border-solid border-secondary border-opacity-20 flex-grow-1"></div>
-                    </div>
-                    <svg class="position-absolute top-0 start-0 w-100 h-100 overflow-visible" preserveAspectRatio="none" style="padding-bottom: 24px; z-index: 3;">
-                        <defs>
-                            <linearGradient id="gradientArea" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#13A8A6" stop-opacity="0.25"></stop>
-                                <stop offset="100%" stop-color="#13A8A6" stop-opacity="0"></stop>
-                            </linearGradient>
-                        </defs>
-                        <path d="M0,160 Q30,130 60,140 T120,95 T180,105 T240,75 T300,85 T360,35 T420,55 L420,200 L0,200 Z" fill="url(#gradientArea)" />
-                        <path d="M0,160 Q30,130 60,140 T120,95 T180,105 T240,75 T300,85 T360,35 T420,55" fill="none" stroke="#13A8A6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                        
-                        <!-- Graph Nodes -->
-                        <circle cx="60" cy="140" r="4.5" fill="#fff" stroke="#13A8A6" stroke-width="2.5" class="chart-node"></circle>
-                        <circle cx="120" cy="95" r="4.5" fill="#fff" stroke="#13A8A6" stroke-width="2.5" class="chart-node"></circle>
-                        <circle cx="180" cy="105" r="4.5" fill="#fff" stroke="#13A8A6" stroke-width="2.5" class="chart-node"></circle>
-                        <circle cx="240" cy="75" r="4.5" fill="#fff" stroke="#13A8A6" stroke-width="2.5" class="chart-node"></circle>
-                        <circle cx="300" cy="85" r="4.5" fill="#fff" stroke="#13A8A6" stroke-width="2.5" class="chart-node"></circle>
-                        <circle cx="360" cy="35" r="4.5" fill="#fff" stroke="#13A8A6" stroke-width="2.5" class="chart-node"></circle>
-                        <circle cx="420" cy="55" r="4.5" fill="#fff" stroke="#13A8A6" stroke-width="2.5" class="chart-node"></circle>
-                    </svg>
-                </div>
-                
-                <div class="d-flex justify-content-between text-secondary px-2 mt-2" style="font-size: 11px; font-weight: 700; font-family: 'Inter', sans-serif;">
-                    <span>1 Apr</span>
-                    <span>5 Apr</span>
-                    <span>10 Apr</span>
-                    <span>15 Apr</span>
-                    <span>20 Apr</span>
-                    <span>25 Apr</span>
-                    <span>30 Apr</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Latest Activity -->
-        <div class="col-lg-3">
-            <div class="dashboard-glass-panel p-4 d-flex flex-column h-100 shadow-sm" style="min-height: 380px; background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="d-flex align-items-center justify-content-between mb-4">
-                    <h3 class="font-serif fw-bold m-0" style="font-size: 1.25rem; color: #0A5C5A; font-family: 'Playfair Display', serif;">Latest Activity</h3>
-                    <a href="@Url.Action("Index", "Stories")" class="text-decoration-none fw-bold" style="font-size: 0.8rem; color: #13A8A6; font-family: 'Inter', sans-serif;">View All</a>
-                </div>
-                
-                <div class="flex-grow-1 overflow-auto pe-1 d-flex flex-column gap-3 justify-content-center">
-                    @if (Model.RecentActivities.Any())
-                    {
-                        foreach(var activity in Model.RecentActivities)
-                        {
-                            <div class="d-flex gap-3 align-items-start">
-                                @if(activity.ActionType == "Chapter")
-                                {
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background-color: rgba(10, 92, 90, 0.08); border: 1px solid rgba(10, 92, 90, 0.15); color: #13A8A6;">
-                                        <i data-lucide="book-open" style="width: 16px; height: 16px;"></i>
-                                    </div>
-                                }
-                                else if(activity.ActionType == "Character")
-                                {
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background-color: rgba(197, 168, 128, 0.1); border: 1px solid rgba(197, 168, 128, 0.2); color: #C5A880;">
-                                        <i data-lucide="users" style="width: 16px; height: 16px;"></i>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background-color: rgba(100, 116, 139, 0.08); border: 1px solid rgba(100, 116, 139, 0.15); color: #64748B;">
-                                        <i data-lucide="compass" style="width: 16px; height: 16px;"></i>
-                                    </div>
-                                }
-                                <div class="flex-grow-1">
-                                    <h4 class="fw-bold m-0" style="font-size: 0.8rem; color: #0A5C5A;">@activity.Description</h4>
-                                    <span class="text-secondary fw-semibold d-block mt-0.5" style="font-size: 10px;">@activity.RelatedEntityName</span>
-                                </div>
-                                <span class="text-secondary fw-bold" style="font-size: 9px;">@activity.Timestamp.ToString("MMM dd")</span>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="text-center text-secondary py-5 d-flex flex-column align-items-center justify-content-center">
-                            <!-- Custom elegant activity squiggle watermark -->
-                            <div class="mb-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; opacity: 0.25; color: #0A5C5A;">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 12h3l3-9 4 18 3-13 1 4h3"/>
-                                    <circle cx="9" cy="3" r="1.5" fill="currentColor"/>
-                                    <circle cx="13" cy="21" r="1.5" fill="currentColor"/>
-                                    <circle cx="16" cy="8" r="1.5" fill="currentColor"/>
-                                </svg>
-                            </div>
-                            <p class="mb-0 fw-bold" style="font-size: 0.85rem; color: #64748B; font-family: 'Inter', sans-serif;">No recent activity.</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- Current Story -->
-        <div class="col-lg-4">
-            <div class="dashboard-glass-panel p-4 d-flex flex-column h-100 shadow-sm" style="min-height: 380px; background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="text-center mb-3">
-                    <h3 class="font-serif fw-bold text-uppercase m-0 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.85rem; letter-spacing: 0.12em; color: #C5A880; font-family: 'Playfair Display', serif;">
-                        ✦ CURRENT STORY ✦
-                    </h3>
-                </div>
-                
-                @if(Model.ActiveStory != null)
-                {
-                    <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                        <div class="d-flex gap-3 align-items-start mb-3">
-                            <!-- Cover Art -->
-                            <div class="rounded-3 overflow-hidden shadow-sm border position-relative flex-shrink-0 bg-light" style="width: 90px; aspect-ratio: 2/3;">
-                                <img src="@(string.IsNullOrEmpty(Model.ActiveStory.CoverImageUrl) ? "/images/dashboard/Story_cover.png" : Model.ActiveStory.CoverImageUrl)" alt="Story Cover" class="w-100 h-100 object-fit-cover" onerror="this.src='/images/dashboard/Story_cover.png'" />
-                            </div>
-                            
-                            <!-- Details -->
-                            <div class="flex-grow-1 py-1">
-                                <h4 class="font-serif fw-bold m-0" style="font-size: 1.2rem; line-height: 1.2; color: #0A5C5A;">@Model.ActiveStory.Title</h4>
-                                <span class="text-secondary fw-semibold d-block mt-0.5" style="font-size: 0.8rem;">@Model.ActiveStory.Genre</span>
-                                
-                                <div class="mt-3 d-flex flex-column gap-1.5 text-secondary fw-bold" style="font-size: 11px;">
-                                    <div class="d-flex justify-content-between border-bottom border-dashed pb-1">
-                                        <span>Chapters</span>
-                                        <span class="text-peacock-dark">@Model.ActiveStory.Chapters.Count Chapters</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between border-bottom border-dashed pb-1 mt-1">
-                                        <span>Word Count</span>
-                                        <span class="text-peacock-dark">@Model.ActiveStory.CurrentWordCount.ToString("N0") / @Model.ActiveStory.TargetWordCount.ToString("N0")</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between border-bottom border-dashed pb-1 mt-1">
-                                        <span>Current Streak</span>
-                                        <span class="text-warning">🔥 @Model.UserGoal.CurrentStreakDays Days</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Progress Dial -->
-                        <div class="d-flex justify-content-center align-items-center gap-3 mb-3 border rounded-3 p-2.5" style="background: rgba(255,255,255,0.4); border-color: #ECE6D5 !important;">
-                            <div class="position-relative d-flex align-items-center justify-content-center flex-shrink-0" style="width: 60px; height: 60px;">
-                                <svg class="w-100 h-100" style="transform: rotate(-90deg);">
-                                    <circle cx="30" cy="30" r="24" fill="none" stroke="#EAE3D2" stroke-width="4.5"></circle>
-                                    <circle cx="30" cy="30" r="24" fill="none" stroke="#13A8A6" stroke-width="4.5" stroke-dasharray="150.79" stroke-dashoffset="@(150.79 - (150.79 * Model.ActiveStoryProgressPercentage / 100.0))" stroke-linecap="round"></circle>
-                                </svg>
-                                <div class="position-absolute d-flex flex-column align-items-center justify-content-center text-center">
-                                    <span class="fw-bold" style="font-size: 0.8rem; color: #13A8A6;">@Model.ActiveStoryProgressPercentage%</span>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-column justify-content-center">
-                                <span class="font-serif fw-bold" style="font-size: 1.3rem; color: #0A5C5A;">@Model.ActiveStoryProgressPercentage% Complete</span>
-                                <span class="text-secondary fw-bold text-uppercase" style="font-size: 9px; letter-spacing: 0.1em;">Overall Story Progress</span>
-                            </div>
-                        </div>
-                        
-                        <a href="@Url.Action("Details", "Stories", new { id = Model.ActiveStory.Id })" class="btn w-100 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm text-white transition-all" style="background-color: #13A8A6; border: none; font-size: 0.85rem; height: 40px;">
-                            <i data-lucide="pen-tool" style="width: 16px; height: 16px; color: var(--gold-accent);"></i> Continue Writing
-                        </a>
-                    </div>
-                }
-                else
-                {
-                    <div class="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center py-5">
-                        <div class="rounded-3 border border-secondary border-opacity-10 d-flex align-items-center justify-content-center bg-white bg-opacity-70 p-3 shadow-xs mb-3" style="width: 64px; height: 64px; border-color: #ECE6D5 !important;">
-                            <i data-lucide="file-plus-2" style="width: 32px; height: 32px; color: #13A8A6;"></i>
-                        </div>
-                        <p class="text-secondary mt-1 mb-4 fw-bold" style="font-size: 0.95rem; font-family: 'Inter', sans-serif;">No active stories found.</p>
-                        <a href="@Url.Action("Index", "Stories")" class="btn rounded-pill fw-bold text-white px-4 py-2" style="background-color: #13A8A6; border: none; font-size: 0.85rem;">
-                            Create a Story
-                        </a>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- Row 3: My Stories & Daily Goal -->
-    <div class="row g-4">
-        <!-- My Stories -->
-        <div class="col-lg-8 d-flex flex-column gap-4">
-            <div class="dashboard-glass-panel p-4 d-flex flex-column h-100 shadow-sm" style="min-height: 340px; background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="d-flex align-items-center justify-content-between mb-4">
-                    <h3 class="font-serif fw-bold m-0" style="font-size: 1.25rem; color: #0A5C5A; font-family: 'Playfair Display', serif;">My Stories</h3>
-                    <a href="@Url.Action("Index", "Stories")" class="text-decoration-none fw-bold" style="font-size: 0.8rem; color: #13A8A6; font-family: 'Inter', sans-serif;">View All</a>
-                </div>
-                
-                <div class="row g-4 flex-grow-1">
-                    @if (Model.RecentStories != null && Model.RecentStories.Any())
-                    {
-                        foreach(var story in Model.RecentStories.Take(3))
-                        {
-                            string badgeColor = story.Status == "InProgress" ? "success" : (story.Status == "Published" ? "primary" : "warning");
-                            
-                            <div class="col-md-4">
-                                <div class="rounded-4 overflow-hidden border position-relative h-100 d-flex flex-column justify-content-end bg-dark shadow-xs transition-all story-card-hover cursor-pointer" 
-                                     style="aspect-ratio: 4/5; border-color: #ECE6D5 !important;"
-                                     onclick="window.location.href='@Url.Action("Details", "Stories", new { id = story.Id })'">
-                                    <!-- Cover Image -->
-                                    @if(!string.IsNullOrEmpty(story.CoverImageUrl))
-                                    {
-                                        <img src="@story.CoverImageUrl" alt="@story.Title" class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover" onerror="this.src='/images/dashboard/Story_cover.png'" />
-                                    }
-                                    else
-                                    {
-                                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-secondary" style="background-image: url('/images/WritingSpace/Texture.png');"></div>
-                                    }
-                                    <!-- Gradients -->
-                                    <div class="position-absolute top-0 bottom-0 start-0" style="width: 14px; background: linear-gradient(to right, rgba(0,0,0,0.25), rgba(0,0,0,0.1), transparent); z-index: 20;"></div>
-                                    <div class="position-absolute top-0 bottom-0 start-0 w-100 bg-gradient" style="background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.3), transparent); z-index: 10;"></div>
-                                    
-                                    <!-- Status Badge -->
-                                    <div class="position-absolute" style="top: 12px; left: 16px; z-index: 20;">
-                                        <span class="badge bg-@badgeColor bg-opacity-75 border border-@badgeColor text-white text-uppercase" style="font-size: 9px; letter-spacing: 0.05em;">@story.Status</span>
-                                    </div>
-                                    
-                                    <!-- Content -->
-                                    <div class="p-3 position-relative text-white" style="z-index: 20;">
-                                        <h4 class="font-serif fw-bold mb-1 text-truncate" style="font-size: 1rem; max-width: 100%;">@story.Title</h4>
-                                        <span class="fw-semibold text-white-50" style="font-size: 10px;">@story.Genre</span>
-                                        <div class="progress mt-2" style="height: 3px; background-color: rgba(255,255,255,0.25);">
-                                            <div class="progress-bar" style="width: @story.ProgressPercentage%; background-color: var(--gold-accent);"></div>
-                                        </div>
-                                        <div class="d-flex justify-content-between text-white-50 mt-1" style="font-size: 9px;">
-                                            <span>@story.CurrentWordCount.ToString("N0") words</span>
-                                            <span>@story.ProgressPercentage%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <div class="col-md-4">
-                            <div class="rounded-4 border border-2 border-dashed d-flex flex-column align-items-center justify-content-center p-4 text-center cursor-pointer hover-lift-subtle bg-white bg-opacity-40 h-100 shadow-xs" 
-                                 style="aspect-ratio: 4/5; border-color: #ECE6D5 !important; border-radius: 20px;"
-                                 onclick="window.location.href='@Url.Action("Index", "Stories")'">
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-3 border" style="width: 48px; height: 48px; border-color: #ECE6D5 !important; background: rgba(255,255,255,0.8) !important;">
-                                    <i data-lucide="plus" style="color: #13A8A6; width: 24px; height: 24px;"></i>
-                                </div>
-                                <h5 class="fw-bold mb-1" style="color: #0A5C5A; font-size: 1rem; font-family: 'Playfair Display', serif;">New Story</h5>
-                                <p class="text-secondary small mb-0" style="font-size: 0.8rem; font-family: 'Inter', sans-serif;">Start your first masterpiece</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="rounded-4 border border-2 border-dashed d-flex flex-column align-items-center justify-content-center p-4 text-center opacity-50 bg-white bg-opacity-20 h-100" 
-                                 style="aspect-ratio: 4/5; border-color: #ECE6D5 !important; border-radius: 20px;">
-                                <i data-lucide="lock" style="width: 24px; height: 24px; color: #64748B;" class="text-secondary"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="rounded-4 border border-2 border-dashed d-flex flex-column align-items-center justify-content-center p-4 text-center opacity-50 bg-white bg-opacity-20 h-100" 
-                                 style="aspect-ratio: 4/5; border-color: #ECE6D5 !important; border-radius: 20px;">
-                                <i data-lucide="lock" style="width: 24px; height: 24px; color: #64748B;" class="text-secondary"></i>
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Upcoming Milestones -->
-            <div class="dashboard-glass-panel p-4 shadow-sm" style="background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px;">
-                <div class="d-flex align-items-center justify-content-between mb-4">
-                    <h3 class="font-serif fw-bold m-0" style="font-size: 1.25rem; color: #0A5C5A; font-family: 'Playfair Display', serif;">Upcoming Milestones</h3>
-                    <a href="@Url.Action("Index", "Stories")" class="text-decoration-none fw-bold" style="font-size: 0.8rem; color: #13A8A6; font-family: 'Inter', sans-serif;">View All</a>
-                </div>
-                
-                <div class="d-flex align-items-center justify-content-between position-relative py-2 px-1">
-                    <!-- Progress Bar Behind Nodes -->
-                    <div class="position-absolute start-0 end-0 bg-secondary bg-opacity-10" style="height: 4px; top: 24px; transform: translateY(-50%); z-index: 1;"></div>
-                    <div class="position-absolute start-0" style="height: 4px; width: 45%; top: 24px; transform: translateY(-50%); z-index: 2; background: linear-gradient(90deg, #13A8A6, #1E439B);"></div>
-
-                    <!-- Milestone 1 -->
-                    <div class="d-flex flex-column align-items-center text-center position-relative" style="z-index: 10; width: 80px;">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white shadow-xs" style="width: 32px; height: 32px; background: #13A8A6;">
-                            <i data-lucide="check" style="width: 16px; height: 16px; color: white;"></i>
-                        </div>
-                        <span class="fw-bold mt-2 text-dark" style="font-size: 0.75rem; font-family: 'Inter', sans-serif;">5,000 Words</span>
-                        <span class="text-secondary" style="font-size: 9px; font-weight: 700;">Achieved</span>
-                    </div>
-
-                    <!-- Milestone 2 -->
-                    <div class="d-flex flex-column align-items-center text-center position-relative" style="z-index: 10; width: 80px;">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white shadow-xs" style="width: 32px; height: 32px; background: #13A8A6;">
-                            <i data-lucide="check" style="width: 16px; height: 16px; color: white;"></i>
-                        </div>
-                        <span class="fw-bold mt-2 text-dark" style="font-size: 0.75rem; font-family: 'Inter', sans-serif;">10,000 Words</span>
-                        <span class="text-secondary" style="font-size: 9px; font-weight: 700;">Achieved</span>
-                    </div>
-
-                    <!-- Milestone 3 -->
-                    <div class="d-flex flex-column align-items-center text-center position-relative" style="z-index: 10; width: 80px;">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white shadow-xs border" style="width: 32px; height: 32px; background-color: var(--gold-accent); border-color: #ECE6D5 !important;">
-                            <i data-lucide="pen-tool" style="width: 16px; height: 16px; color: white;"></i>
-                        </div>
-                        <span class="fw-bold mt-2 text-dark" style="font-size: 0.75rem; font-family: 'Inter', sans-serif;">20,000 Words</span>
-                        <span class="fw-bold" style="font-size: 9px; color: #1E439B;">In Progress</span>
-                    </div>
-
-                    <!-- Milestone 4 -->
-                    <div class="d-flex flex-column align-items-center text-center position-relative" style="z-index: 10; width: 80px;">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-secondary bg-white border shadow-xs" style="width: 32px; height: 32px; border-color: #ECE6D5 !important;">
-                            <i data-lucide="lock" style="width: 14px; height: 14px; color: #64748B;"></i>
-                        </div>
-                        <span class="fw-bold mt-2 text-secondary" style="font-size: 0.75rem; font-family: 'Inter', sans-serif;">30,000 Words</span>
-                        <span class="text-secondary" style="font-size: 9px; font-weight: 700;">Locked</span>
-                    </div>
-
-                    <!-- Milestone 5 -->
-                    <div class="d-flex flex-column align-items-center text-center position-relative" style="z-index: 10; width: 80px;">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-secondary bg-white border shadow-xs" style="width: 32px; height: 32px; border-color: #ECE6D5 !important;">
-                            <i data-lucide="lock" style="width: 14px; height: 14px; color: #64748B;"></i>
-                        </div>
-                        <span class="fw-bold mt-2 text-secondary" style="font-size: 0.75rem; font-family: 'Inter', sans-serif;">40,000 Words</span>
-                        <span class="text-secondary" style="font-size: 9px; font-weight: 700;">Locked</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Side: Daily Goal & Quick Actions -->
-        <div class="col-lg-4 d-flex flex-column gap-4">
-            <!-- Daily Goal Card -->
-            <div class="dashboard-glass-panel p-4 d-flex flex-column h-100 position-relative overflow-hidden shadow-sm" 
-                 style="background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px; min-height: 260px;">
-                <div class="position-absolute end-0" style="bottom: 10px; right: 10px; opacity: 0.12; pointer-events: none;">
-                    <img src="/images/dashboard/quill_ink.png" alt="Quill" style="width: 120px; height: 120px; object-fit: contain; mix-blend-mode: multiply;" />
-                </div>
-                
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="font-serif fw-bold m-0" style="font-size: 1.25rem; color: #1E439B; font-family: 'Playfair Display', serif;">Daily Goal</h3>
-                    <button class="btn btn-link p-0 text-decoration-none fw-bold" style="font-size: 0.8rem; color: #1E439B; font-family: 'Inter', sans-serif;">Edit Goal</button>
-                </div>
-                
-                <div class="flex-grow-1 d-flex flex-column justify-content-center">
-                    <div class="d-flex align-items-center gap-4 mb-3">
-                        <!-- Radial progress circle containing Words Written Today -->
-                        <div class="position-relative d-flex align-items-center justify-content-center flex-shrink-0" style="width: 76px; height: 76px;">
-                            <svg class="w-100 h-100" style="transform: rotate(-90deg);">
-                                <circle cx="38" cy="38" r="32" fill="none" stroke="#EAE3D2" stroke-width="6"></circle>
-                                <circle cx="38" cy="38" r="32" fill="none" stroke="#13A8A6" stroke-width="6" stroke-dasharray="201.06" stroke-dashoffset="@(201.06 - (201.06 * Model.GoalProgressPercentage / 100.0))" stroke-linecap="round"></circle>
-                            </svg>
-                            <div class="position-absolute d-flex flex-column align-items-center justify-content-center text-center">
-                                <span class="font-serif fw-bold" style="font-size: 1.6rem; color: #1E439B;">@Model.UserGoal.WordsWrittenToday</span>
-                            </div>
-                        </div>
-                        <div class="d-flex flex-column justify-content-center">
-                            <span class="text-secondary fw-semibold" style="font-size: 0.95rem; font-family: 'Inter', sans-serif;"><span class="font-serif fw-bold" style="color: #1E439B; font-size: 1.15rem;">/ @Model.UserGoal.DailyWordCountGoal</span> words per day</span>
-                        </div>
-                    </div>
-
-                    <div class="progress rounded-pill bg-light border mb-2 shadow-xs" style="height: 8px; border-color: #ECE6D5 !important;">
-                        <div class="progress-bar rounded-pill" style="width: @Model.GoalProgressPercentage%; background: linear-gradient(90deg, #13A8A6, #1E439B);"></div>
+        <!-- Welcome Card -->
+        <div class="col-md-9">
+            <div class="db-card h-100 d-flex justify-content-between align-items-center" style="padding: 40px 48px; overflow: hidden;">
+                <div style="max-width: 55%; z-index: 2;">
+                    <h2 class="section-title mb-2" style="font-size: 2.2rem;">Welcome to your Author Workspace</h2>
+                    
+                    <div class="decorative-line mb-4">
+                        <span style="color: #D4AF37; font-size: 10px;">✦</span>
                     </div>
                     
-                    <div class="d-flex justify-content-between align-items-center" style="font-size: 12px; font-family: 'Inter', sans-serif;">
-                        <span class="fw-bold text-secondary">@Model.GoalProgressPercentage% Complete</span>
-                        <span class="fw-bold" style="color: #13A8A6;">
-                            @if (Model.UserGoal.WordsWrittenToday >= Model.UserGoal.DailyWordCountGoal)
+                    <p class="mb-5" style="color: #64748B; font-size: 1rem; line-height: 1.6; font-family: 'Inter', sans-serif;">
+                        This is where your imagination becomes reality.<br/>
+                        Create your first story and begin your journey.
+                    </p>
+                    <div class="d-flex gap-3">
+                        @if (Model == null || !Model.RecentStories.Any())
+                        {
+                            <a href="@Url.Action("Create", "Stories")" class="btn-teal text-decoration-none d-flex align-items-center gap-2">
+                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Create Your First Story
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Index", "Stories")" class="btn-teal text-decoration-none d-flex align-items-center gap-2">
+                                <i data-lucide="book-open" style="width: 16px; height: 16px;"></i> View Your Stories
+                            </a>
+                        }
+                        <button class="btn-outline-custom d-flex align-items-center gap-2">
+                            <i data-lucide="play" style="width: 16px; height: 16px;"></i> Watch 2 Min Tour
+                        </button>
+                    </div>
+                </div>
+                <!-- Welcome Illustration -->
+                <div style="position: absolute; right: 0; bottom: -20px; width: 45%; height: 120%; z-index: 1; display: flex; align-items: flex-end; justify-content: flex-end; pointer-events: none;">
+                    <img src="/images/dashboard/welcome_hero.png" alt="Illustration" style="max-width: 130%; max-height: 130%; object-fit: contain; transform-origin: bottom right; mix-blend-mode: multiply;" onerror="this.src='/images/dashboard/quill_ink.png'" />
+                </div>
+            </div>
+        </div>
+        
+        <!-- Your Progress -->
+        <div class="col-md-3">
+            <div class="db-card h-100 d-flex flex-column text-center">
+                <h3 class="section-title text-start mb-4" style="font-size: 1.15rem;">Your Progress</h3>
+                
+                <div class="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+                    <div class="stat-card-icon mb-4" style="width: 64px; height: 64px; background: rgba(212, 175, 55, 0.08);">
+                        <i data-lucide="feather" style="color: #13A8A6; width: 28px; height: 28px;"></i>
+                    </div>
+                    <h4 class="fw-bold mb-2" style="font-size: 0.95rem; color: #1E293B; font-family: 'Inter', sans-serif; line-height: 1.4;">Your writing journey<br/>starts here</h4>
+                    <p class="mb-4" style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif; max-width: 200px; margin: 0 auto; line-height: 1.5;">
+                        Complete your first chapter to unlock your progress.
+                    </p>
+                    <a href="#" class="text-decoration-none fw-bold mt-auto pb-2" style="color: #13A8A6; font-size: 0.75rem; font-family: 'Inter', sans-serif;">
+                        Learn how StoryVerse works &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Row -->
+    <div class="row g-4">
+        <!-- Col 1: Story Shelf & Recent Activity -->
+        <div class="col-md-3 d-flex flex-column gap-4">
+            <!-- Story Shelf -->
+            <div class="db-card flex-grow-1 text-center d-flex flex-column">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="title-star">✦</span>
+                    <h3 class="section-title mb-0 text-start" style="font-size: 1.15rem;">Your Story Shelf</h3>
+                </div>
+                
+                <div class="my-4 flex-grow-1 d-flex align-items-center justify-content-center">
+                    <div class="css-bookshelf-container">
+                        <div class="css-shelf"></div>
+                        <div class="css-books">
+                            @if (Model != null && Model.RecentStories != null && Model.RecentStories.Any())
                             {
-                                <span>Goal achieved!</span>
+                                int colorIdx = 0;
+                                foreach (var story in Model.RecentStories.Take(5))
+                                {
+                                    <div class="css-book-real book-color-@(colorIdx % 5)" title="@story.Title">
+                                        <div class="book-spine">@story.Title</div>
+                                    </div>
+                                    colorIdx++;
+                                }
                             }
                             else
                             {
-                                <span>@(Model.UserGoal.DailyWordCountGoal - Model.UserGoal.WordsWrittenToday) words remaining</span>
+                                <div class="css-book-empty"></div>
+                                <div class="css-book-empty"></div>
+                                <div class="css-book-empty"></div>
+                                <div class="css-book-empty"></div>
+                                <div class="css-book-empty"></div>
                             }
-                        </span>
+                        </div>
+                    </div>
+                </div>
+                
+                @if (Model != null && Model.RecentStories != null && Model.RecentStories.Any())
+                {
+                    <h4 class="fw-bold mb-1" style="font-size: 0.9rem; color: #1E293B; font-family: 'Inter', sans-serif;">Continue your journey</h4>
+                    <p class="mb-4" style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif;">Pick up where you left off.</p>
+                }
+                else
+                {
+                    <h4 class="fw-bold mb-1" style="font-size: 0.9rem; color: #1E293B; font-family: 'Inter', sans-serif;">Your shelf is empty</h4>
+                    <p class="mb-4" style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif;">Create your first story to see it here.</p>
+                }
+                
+                @if (Model == null || !Model.RecentStories.Any())
+                {
+                    <a href="@Url.Action("Create", "Stories")" class="btn-teal text-decoration-none d-inline-flex align-items-center justify-content-center gap-2 w-100 mt-auto" style="font-size: 0.8rem; padding: 10px 16px;">
+                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Your First Story
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("Index", "Stories")" class="btn-teal text-decoration-none d-inline-flex align-items-center justify-content-center gap-2 w-100 mt-auto" style="font-size: 0.8rem; padding: 10px 16px;">
+                        <i data-lucide="list" style="width: 16px; height: 16px;"></i> View All Stories
+                    </a>
+                }
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="db-card text-center d-flex flex-column" style="min-height: 250px;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="title-star">✦</span>
+                    <h3 class="section-title mb-0 text-start" style="font-size: 1.15rem;">Recent Activity</h3>
+                </div>
+                
+                <div class="my-3 flex-grow-1 d-flex align-items-center justify-content-center">
+                    <img src="/images/dashboard/quill_ink.png" alt="Activity" style="width: 80px; height: auto; opacity: 0.8;" onerror="this.style.display='none'" />
+                </div>
+                
+                <h4 class="fw-bold mb-1" style="font-size: 0.9rem; color: #1E293B; font-family: 'Inter', sans-serif;">No recent activity</h4>
+                <p class="mb-4" style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif;">Your writing activity will appear here.</p>
+                
+                <a href="@(Model == null || !Model.RecentStories.Any() ? Url.Action("Create", "Stories") : Url.Action("Index", "Stories"))" class="btn-outline-custom text-decoration-none w-100 mt-auto" style="font-size: 0.8rem; padding: 10px 16px;">
+                    Start Writing
+                </a>
+            </div>
+        </div>
+        
+        <!-- Col 2: Let's Get You Started & Quick Actions -->
+        <div class="col-md-6 d-flex flex-column gap-4">
+            <!-- Let's Get You Started -->
+            <div class="db-card">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="title-star">✦</span>
+                    <h3 class="section-title mb-0" style="font-size: 1.15rem;">Let's Get You Started</h3>
+                </div>
+                <p class="mb-5" style="font-size: 0.8rem; color: #64748B; font-family: 'Inter', sans-serif; padding-left: 24px;">Follow these simple steps to begin your writing journey.</p>
+                
+                <div class="stepper-container px-2 pb-2">
+                    <div class="stepper-line"></div>
+                    
+                    <!-- Step 1 -->
+                    <div class="stepper-step">
+                        <div class="stepper-icon active">
+                            <i data-lucide="book" style="color: #13A8A6; width: 22px; height: 22px;"></i>
+                        </div>
+                        <div class="stepper-title">Create Story</div>
+                        <div class="stepper-desc">Build the foundation<br/>of your world</div>
+                    </div>
+                    
+                    <!-- Step 2 -->
+                    <div class="stepper-step">
+                        <div class="stepper-icon">
+                            <i data-lucide="file-text" style="color: #94A3B8; width: 22px; height: 22px;"></i>
+                        </div>
+                        <div class="stepper-title" style="color: #64748B;">Write Chapter</div>
+                        <div class="stepper-desc">Start writing your<br/>first chapter</div>
+                    </div>
+                    
+                    <!-- Step 3 -->
+                    <div class="stepper-step">
+                        <div class="stepper-icon">
+                            <i data-lucide="users" style="color: #94A3B8; width: 22px; height: 22px;"></i>
+                        </div>
+                        <div class="stepper-title" style="color: #64748B;">Create Character</div>
+                        <div class="stepper-desc">Bring your characters<br/>to life</div>
+                    </div>
+                    
+                    <!-- Step 4 -->
+                    <div class="stepper-step">
+                        <div class="stepper-icon">
+                            <i data-lucide="globe-2" style="color: #94A3B8; width: 22px; height: 22px;"></i>
+                        </div>
+                        <div class="stepper-title" style="color: #64748B;">Build World</div>
+                        <div class="stepper-desc">Design your world<br/>and its rules</div>
+                    </div>
+                    
+                    <!-- Step 5 -->
+                    <div class="stepper-step">
+                        <div class="stepper-icon">
+                            <i data-lucide="search" style="color: #94A3B8; width: 22px; height: 22px;"></i>
+                        </div>
+                        <div class="stepper-title" style="color: #64748B;">Research</div>
+                        <div class="stepper-desc">Collect ideas and<br/>inspiration</div>
                     </div>
                 </div>
             </div>
-
-            <!-- Quick Actions Card -->
-            <div class="dashboard-glass-panel p-4 d-flex flex-column h-100 position-relative shadow-sm" 
-                 style="background: #FCFAF6; border: 1.5px solid #ECE6D5 !important; border-radius: 20px; min-height: 280px;">
-                <h3 class="font-serif fw-bold mb-4" style="font-size: 1.25rem; color: #0A5C5A; font-family: 'Playfair Display', serif;">Quick Actions</h3>
+            
+            <!-- Quick Actions -->
+            <div class="db-card flex-grow-1">
+                <h3 class="section-title mb-4" style="font-size: 1.15rem;">Quick Actions</h3>
                 
-                <div class="d-flex flex-column gap-2 flex-grow-1">
-                    <a href="@(defaultStoryId != null ? Url.Action("Index", "Chapters", new { storyId = defaultStoryId }) : Url.Action("Index", "Stories"))" 
-                       class="btn btn-white text-start d-flex align-items-center justify-content-between p-2.5 rounded-3 border bg-white shadow-xs transition-all hover-lift-subtle" 
-                       style="border-color: #ECE6D5 !important; font-size: 0.85rem; color: #13A8A6; font-weight: 700; font-family: 'Inter', sans-serif;">
-                        <div class="d-flex align-items-center gap-2">
-                            <i data-lucide="file-plus-2" style="width: 16px; height: 16px; color: #13A8A6;"></i>
-                            <span>Create New Chapter</span>
+                <div class="row g-4 mt-2">
+                    <div class="col-6 d-flex flex-column gap-4">
+                        @if (Model != null && Model.RecentStories.Any())
+                        {
+                            <a href="@Url.Action("Create", "Chapters")" class="text-decoration-none d-flex justify-content-between align-items-center group" style="color: #334155; font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 600;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <i data-lucide="file-plus-2" style="width: 18px; height: 18px; color: #13A8A6;"></i> Create New Chapter
+                                </div>
+                                <i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                            </a>
+                            
+                            <a href="@Url.Action("Create", "Characters")" class="text-decoration-none d-flex justify-content-between align-items-center" style="color: #334155; font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 600;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <i data-lucide="user-plus" style="width: 18px; height: 18px; color: #13A8A6;"></i> Add New Character
+                                </div>
+                                <i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                            </a>
+                        }
+                        
+                        <a href="@Url.Action("Index", "WorldBuilding")" class="text-decoration-none d-flex justify-content-between align-items-center" style="color: #334155; font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 600;">
+                            <div class="d-flex align-items-center gap-3">
+                                <i data-lucide="globe-2" style="width: 18px; height: 18px; color: #13A8A6;"></i> World Building
+                            </div>
+                            <i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                        </a>
+                    </div>
+                    <div class="col-6 d-flex flex-column gap-4">
+                        <a href="@Url.Action("Index", "Research")" class="text-decoration-none d-flex justify-content-between align-items-center" style="color: #334155; font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 600;">
+                            <div class="d-flex align-items-center gap-3">
+                                <i data-lucide="search" style="width: 18px; height: 18px; color: #13A8A6;"></i> Research Something
+                            </div>
+                            <i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                        </a>
+                        
+                        @if (Model != null && Model.RecentStories.Any())
+                        {
+                            <a href="@Url.Action("Create", "Timeline")" class="text-decoration-none d-flex justify-content-between align-items-center" style="color: #334155; font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 600;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <i data-lucide="calendar-plus" style="width: 18px; height: 18px; color: #13A8A6;"></i> Add Timeline Event
+                                </div>
+                                <i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                            </a>
+                        }
+                        
+                        <a href="@Url.Action("Index", "Dashboard")" class="text-decoration-none d-flex justify-content-between align-items-center" style="color: #334155; font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 600;">
+                            <div class="d-flex align-items-center gap-3">
+                                <i data-lucide="bar-chart-2" style="width: 18px; height: 18px; color: #13A8A6;"></i> View Analytics
+                            </div>
+                            <i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Col 3: Daily Goal & Inspiration -->
+        <div class="col-md-3 d-flex flex-column gap-4">
+            <!-- Daily Goal -->
+            <div class="db-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="section-title mb-0" style="font-size: 1.15rem;">Daily Goal</h3>
+                    <a href="#" class="text-decoration-none fw-bold" style="color: #13A8A6; font-size: 0.75rem; font-family: 'Inter', sans-serif;">Edit Goal</a>
+                </div>
+                
+                <div class="d-flex align-items-center justify-content-center gap-4 mb-4 mt-2">
+                    <div class="position-relative d-flex align-items-center justify-content-center" style="width: 76px; height: 76px;">
+                        <svg class="w-100 h-100" style="transform: rotate(-90deg);">
+                            <circle cx="38" cy="38" r="34" fill="none" stroke="#F1F5F9" stroke-width="6"></circle>
+                            <circle cx="38" cy="38" r="34" fill="none" stroke="#E2E8F0" stroke-width="6" stroke-dasharray="213.6" stroke-dashoffset="213.6" stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="position-absolute fw-bold" style="font-size: 0.9rem; color: #64748B; font-family: 'Inter', sans-serif;">
+                            0%
                         </div>
-                        <i data-lucide="chevron-right" style="width: 14px; height: 14px; opacity: 0.5; color: #64748B;"></i>
-                    </a>
-
-                    <a href="@(defaultStoryId != null ? Url.Action("Index", "Characters", new { storyId = defaultStoryId }) : Url.Action("Index", "Stories"))" 
-                       class="btn btn-white text-start d-flex align-items-center justify-content-between p-2.5 rounded-3 border bg-white shadow-xs transition-all hover-lift-subtle" 
-                       style="border-color: #ECE6D5 !important; font-size: 0.85rem; color: #13A8A6; font-weight: 700; font-family: 'Inter', sans-serif;">
-                        <div class="d-flex align-items-center gap-2">
-                            <i data-lucide="user-plus" style="width: 16px; height: 16px; color: #13A8A6;"></i>
-                            <span>Add New Character</span>
-                        </div>
-                        <i data-lucide="chevron-right" style="width: 14px; height: 14px; opacity: 0.5; color: #64748B;"></i>
-                    </a>
-
-                    <a href="@(defaultStoryId != null ? Url.Action("Index", "WorldBuilding", new { storyId = defaultStoryId }) : Url.Action("Index", "Stories"))" 
-                       class="btn btn-white text-start d-flex align-items-center justify-content-between p-2.5 rounded-3 border bg-white shadow-xs transition-all hover-lift-subtle" 
-                       style="border-color: #ECE6D5 !important; font-size: 0.85rem; color: #13A8A6; font-weight: 700; font-family: 'Inter', sans-serif;">
-                        <div class="d-flex align-items-center gap-2">
-                            <i data-lucide="globe-2" style="width: 16px; height: 16px; color: #13A8A6;"></i>
-                            <span>World Building</span>
-                        </div>
-                        <i data-lucide="chevron-right" style="width: 14px; height: 14px; opacity: 0.5; color: #64748B;"></i>
-                    </a>
-
-                    <a href="@(defaultStoryId != null ? Url.Action("Index", "Research", new { storyId = defaultStoryId }) : Url.Action("Index", "Stories"))" 
-                       class="btn btn-white text-start d-flex align-items-center justify-content-between p-2.5 rounded-3 border bg-white shadow-xs transition-all hover-lift-subtle" 
-                       style="border-color: #ECE6D5 !important; font-size: 0.85rem; color: #13A8A6; font-weight: 700; font-family: 'Inter', sans-serif;">
-                        <div class="d-flex align-items-center gap-2">
-                            <i data-lucide="search" style="width: 16px; height: 16px; color: #13A8A6;"></i>
-                            <span>Research Something</span>
-                        </div>
-                        <i data-lucide="chevron-right" style="width: 14px; height: 14px; opacity: 0.5; color: #64748B;"></i>
-                    </a>
-
-                    <a href="@Url.Action("Index", "Stories")" 
-                       class="btn btn-white text-start d-flex align-items-center justify-content-between p-2.5 rounded-3 border bg-white shadow-xs transition-all hover-lift-subtle" 
-                       style="border-color: #ECE6D5 !important; font-size: 0.85rem; color: #13A8A6; font-weight: 700; font-family: 'Inter', sans-serif;">
-                        <div class="d-flex align-items-center gap-2">
-                            <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; color: #13A8A6;"></i>
-                            <span>View Analytics</span>
-                        </div>
-                        <i data-lucide="chevron-right" style="width: 14px; height: 14px; opacity: 0.5; color: #64748B;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 1.8rem; color: #1E3A8A; line-height: 1; font-family: 'Playfair Display', serif;">0</div>
+                        <div style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif; margin-top: 6px; white-space: nowrap;">/ 1,500 words per day</div>
+                    </div>
+                </div>
+                
+                <div style="height: 1px; width: 100%; background: #F1F5F9; margin-bottom: 16px; margin-top: 16px;"></div>
+                <div style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif; font-weight: 500;">Start writing to set your pace.</div>
+            </div>
+            
+            <!-- Inspiration -->
+            <div class="db-card flex-grow-1 d-flex flex-column" style="min-height: 220px;">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <span style="color: #D4AF37; font-size: 1.25rem; font-family: 'Playfair Display', serif; font-weight: 700; line-height: 1;">&ldquo;</span>
+                    <h3 class="section-title mb-0" style="font-size: 1.15rem;">Inspiration of the Day</h3>
+                </div>
+                
+                <p class="mb-3" style="font-size: 0.9rem; color: #1E3A8A; font-family: 'Inter', sans-serif; line-height: 1.6; font-weight: 500;">
+                    You don't have to be great to start, but you have to start to be great.
+                </p>
+                <p style="font-size: 0.8rem; color: #64748B; font-family: 'Inter', sans-serif;">- Zig Ziglar</p>
+                
+                <div class="text-end mt-auto">
+                    <a href="#" class="text-decoration-none d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; color: #94A3B8; font-family: 'Inter', sans-serif; font-weight: 600; transition: color 0.2s;">
+                        <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh
                     </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .story-card-hover:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 30px rgba(10, 92, 90, 0.12) !important;
-    }
-    .hover-lift-subtle {
-        transition: transform 0.15s ease, background-color 0.15s ease;
-    }
-    .hover-lift-subtle:hover {
-        transform: translateY(-2px);
-        background-color: #FAF5ED !important;
-    }
-</style>

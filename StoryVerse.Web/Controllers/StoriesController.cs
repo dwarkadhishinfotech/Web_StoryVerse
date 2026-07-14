@@ -15,11 +15,13 @@ namespace StoryVerse.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly StoryVerse.Web.Services.IDropdownService _dropdownService;
 
-        public StoriesController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public StoriesController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, StoryVerse.Web.Services.IDropdownService dropdownService)
         {
             _context = context;
             _userManager = userManager;
+            _dropdownService = dropdownService;
         }
 
         public async Task<IActionResult> Index()
@@ -55,8 +57,16 @@ namespace StoryVerse.Web.Controllers
         }
 
         // GET: Stories/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            ViewBag.StoryTypes = await _dropdownService.GetOptionsByCategoryAsync("StoryType");
+            ViewBag.ProjectStatuses = await _dropdownService.GetOptionsByCategoryAsync("ProjectStatus");
+            ViewBag.TargetAudiences = await _dropdownService.GetOptionsByCategoryAsync("TargetAudience");
+            ViewBag.Languages = await _dropdownService.GetOptionsByCategoryAsync("Language");
+            ViewBag.WritingStyles = await _dropdownService.GetOptionsByCategoryAsync("WritingStyle");
+            ViewBag.PointsOfView = await _dropdownService.GetOptionsByCategoryAsync("PointOfView");
+            ViewBag.Tenses = await _dropdownService.GetOptionsByCategoryAsync("Tense");
+
             return View(new Story());
         }
 
