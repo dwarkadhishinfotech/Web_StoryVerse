@@ -5,8 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using StoryVerse.Core.Entities;
 using StoryVerse.Core.Entities.Identity;
 using StoryVerse.Infrastructure.Data;
+using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace StoryVerse.Web.Controllers
 {
@@ -73,23 +76,55 @@ namespace StoryVerse.Web.Controllers
         // POST: Stories/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,Genre,TargetWordCount,Status,CoverImageUrl")] Story story)
+        public async Task<IActionResult> Create([Bind("Title,Genre,TargetWordCount,Status")] Story story, IFormFile CoverFile)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
+
+            ModelState.Remove("User");
+            ModelState.Remove("UserId");
 
             if (ModelState.IsValid)
             {
                 story.Id = Guid.NewGuid();
                 story.UserId = user.Id;
-                story.CreatedAt = System.DateTime.UtcNow;
-                story.UpdatedAt = System.DateTime.UtcNow;
+                story.CreatedAt = DateTime.UtcNow;
+                story.UpdatedAt = DateTime.UtcNow;
                 story.CurrentWordCount = 0;
+
+                if (CoverFile != null && CoverFile.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "covers");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(CoverFile.FileName);
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await CoverFile.CopyToAsync(fileStream);
+                    }
+                    story.CoverImageUrl = "/covers/" + uniqueFileName;
+                }
+                else
+                {
+                    story.CoverImageUrl = "/images/empty-states/live_preview_book.png";
+                }
 
                 _context.Add(story);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewBag.StoryTypes = await _dropdownService.GetOptionsByCategoryAsync("StoryType");
+            ViewBag.ProjectStatuses = await _dropdownService.GetOptionsByCategoryAsync("ProjectStatus");
+            ViewBag.TargetAudiences = await _dropdownService.GetOptionsByCategoryAsync("TargetAudience");
+            ViewBag.Languages = await _dropdownService.GetOptionsByCategoryAsync("Language");
+            ViewBag.WritingStyles = await _dropdownService.GetOptionsByCategoryAsync("WritingStyle");
+            ViewBag.PointsOfView = await _dropdownService.GetOptionsByCategoryAsync("PointOfView");
+            ViewBag.Tenses = await _dropdownService.GetOptionsByCategoryAsync("Tense");
+
             return View(story);
         }
 
@@ -117,6 +152,9 @@ namespace StoryVerse.Web.Controllers
 
             var existingStory = await _context.Stories.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id && s.UserId == user.Id);
             if (existingStory == null) return NotFound();
+
+            ModelState.Remove("User");
+            ModelState.Remove("UserId");
 
             if (ModelState.IsValid)
             {

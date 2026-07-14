@@ -179,15 +179,13 @@
                     <div class="position-absolute top-50 start-0 end-0 translate-middle-y" style="height: 2px; background-color: #e2e8f0; z-index: 1; left: 10% !important; right: 10% !important;"></div>
                     
                     <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-1">
-                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #0d9488; color: white; font-size: 14px; border: 2px solid white;">
-                            <i data-lucide="check" style="width: 18px; height: 18px;"></i>
-                        </div>
-                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 500; color: #64748b;">Basic Details</div>
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #0d9488; color: white; font-size: 14px; border: 2px solid white;">1</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 700; color: #0d9488;">Basic Details</div>
                     </div>
                     
                     <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-2">
-                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #0d9488; color: white; font-size: 14px; border: 2px solid white;">2</div>
-                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 700; color: #0d9488;">Genre & Theme</div>
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #f1f5f9; color: #64748b; font-size: 14px; border: 2px solid white;">2</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 600; color: #64748b;">Genre & Theme</div>
                     </div>
                     
                     <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-3">
@@ -201,9 +199,10 @@
                     </div>
                 </div>
 
-                <form id="storyForm">
+                <form id="storyForm" method="post" action="@Url.Action("Create", "Stories")" enctype="multipart/form-data" novalidate>
+                    @Html.AntiForgeryToken()
                     <!-- Step 1: Basic Details -->
-                    <div id="step-1" class="step-content d-none">
+                    <div id="step-1" class="step-content">
                         <div class="mb-2 d-flex align-items-center gap-2">
                             <i data-lucide="clipboard-list" style="width: 22px; height: 22px; color: #475569;"></i>
                             <h4 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 20px;">Basic Details</h4>
@@ -241,7 +240,7 @@
                                 <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
                                     Story Type <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
                                 </label>
-                                <select class="form-select select2-themed" name="Genre" data-placeholder="Select story type...">
+                                <select class="form-select select2-themed" name="StoryType" data-placeholder="Select story type...">
                                     <option value=""></option>
                                     @if (ViewBag.StoryTypes != null) {
                                         foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.StoryTypes) {
@@ -285,7 +284,8 @@
                             </label>
                             <div class="row g-4">
                                 <div class="col-md-7">
-                                    <div class="border border-2 border-dashed rounded-3 p-4 text-center d-flex flex-column align-items-center justify-content-center h-100" style="border-color: #cbd5e1 !important; background-color: #f8fafc; transition: all 0.2s; cursor: pointer;">
+                                    <input type="file" name="CoverFile" id="CoverFile" accept="image/*" class="d-none">
+                                    <div id="cover-drop-zone" class="border border-2 border-dashed rounded-3 p-4 text-center d-flex flex-column align-items-center justify-content-center h-100" style="border-color: #cbd5e1 !important; background-color: #f8fafc; transition: all 0.2s; cursor: pointer;">
                                         <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border mb-3" style="width: 48px; height: 48px; border-color: #e2e8f0;">
                                             <i data-lucide="image" style="width: 20px; height: 20px; color: #0d9488;"></i>
                                         </div>
@@ -337,7 +337,7 @@
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100" style="cursor: pointer; background-color: #f0fdfa; border: 1px solid #0d9488; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Fantasy" class="d-none" checked>
+                                        <input type="radio" name="Genre" value="Fantasy" class="d-none" checked>
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -355,7 +355,7 @@
                                 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Science Fiction" class="d-none">
+                                        <input type="radio" name="Genre" value="Science Fiction" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -373,7 +373,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Mystery" class="d-none">
+                                        <input type="radio" name="Genre" value="Mystery" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -391,7 +391,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Romance" class="d-none">
+                                        <input type="radio" name="Genre" value="Romance" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -409,7 +409,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Thriller" class="d-none">
+                                        <input type="radio" name="Genre" value="Thriller" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -427,7 +427,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Historical Fiction" class="d-none">
+                                        <input type="radio" name="Genre" value="Historical Fiction" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -445,7 +445,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Horror" class="d-none">
+                                        <input type="radio" name="Genre" value="Horror" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -463,7 +463,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Comedy" class="d-none">
+                                        <input type="radio" name="Genre" value="Comedy" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -481,7 +481,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Adventure" class="d-none">
+                                        <input type="radio" name="Genre" value="Adventure" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -499,7 +499,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Drama" class="d-none">
+                                        <input type="radio" name="Genre" value="Drama" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -517,7 +517,7 @@
 
                                 <div class="col-md-3">
                                     <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="PrimaryGenre" value="Other" class="d-none">
+                                        <input type="radio" name="Genre" value="Other" class="d-none">
                                         <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
                                             <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
                                                 <i data-lucide="check" style="width: 11px; height: 11px;"></i>
@@ -1053,7 +1053,7 @@
                 
                 <div class="mb-4 d-flex justify-content-center">
                     <div style="width: 240px; height: 200px;">
-                        <img src="~/images/empty-states/live_preview_book.png" class="w-100 h-100" style="object-fit: contain; mix-blend-mode: multiply;" alt="Preview Book" />
+                        <img id="live-preview-book" src="/images/empty-states/live_preview_book.png" class="w-100 h-100" style="object-fit: contain; mix-blend-mode: multiply;" alt="Preview Book" />
                     </div>
                 </div>
 
@@ -1255,6 +1255,53 @@
                 }
             });
 
+            // Cover Image Drag & Drop / File Select
+            var $dropZone = $('#cover-drop-zone');
+            var $fileInput = $('#CoverFile');
+
+            $dropZone.on('click', function() {
+                $fileInput.click();
+            });
+
+            $fileInput.on('change', function(e) {
+                handleFileSelect(e.target.files);
+            });
+
+            $dropZone.on('dragover', function(e) {
+                e.preventDefault();
+                $dropZone.css('border-color', '#0d9488');
+            });
+
+            $dropZone.on('dragleave', function(e) {
+                e.preventDefault();
+                $dropZone.css('border-color', '#cbd5e1');
+            });
+
+            $dropZone.on('drop', function(e) {
+                e.preventDefault();
+                $dropZone.css('border-color', '#cbd5e1');
+                if (e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files.length) {
+                    $fileInput[0].files = e.originalEvent.dataTransfer.files;
+                    handleFileSelect(e.originalEvent.dataTransfer.files);
+                }
+            });
+
+            function handleFileSelect(files) {
+                if (files && files.length > 0) {
+                    var file = files[0];
+                    $dropZone.find('h6').text(file.name);
+                    $dropZone.find('p.text-teal').text('File selected');
+                    
+                    // Show preview
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#live-preview-book').attr('src', e.target.result);
+                        $('#review-cover').html('<div class="d-flex align-items-center gap-2"><img src="' + e.target.result + '" style="width: 40px; height: 50px; object-fit: cover; border-radius: 4px;" /><span>' + file.name + '</span></div>');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
             // Step Navigation Logic
             function updateSteppers(currentStep) {
                 // Reset all
@@ -1338,11 +1385,11 @@
                 setVal('#review-title', title);
                 setVal('#review-tagline', getText('input[name="Tagline"]'));
                 setVal('#review-synopsis', getText('textarea[name="Synopsis"]'));
-                setVal('#review-type', getText('select[name="Genre"]'));
+                setVal('#review-type', getText('select[name="StoryType"]'));
                 setVal('#review-audience', getText('select[name="TargetAudience"]'));
                 setVal('#review-language', getText('select[name="Language"]'));
                 
-                var primaryGenre = $('input[name="PrimaryGenre"]:checked').val();
+                var primaryGenre = $('input[name="Genre"]:checked').val();
                 setVal('#review-primary-genre', primaryGenre);
                 
                 var themes = [];
@@ -1444,10 +1491,10 @@
                 updateSteppers(targetStep);
             });
             
-            // Initialize on step 4 for display
-            updateSteppers(4);
+            // Initialize on step 1 (Basic Details)
+            updateSteppers(1);
             $('.step-content').addClass('d-none');
-            $('#step-4').removeClass('d-none');
+            $('#step-1').removeClass('d-none');
         });
     </script>
 }
