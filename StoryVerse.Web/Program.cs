@@ -93,6 +93,7 @@ try
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var context = services.GetRequiredService<ApplicationDbContext>();
+            await context.Database.MigrateAsync();
             
             await StoryVerse.Infrastructure.Data.DbSeeder.SeedRolesAsync(roleManager);
             await StoryVerse.Infrastructure.Data.DbSeeder.SeedDataAsync(context, userManager);

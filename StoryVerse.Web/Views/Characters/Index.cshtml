@@ -1,312 +1,746 @@
 @model IEnumerable<StoryVerse.Core.Entities.Character>
 @{
-    var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
-    ViewData["Title"] = $"Characters - {(story?.Title ?? "All Stories")}";
+    var selectedStory = ViewBag.Story as StoryVerse.Core.Entities.Story;
+    var userStories = ViewBag.Stories as List<StoryVerse.Core.Entities.Story> ?? new List<StoryVerse.Core.Entities.Story>();
+    var allCharacters = ViewBag.AllCharacters as List<StoryVerse.Core.Entities.Character> ?? new List<StoryVerse.Core.Entities.Character>();
+    
+    ViewData["Title"] = $"Characters - {(selectedStory?.Title ?? "Author OS")}";
+
+    int totalCount = ViewBag.TotalCount ?? Model.Count();
+    int mainCount = ViewBag.MainCount ?? Model.Count(c => c.ArcType == "Main");
+    int supportingCount = ViewBag.SupportingCount ?? Model.Count(c => c.ArcType == "Supporting");
+    int minorCount = ViewBag.MinorCount ?? Model.Count(c => c.ArcType == "Minor");
+    int recentlyAddedCount = ViewBag.RecentlyAddedCount ?? Model.Count(c => c.CreatedAt >= DateTime.UtcNow.AddDays(-30));
+
+    string currentSearch = ViewBag.CurrentSearch as string ?? "";
+    string currentRole = ViewBag.CurrentRole as string ?? "";
+    string currentStatus = ViewBag.CurrentStatus as string ?? "";
+    string currentSortBy = ViewBag.CurrentSortBy as string ?? "recently_updated";
+
+    string GetRelativeTime(DateTime dt)
+    {
+        var ts = DateTime.UtcNow - dt;
+        if (ts.TotalMinutes < 60) return $"{Math.Max(1, (int)ts.TotalMinutes)} minutes ago";
+        if (ts.TotalHours < 24) return $"{(int)ts.TotalHours} hours ago";
+        if (ts.TotalDays < 7) return $"{(int)ts.TotalDays} days ago";
+        if (ts.TotalDays < 30) return $"{Math.Max(1, (int)(ts.TotalDays / 7))} week ago";
+        return $"{Math.Max(1, (int)(ts.TotalDays / 30))} month ago";
+    }
 }
 
-<div class="w-full pb-5 relative z-10 font-sans text-slate-800" style="min-height: 100vh; padding: 20px;">
-    <!-- Top Header Navigation Area -->
-    <div class="d-flex justify-content-between align-items-start mb-4">
+<style>
+    .character-page-container {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: transparent;
+        color: #0f172a;
+        width: 100%;
+        padding: 0;
+    }
+
+    .btn-teal {
+        background-color: #0d9488;
+        color: #ffffff;
+        border: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .btn-teal:hover {
+        background-color: #0f766e;
+        color: #ffffff;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 20px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+
+    .icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .badge-arc-main {
+        background-color: #ccfbf1;
+        color: #0f766e;
+        font-weight: 600;
+        font-size: 0.72rem;
+        padding: 3px 9px;
+        border-radius: 9999px;
+    }
+
+    .badge-arc-supporting {
+        background-color: #f3e8ff;
+        color: #7e22ce;
+        font-weight: 600;
+        font-size: 0.72rem;
+        padding: 3px 9px;
+        border-radius: 9999px;
+    }
+
+    .badge-arc-minor {
+        background-color: #e2e8f0;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.72rem;
+        padding: 3px 9px;
+        border-radius: 9999px;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .custom-table th {
+        background-color: #ffffff;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .custom-table td {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        background-color: #ffffff;
+        vertical-align: middle;
+        transition: background-color 0.15s ease;
+    }
+    .custom-table tr:hover td {
+        background-color: #f8fafc;
+    }
+
+    .avatar-stack {
+        display: flex;
+        align-items: center;
+    }
+    .avatar-stack img, .avatar-stack .avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        margin-left: -8px;
+        object-fit: cover;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .avatar-stack img:first-child, .avatar-stack .avatar-placeholder:first-child {
+        margin-left: 0;
+    }
+    .avatar-more-badge {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        margin-left: -8px;
+        background-color: #f1f5f9;
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+    .status-active { background-color: #16a34a; }
+    .status-draft { background-color: #2563eb; }
+    .status-archived { background-color: #dc2626; }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background-color: #ffffff;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .action-btn:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
+
+    .form-control-custom, .form-select-custom {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        color: #334155;
+        padding: 8px 14px;
+        transition: all 0.2s ease;
+    }
+    .form-control-custom:focus, .form-select-custom:focus {
+        border-color: #0d9488;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+        outline: none;
+    }
+</style>
+
+<div class="character-page-container">
+
+    <!-- Top Header Navigation & Action Row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <h2 class="font-serif fw-bold text-slate-900 mb-0" style="font-size: 32px; color: #1a2b3c;">
-                    Characters 
-                </h2>
-                <div class="d-flex align-items-center text-secondary">
-                    <i data-lucide="users" style="width: 20px; height: 20px; margin-right: 4px;"></i>
-                    <span class="text-warning fs-5">✦</span>
+                <h1 class="fw-bold mb-0 text-slate-900" style="font-size: 1.85rem; font-family: Georgia, serif;">Characters</h1>
+                <div class="d-flex align-items-center justify-content-center bg-teal-50 rounded-circle p-1 ms-1" style="color: #0d9488;">
+                    <i data-lucide="users" style="width: 22px; height: 22px;"></i>
                 </div>
             </div>
-            <p class="text-secondary mb-0" style="font-size: 0.9rem; color: #64748b;">Every unforgettable story begins with unforgettable characters.</p>
+            <p class="text-secondary mb-0" style="font-size: 0.925rem;">Build unforgettable characters. Bring them to life in your stories.</p>
         </div>
-        
-        <div class="d-flex align-items-center gap-3">
-            <a href="@Url.Action("Create", "Characters", new { storyId = story?.Id })" class="btn btn-outline-secondary rounded-pill px-3 py-2 d-flex align-items-center bg-white shadow-sm" style="font-size: 0.85rem; font-weight: 600; border-color: #e2e8f0; color: #0d9488;">
-                <i data-lucide="plus" class="me-1.5" style="width: 16px; height: 16px;"></i> New Character
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="@Url.Action("Create", "Characters", new { storyId = selectedStory?.Id })" class="btn btn-teal rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm" style="font-size: 0.875rem;">
+                <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+                <span>New Character</span>
             </a>
-            <div class="dropdown">
-                <button class="btn rounded-pill px-4 py-2 d-flex align-items-center text-white dropdown-toggle shadow-sm" style="background-color: #0d9488; font-size: 0.85rem; font-weight: 600; border: none;" data-bs-toggle="dropdown">
-                    <i data-lucide="feather" class="me-2" style="width: 16px; height: 16px;"></i> New Story
+
+            <button class="btn btn-white bg-white border rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm text-slate-700" style="font-size: 0.875rem; border-color: #e2e8f0;">
+                <i data-lucide="upload" style="width: 16px; height: 16px; color: #64748b;"></i>
+                <span>Import</span>
+            </button>
+
+            <button class="action-btn shadow-sm" title="Notifications">
+                <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+            </button>
+
+            <button class="action-btn shadow-sm" title="Toggle Theme">
+                <i data-lucide="sun" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 5 Key Metric Cards Row -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Total Characters -->
+        <div class="col-12 col-sm-6 col-lg">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <div class="icon-box" style="background-color: rgba(13, 148, 136, 0.1); color: #0d9488;">
+                    <i data-lucide="users" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <span class="text-secondary d-block fw-medium" style="font-size: 0.8rem;">Total Characters</span>
+                    <h3 class="fw-bold mb-0 text-slate-900" style="font-size: 1.5rem;">@totalCount</h3>
+                    <span class="text-muted" style="font-size: 0.75rem;">Across all stories</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Main Characters -->
+        <div class="col-12 col-sm-6 col-lg">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <div class="icon-box" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                    <i data-lucide="star" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <span class="text-secondary d-block fw-medium" style="font-size: 0.8rem;">Main Characters</span>
+                    <h3 class="fw-bold mb-0 text-slate-900" style="font-size: 1.5rem;">@mainCount</h3>
+                    <span class="text-muted" style="font-size: 0.75rem;">Protagonists / Antagonists</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Supporting Characters -->
+        <div class="col-12 col-sm-6 col-lg">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <div class="icon-box" style="background-color: rgba(147, 51, 234, 0.1); color: #9333ea;">
+                    <i data-lucide="user-check" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <span class="text-secondary d-block fw-medium" style="font-size: 0.8rem;">Supporting Characters</span>
+                    <h3 class="fw-bold mb-0 text-slate-900" style="font-size: 1.5rem;">@supportingCount</h3>
+                    <span class="text-muted" style="font-size: 0.75rem;">Supporting roles</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Minor Characters -->
+        <div class="col-12 col-sm-6 col-lg">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <div class="icon-box" style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                    <i data-lucide="user" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <span class="text-secondary d-block fw-medium" style="font-size: 0.8rem;">Minor Characters</span>
+                    <h3 class="fw-bold mb-0 text-slate-900" style="font-size: 1.5rem;">@minorCount</h3>
+                    <span class="text-muted" style="font-size: 0.75rem;">Minor / Background</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Recently Added -->
+        <div class="col-12 col-sm-6 col-lg">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <div class="icon-box" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
+                    <i data-lucide="clock" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <span class="text-secondary d-block fw-medium" style="font-size: 0.8rem;">Recently Added</span>
+                    <h3 class="fw-bold mb-0 text-slate-900" style="font-size: 1.5rem;">@recentlyAddedCount</h3>
+                    <span class="text-muted" style="font-size: 0.75rem;">In the last 30 days</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search, Filter & Toolbar Bar -->
+    <form id="filterForm" method="get" action="@Url.Action("Index", "Characters")" class="mb-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white p-3 rounded-3 border shadow-sm" style="border-color: #e2e8f0;">
+            
+            <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1">
+                <!-- Search input -->
+                <div class="position-relative" style="min-width: 240px; flex-grow: 1; max-width: 320px;">
+                    <i data-lucide="search" class="position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px;"></i>
+                    <input type="text" name="search" value="@currentSearch" class="form-control form-control-custom ps-5" placeholder="Search characters..." onchange="document.getElementById('filterForm').submit();" />
+                </div>
+
+                <!-- Story Filter -->
+                <div class="position-relative">
+                    <select name="storyId" class="form-select form-select-custom" onchange="document.getElementById('filterForm').submit();" style="padding-left: 32px;">
+                        <option value="">All Stories</option>
+                        @foreach (var s in userStories)
+                        {
+                            if (selectedStory?.Id == s.Id)
+                            {
+                                <option value="@s.Id" selected="selected">@s.Title</option>
+                            }
+                            else
+                            {
+                                <option value="@s.Id">@s.Title</option>
+                            }
+                        }
+                    </select>
+                    <i data-lucide="book-open" class="position-absolute text-muted" style="left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; pointer-events: none;"></i>
+                </div>
+
+                <!-- Role Filter -->
+                <div>
+                    <select name="role" class="form-select form-select-custom" onchange="document.getElementById('filterForm').submit();">
+                        <option value="">All Roles</option>
+                        <option value="Protagonist" selected="@(currentRole == "Protagonist")">Protagonist</option>
+                        <option value="Antagonist" selected="@(currentRole == "Antagonist")">Antagonist</option>
+                        <option value="Mentor" selected="@(currentRole == "Mentor")">Mentor</option>
+                        <option value="Supporting" selected="@(currentRole == "Supporting")">Supporting</option>
+                        <option value="Supporter" selected="@(currentRole == "Supporter")">Supporter</option>
+                        <option value="Authority" selected="@(currentRole == "Authority")">Authority</option>
+                        <option value="Minor" selected="@(currentRole == "Minor")">Minor</option>
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <select name="status" class="form-select form-select-custom" onchange="document.getElementById('filterForm').submit();">
+                        <option value="">All Status</option>
+                        <option value="Active" selected="@(currentStatus == "Active")">Active</option>
+                        <option value="Draft" selected="@(currentStatus == "Draft")">Draft</option>
+                        <option value="Archived" selected="@(currentStatus == "Archived")">Archived</option>
+                    </select>
+                </div>
+
+                <!-- More Filters Button -->
+                <button type="button" class="btn btn-light bg-white border text-slate-700 rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2" style="font-size: 0.875rem; border-color: #e2e8f0;">
+                    <i data-lucide="sliders-horizontal" style="width: 16px; height: 16px; color: #64748b;"></i>
+                    <span>More Filters</span>
                 </button>
-                <ul class="dropdown-menu border-0 shadow-sm rounded-3">
-                    <li><a class="dropdown-item" href="@Url.Action("Create", "Stories")">Create New Story</a></li>
-                </ul>
             </div>
-            <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0 shadow-sm" style="width: 40px; height: 40px; border: 1px solid #E2E8F0;">
-                <i data-lucide="bell" style="width: 18px; height: 18px; color: #64748B;"></i>
-            </button>
-            <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0 shadow-sm" style="width: 40px; height: 40px; border: 1px solid #E2E8F0;">
-                <i data-lucide="moon" style="width: 18px; height: 18px; color: #64748B;"></i>
-            </button>
-        </div>
-    </div>
 
-    <!-- Stats row -->
-    <div class="row g-0 mb-4 bg-white rounded-4 border shadow-sm position-relative overflow-hidden" style="border-color: #e2e8f0 !important;">
-        <div class="col-md-3 border-end">
-            <div class="p-4 d-flex align-items-center gap-3" style="background-color: rgba(248, 250, 252, 0.5);">
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(13, 148, 136, 0.1); color: #0d9488;">
-                    <i data-lucide="user"></i>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Sort Dropdown -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small text-nowrap">Sort by:</span>
+                    <select name="sortBy" class="form-select form-select-custom w-auto" onchange="document.getElementById('filterForm').submit();">
+                        <option value="recently_updated" selected="@(currentSortBy == "recently_updated")">Recently Updated</option>
+                        <option value="recently_added" selected="@(currentSortBy == "recently_added")">Recently Added</option>
+                        <option value="name" selected="@(currentSortBy == "name")">Name</option>
+                        <option value="role" selected="@(currentSortBy == "role")">Role</option>
+                    </select>
                 </div>
-                <div>
-                    <span class="fw-semibold d-block" style="font-size: 11px; color: #0f172a;">Total Characters</span>
-                    <h4 class="fw-bold mb-0" style="color: #0f172a;">@Model.Count()</h4>
-                    <span class="text-secondary" style="font-size: 11px;">No characters yet</span>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 border-end">
-            <div class="p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center text-warning" style="width: 48px; height: 48px; background: rgba(245, 158, 11, 0.1);">
-                    <i data-lucide="star"></i>
-                </div>
-                <div>
-                    <span class="text-secondary fw-semibold d-block" style="font-size: 11px;">Main Characters</span>
-                    <h4 class="fw-bold mb-0 text-slate-800">@Model.Count(c => c.Role != null && c.Role.Contains("Protagonist"))</h4>
-                    <span class="text-secondary" style="font-size: 11px;">Protagonists & Antagonists</span>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 border-end">
-            <div class="p-4 d-flex align-items-center gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(16, 185, 129, 0.1); color: #10b981;">
-                    <i data-lucide="users"></i>
-                </div>
-                <div>
-                    <span class="text-secondary fw-semibold d-block" style="font-size: 11px;">Supporting Characters</span>
-                    <h4 class="fw-bold mb-0 text-slate-800">@Model.Count(c => c.Role != null && c.Role.Contains("Supporting"))</h4>
-                    <span class="text-secondary" style="font-size: 11px;">Side characters & allies</span>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="p-4 d-flex align-items-center gap-3 relative">
-                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-                    <i data-lucide="feather"></i>
-                </div>
-                <div>
-                    <span class="text-secondary fw-semibold d-block" style="font-size: 11px;">Minor Characters</span>
-                    <h4 class="fw-bold mb-0 text-slate-800">@Model.Count(c => c.Role != null && c.Role.Contains("Minor"))</h4>
-                    <span class="text-secondary" style="font-size: 11px;">Background characters</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Background decorative image in top right -->
-        <div class="position-absolute end-0 top-0 h-100" style="width: 250px; z-index: 0; opacity: 0.7; background-image: url('/images/character_empty_state.png'); background-size: cover; background-position: center; mix-blend-mode: multiply; mask-image: linear-gradient(to right, transparent, black); -webkit-mask-image: linear-gradient(to right, transparent, black);">
-        </div>
-    </div>
 
-    <div class="row g-4">
-        <!-- Main Content Area -->
-        <div class="col-lg-8 col-xl-9">
-            
-            <!-- Filters & Toolbar -->
-            <div class="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between">
-                <div class="d-flex gap-2 flex-grow-1 flex-wrap">
-                    <div class="position-relative">
-                        <i data-lucide="search" class="position-absolute text-secondary" style="left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px;"></i>
-                        <input type="text" class="form-control bg-white rounded-3 shadow-sm border-0" placeholder="Search characters..." style="padding-left: 36px; min-width: 200px; font-size: 0.85rem;" />
-                    </div>
-                    
-                    <select class="form-select bg-white rounded-3 shadow-sm border-0 w-auto" style="font-size: 0.85rem; color: #475569;">
-                        <option>All Stories</option>
-                    </select>
-                    
-                    <select class="form-select bg-white rounded-3 shadow-sm border-0 w-auto" style="font-size: 0.85rem; color: #475569;">
-                        <option>All Roles</option>
-                    </select>
-                    
-                    <select class="form-select bg-white rounded-3 shadow-sm border-0 w-auto" style="font-size: 0.85rem; color: #475569;">
-                        <option>All Arcs</option>
-                    </select>
-                    
-                    <select class="form-select bg-white rounded-3 shadow-sm border-0 w-auto" style="font-size: 0.85rem; color: #475569;">
-                        <option>All Status</option>
-                    </select>
-                </div>
-                
-                <div class="d-flex gap-2 align-items-center">
-                    <select class="form-select bg-white rounded-3 shadow-sm border-0 w-auto" style="font-size: 0.85rem; color: #475569;">
-                        <option>Sort by: Recently Added</option>
-                    </select>
-                    
-                    <div class="bg-white rounded-3 shadow-sm border-0 d-flex p-1">
-                        <button class="btn btn-sm btn-light rounded bg-white text-secondary" style="color: #0d9488 !important; background-color: rgba(13, 148, 136, 0.1) !important;">
-                            <i data-lucide="grid" style="width: 16px; height: 16px;"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light rounded bg-white text-secondary border-0">
-                            <i data-lucide="list" style="width: 16px; height: 16px;"></i>
-                        </button>
-                    </div>
+                <!-- View Switcher -->
+                <div class="bg-slate-100 p-1 rounded-3 d-flex align-items-center border" style="border-color: #e2e8f0;">
+                    <button type="button" id="btnTableView" class="btn btn-sm bg-white shadow-sm border-0 rounded text-teal" style="color: #0d9488;" title="Table View">
+                        <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                    </button>
+                    <button type="button" id="btnGridView" class="btn btn-sm border-0 rounded text-muted" title="Grid View">
+                        <i data-lucide="grid" style="width: 18px; height: 18px;"></i>
+                    </button>
                 </div>
             </div>
-            
-            <!-- Empty State Section -->
-            <div class="bg-white rounded-4 border shadow-sm p-5 text-center d-flex flex-column align-items-center justify-content-center mb-4 position-relative overflow-hidden" style="min-height: 480px; border-color: #e2e8f0 !important;">
-                <!-- Decorative leaves in corners -->
-                <i data-lucide="feather" class="position-absolute text-secondary opacity-10" style="width: 200px; height: 200px; bottom: -40px; left: -40px; transform: rotate(45deg);"></i>
-                <i data-lucide="feather" class="position-absolute text-secondary opacity-10" style="width: 200px; height: 200px; bottom: -40px; right: -40px; transform: rotate(-45deg);"></i>
+        </div>
+    </form>
 
-                <img src="/images/character_empty_state.png" alt="No Characters" class="mb-4" style="max-width: 320px; height: auto; mix-blend-mode: multiply;" />
-                
-                <h3 class="font-serif fw-bold text-slate-900 mb-2" style="font-size: 26px;">No characters created yet</h3>
-                <p class="text-secondary mb-4" style="max-width: 420px; line-height: 1.6; font-size: 0.95rem;">
-                    Your characters are waiting to come to life.<br/>Create your first character and start building the heart of your story.
-                </p>
-                
-                <a href="@Url.Action("Create", "Characters", new { storyId = story?.Id })" class="btn text-white rounded-pill px-4 py-2.5 mb-3 fw-semibold shadow-sm" style="background-color: #0d9488; border: none; font-size: 0.9rem;">
-                    <i data-lucide="plus" class="me-1.5" style="width: 16px; height: 16px;"></i> Create Your First Character
-                </a>
-                
-                <a href="#" class="btn btn-outline-secondary rounded-pill px-4 py-2 d-flex align-items-center justify-content-center bg-white border" style="color: #0d9488; font-size: 0.85rem; font-weight: 600; border-color: #e2e8f0 !important;">
-                    <i data-lucide="play-circle" class="me-1.5" style="width: 16px; height: 16px;"></i> Learn How to Create Great Characters
-                </a>
+    <!-- Main Data Container (Table / Grid View) -->
+    @if (!Model.Any())
+    {
+        <!-- Empty State Container -->
+        <div class="bg-white rounded-4 border shadow-sm p-5 text-center d-flex flex-column align-items-center justify-content-center position-relative overflow-hidden" style="min-height: 400px; border-color: #e2e8f0;">
+            <div class="rounded-circle bg-teal-50 p-4 mb-3" style="background-color: rgba(13, 148, 136, 0.08); color: #0d9488;">
+                <i data-lucide="user-x" style="width: 48px; height: 48px;"></i>
             </div>
-            
-            <!-- Need Inspiration Section -->
-            <div class="mb-2">
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <span class="text-warning"><i data-lucide="sparkles" style="width: 20px; height: 20px;"></i></span>
-                    <h5 class="fw-bold text-slate-800 mb-0 font-serif" style="font-size: 16px;">Need Inspiration?</h5>
-                </div>
-                <p class="text-secondary small mb-3">Explore resources to create compelling characters.</p>
-                
-                <div class="d-flex flex-nowrap gap-3 overflow-auto pb-2">
-                    <div class="bg-white rounded-3 p-3 border shadow-sm d-flex align-items-center gap-3 flex-shrink-0" style="border-color: #e2e8f0 !important; width: 220px;">
-                        <div class="text-success p-2 rounded" style="background: rgba(16, 185, 129, 0.1);">
-                            <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold mb-1" style="font-size: 12.5px; color: #1e293b;">Character Templates</h6>
-                            <p class="text-secondary mb-0" style="font-size: 11px; line-height: 1.3;">Use proven templates for your characters</p>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-3 p-3 border shadow-sm d-flex align-items-center gap-3 flex-shrink-0" style="border-color: #e2e8f0 !important; width: 220px;">
-                        <div class="text-warning p-2 rounded" style="background: rgba(245, 158, 11, 0.1);">
-                            <i data-lucide="smile" style="width: 20px; height: 20px;"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold mb-1" style="font-size: 12.5px; color: #1e293b;">Personality Traits</h6>
-                            <p class="text-secondary mb-0" style="font-size: 11px; line-height: 1.3;">Explore traits and characteristics</p>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-3 p-3 border shadow-sm d-flex align-items-center gap-3 flex-shrink-0" style="border-color: #e2e8f0 !important; width: 220px;">
-                        <div class="p-2 rounded" style="background: rgba(217, 119, 6, 0.1); color: #d97706;">
-                            <i data-lucide="map" style="width: 20px; height: 20px;"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold mb-1" style="font-size: 12.5px; color: #1e293b;">Character Arcs</h6>
-                            <p class="text-secondary mb-0" style="font-size: 11px; line-height: 1.3;">Build meaningful character journeys</p>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-3 p-3 border shadow-sm d-flex align-items-center gap-3 flex-shrink-0" style="border-color: #e2e8f0 !important; width: 220px;">
-                        <div class="text-info p-2 rounded" style="background: rgba(14, 165, 233, 0.1);">
-                            <i data-lucide="feather" style="width: 20px; height: 20px;"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold mb-1" style="font-size: 12.5px; color: #1e293b;">Naming Ideas</h6>
-                            <p class="text-secondary mb-0" style="font-size: 11px; line-height: 1.3;">Find the perfect names</p>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-3 p-3 border shadow-sm d-flex align-items-center justify-content-center gap-2 flex-shrink-0" style="border-color: #e2e8f0 !important; width: 180px;">
-                        <div class="d-flex align-items-center gap-2 text-decoration-none" style="color: #0d9488; font-size: 0.85rem; font-weight: 600;">
-                            <i data-lucide="book-open" style="width: 16px; height: 16px;"></i> View All Resources <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
+            <h4 class="fw-bold text-slate-900 mb-2">No characters found</h4>
+            <p class="text-secondary mb-4" style="max-width: 400px;">
+                We couldn't find any characters matching your selected search or filters. Try clearing your filters or create a new character.
+            </p>
+            <a href="@Url.Action("Create", "Characters", new { storyId = selectedStory?.Id })" class="btn btn-teal rounded-3 px-4 py-2 fw-semibold">
+                <i data-lucide="plus" class="me-1" style="width: 16px; height: 16px;"></i> Create Character
+            </a>
         </div>
-        
-        <!-- Right Sidebar Area -->
-        <div class="col-lg-4 col-xl-3">
-            
-            <!-- Character Categories -->
-            <div class="bg-white rounded-4 border shadow-sm p-4 mb-4" style="border-color: #e2e8f0 !important;">
-                <h6 class="font-serif fw-bold text-slate-900 mb-4" style="font-size: 16px;">Character Categories</h6>
-                
-                <ul class="list-unstyled mb-4">
-                    <li class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom" style="border-color: #f1f5f9 !important;">
-                        <div class="d-flex align-items-center gap-2" style="font-size: 0.85rem; font-weight: 600; color: #334155;">
-                            <i data-lucide="crown" class="text-success" style="width: 16px; height: 16px;"></i>
-                            Protagonist
-                        </div>
-                        <span class="text-secondary small">0</span>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom" style="border-color: #f1f5f9 !important;">
-                        <div class="d-flex align-items-center gap-2" style="font-size: 0.85rem; font-weight: 600; color: #334155;">
-                            <i data-lucide="shield" class="text-danger" style="width: 16px; height: 16px;"></i>
-                            Antagonist
-                        </div>
-                        <span class="text-secondary small">0</span>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom" style="border-color: #f1f5f9 !important;">
-                        <div class="d-flex align-items-center gap-2" style="font-size: 0.85rem; font-weight: 600; color: #334155;">
-                            <i data-lucide="users" class="text-primary" style="width: 16px; height: 16px;"></i>
-                            Supporting
-                        </div>
-                        <span class="text-secondary small">0</span>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom" style="border-color: #f1f5f9 !important;">
-                        <div class="d-flex align-items-center gap-2" style="font-size: 0.85rem; font-weight: 600; color: #334155;">
-                            <i data-lucide="user-check" style="width: 16px; height: 16px; color: #6366f1;"></i>
-                            Mentor
-                        </div>
-                        <span class="text-secondary small">0</span>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom" style="border-color: #f1f5f9 !important;">
-                        <div class="d-flex align-items-center gap-2" style="font-size: 0.85rem; font-weight: 600; color: #334155;">
-                            <i data-lucide="heart" class="text-danger" style="width: 16px; height: 16px;"></i>
-                            Love Interest
-                        </div>
-                        <span class="text-secondary small">0</span>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom" style="border-color: #f1f5f9 !important;">
-                        <div class="d-flex align-items-center gap-2" style="font-size: 0.85rem; font-weight: 600; color: #334155;">
-                            <i data-lucide="link" class="text-info" style="width: 16px; height: 16px;"></i>
-                            Ally
-                        </div>
-                        <span class="text-secondary small">0</span>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="d-flex align-items-center gap-2" style="font-size: 0.85rem; font-weight: 600; color: #334155;">
-                            <i data-lucide="box" class="text-secondary" style="width: 16px; height: 16px;"></i>
-                            Other
-                        </div>
-                        <span class="text-secondary small">0</span>
-                    </li>
-                </ul>
-                
-                <a href="#" class="d-flex align-items-center gap-2 text-decoration-none" style="color: #0d9488; font-size: 0.85rem; font-weight: 600;">
-                    <i data-lucide="settings" style="width: 16px; height: 16px;"></i> Manage Categories
-                </a>
+    }
+    else
+    {
+        <!-- Table View -->
+        <div id="tableViewContainer" class="bg-white rounded-4 border shadow-sm overflow-hidden mb-4" style="border-color: #e2e8f0;">
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>CHARACTER</th>
+                            <th>STORY</th>
+                            <th>ROLE</th>
+                            <th>STATUS</th>
+                            <th>RELATIONSHIPS</th>
+                            <th>UPDATED</th>
+                            <th class="text-end">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model)
+                        {
+                            string arcType = c.ArcType ?? "Supporting";
+                            if (string.IsNullOrEmpty(arcType) && c.Role != null)
+                            {
+                                if (c.Role.Contains("Protagonist") || c.Role.Contains("Antagonist")) arcType = "Main";
+                                else if (c.Role.Contains("Minor") || c.Role.Contains("Authority")) arcType = "Minor";
+                                else arcType = "Supporting";
+                            }
+
+                            string badgeClass = arcType.Equals("Main", StringComparison.OrdinalIgnoreCase) ? "badge-arc-main" :
+                                                arcType.Equals("Supporting", StringComparison.OrdinalIgnoreCase) ? "badge-arc-supporting" : "badge-arc-minor";
+
+                            string statusDotClass = (c.Status ?? "Active").Equals("Active", StringComparison.OrdinalIgnoreCase) ? "status-active" :
+                                                    (c.Status ?? "Draft").Equals("Draft", StringComparison.OrdinalIgnoreCase) ? "status-draft" : "status-archived";
+
+                            var storyObj = c.Story;
+
+                            <!-- Relationship Avatars parsing -->
+                            List<string> relAvatars = new List<string>();
+                            if (!string.IsNullOrWhiteSpace(c.RelationshipsJson) && c.RelationshipsJson.Contains("avatarUrl"))
+                            {
+                                try
+                                {
+                                    using var doc = System.Text.Json.JsonDocument.Parse(c.RelationshipsJson);
+                                    foreach (var elem in doc.RootElement.EnumerateArray())
+                                    {
+                                        if (elem.TryGetProperty("avatarUrl", out var avProp) && !string.IsNullOrEmpty(avProp.GetString()))
+                                        {
+                                            relAvatars.Add(avProp.GetString()!);
+                                        }
+                                    }
+                                }
+                                catch { }
+                            }
+                            if (!relAvatars.Any())
+                            {
+                                // Fallback to other characters in story
+                                relAvatars = allCharacters
+                                    .Where(other => other.Id != c.Id && (other.StoryId == c.StoryId || (other.Story != null && c.Story != null && other.Story.UserId == c.Story.UserId)))
+                                    .Take(4)
+                                    .Select(other => string.IsNullOrEmpty(other.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(other.Name)}" : other.AvatarUrl)
+                                    .ToList();
+                            }
+                            int overflowCount = relAvatars.Count > 2 ? relAvatars.Count - 2 : 0;
+                            var displayAvatars = relAvatars.Take(2).ToList();
+
+                            <tr>
+                                <!-- CHARACTER -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="position-relative flex-shrink-0">
+                                            @if (!string.IsNullOrWhiteSpace(c.AvatarUrl))
+                                            {
+                                                <img src="@c.AvatarUrl" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 48px; height: 48px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
+                                            }
+                                            else
+                                            {
+                                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 48px; height: 48px; object-fit: cover; border: 2px solid #ffffff;" />
+                                            }
+                                            @if (arcType.Equals("Main", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <div class="position-absolute bottom-0 end-0 bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 16px; height: 16px; border: 1.5px solid #ffffff; font-size: 8px;">
+                                                    <i data-lucide="star" style="width: 10px; height: 10px;"></i>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a href="@Url.Action("Details", "Characters", new { id = c.Id })" class="fw-bold text-slate-900 text-decoration-none hover-teal" style="font-size: 0.95rem;">
+                                                    @c.Name
+                                                </a>
+                                                <span class="@badgeClass">@arcType</span>
+                                            </div>
+                                            <p class="text-secondary mb-0 text-truncate" style="font-size: 0.825rem; max-width: 280px; color: #64748b;">
+                                                @(string.IsNullOrWhiteSpace(c.OneLineDescription) ? "No description provided." : c.OneLineDescription)
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- STORY -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-2.5">
+                                        @if (storyObj != null && !string.IsNullOrWhiteSpace(storyObj.CoverImageUrl))
+                                        {
+                                            <img src="@storyObj.CoverImageUrl" alt="@storyObj.Title" class="rounded-2 shadow-xs flex-shrink-0" style="width: 38px; height: 38px; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&auto=format&fit=crop&q=80';" />
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-2 bg-slate-100 d-flex align-items-center justify-content-center flex-shrink-0 text-teal" style="width: 38px; height: 38px; color: #0d9488;">
+                                                <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <span class="fw-bold d-block text-slate-900" style="font-size: 0.875rem;">
+                                                @(storyObj?.Title ?? "Unassigned Story")
+                                            </span>
+                                            <span class="text-muted d-block" style="font-size: 0.775rem;">
+                                                @(storyObj?.Genre ?? "Fiction")
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- ROLE -->
+                                <td>
+                                    <span class="fw-semibold text-slate-800" style="font-size: 0.875rem;">
+                                        @(string.IsNullOrWhiteSpace(c.Role) ? "Character" : c.Role)
+                                    </span>
+                                </td>
+
+                                <!-- STATUS -->
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="status-dot @statusDotClass"></span>
+                                        <span class="fw-medium text-slate-700" style="font-size: 0.85rem;">
+                                            @(c.Status ?? "Active")
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- RELATIONSHIPS -->
+                                <td>
+                                    <div class="avatar-stack">
+                                        @foreach (var av in displayAvatars)
+                                        {
+                                            <img src="@av" alt="Related Character" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Rel';" />
+                                        }
+                                        @if (overflowCount > 0)
+                                        {
+                                            <div class="avatar-more-badge">+@overflowCount</div>
+                                        }
+                                        else if (!displayAvatars.Any())
+                                        {
+                                            <span class="text-muted small">&mdash;</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <!-- UPDATED -->
+                                <td>
+                                    <span class="text-secondary" style="font-size: 0.85rem;">
+                                        @GetRelativeTime(c.UpdatedAt)
+                                    </span>
+                                </td>
+
+                                <!-- ACTIONS -->
+                                <td class="text-end">
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <a href="@Url.Action("Edit", "Characters", new { id = c.Id })" class="action-btn" title="Edit Character">
+                                            <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
+                                        </a>
+
+                                        <div class="dropdown">
+                                            <button class="action-btn dropdown-toggle no-arrow" type="button" data-bs-toggle="dropdown">
+                                                <i data-lucide="more-vertical" style="width: 16px; height: 16px;"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2" style="min-width: 160px; font-size: 0.85rem;">
+                                                <li>
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="@Url.Action("Details", "Characters", new { id = c.Id })">
+                                                        <i data-lucide="eye" style="width: 15px; height: 15px; color: #64748b;"></i> View Details
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="@Url.Action("Edit", "Characters", new { id = c.Id })">
+                                                        <i data-lucide="edit-3" style="width: 15px; height: 15px; color: #64748b;"></i> Edit Character
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <li>
+                                                    <form method="post" action="@Url.Action("Delete", "Characters", new { id = c.Id })" onsubmit="return confirm('Are you sure you want to delete @c.Name?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 py-1.5 border-0 bg-transparent">
+                                                            <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-            
-            <!-- Writing Tip -->
-            <div class="bg-white rounded-4 border shadow-sm p-4" style="border-color: #e2e8f0 !important;">
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <i data-lucide="lightbulb" style="width: 18px; height: 18px; color: #475569;"></i>
-                    <h6 class="font-serif fw-bold text-slate-900 mb-0" style="font-size: 16px;">Writing Tip</h6>
-                </div>
-                
-                <div class="position-relative mb-4 mt-2">
-                    <p class="text-secondary fst-italic mb-0" style="font-size: 0.9rem; line-height: 1.6; position: relative; z-index: 1;">
-                        <span class="fw-bold fs-3 text-secondary opacity-25 me-1" style="line-height: 0;">&ldquo;</span>
-                        Great characters are the heartbeat of unforgettable stories. Give them depth, flaws, and dreams. Make them real.
-                        <span class="fw-bold fs-3 text-secondary opacity-25 ms-1 position-absolute" style="line-height: 0; bottom: -5px;">&rdquo;</span>
-                    </p>
-                </div>
-                
-                <div class="text-end mt-2">
-                    <a href="#" class="d-inline-flex align-items-center gap-1 text-decoration-none" style="color: #0d9488; font-size: 0.85rem; font-weight: 600;">
-                        <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh Tip
-                    </a>
-                </div>
-            </div>
-            
         </div>
-    </div>
+
+        <!-- Grid View (Hidden by default, toggled via JS) -->
+        <div id="gridViewContainer" class="row g-3 mb-4 d-none">
+            @foreach (var c in Model)
+            {
+                string arcType = c.ArcType ?? "Supporting";
+                if (string.IsNullOrEmpty(arcType) && c.Role != null)
+                {
+                    if (c.Role.Contains("Protagonist") || c.Role.Contains("Antagonist")) arcType = "Main";
+                    else if (c.Role.Contains("Minor") || c.Role.Contains("Authority")) arcType = "Minor";
+                    else arcType = "Supporting";
+                }
+
+                string badgeClass = arcType.Equals("Main", StringComparison.OrdinalIgnoreCase) ? "badge-arc-main" :
+                                    arcType.Equals("Supporting", StringComparison.OrdinalIgnoreCase) ? "badge-arc-supporting" : "badge-arc-minor";
+
+                var storyObj = c.Story;
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="bg-white rounded-4 border shadow-sm p-4 h-100 d-flex flex-column justify-content-between" style="border-color: #e2e8f0;">
+                        <div>
+                            <div class="d-flex align-items-start justify-content-between mb-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="@(string.IsNullOrWhiteSpace(c.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(c.Name)}" : c.AvatarUrl)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 56px; height: 56px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
+                                    <div>
+                                        <h5 class="fw-bold text-slate-900 mb-1" style="font-size: 1.05rem;">@c.Name</h5>
+                                        <span class="@badgeClass">@arcType</span>
+                                    </div>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="action-btn border-0 shadow-none dropdown-toggle no-arrow" type="button" data-bs-toggle="dropdown">
+                                        <i data-lucide="more-vertical" style="width: 16px; height: 16px;"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2">
+                                        <li><a class="dropdown-item" href="@Url.Action("Details", "Characters", new { id = c.Id })">View Details</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Characters", new { id = c.Id })">Edit</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <p class="text-secondary small mb-3 line-clamp-2" style="line-height: 1.5;">
+                                @(string.IsNullOrWhiteSpace(c.OneLineDescription) ? "No description available." : c.OneLineDescription)
+                            </p>
+                        </div>
+
+                        <div class="pt-3 border-top d-flex align-items-center justify-content-between text-muted small" style="border-color: #f1f5f9;">
+                            <span class="d-flex align-items-center gap-1.5">
+                                <i data-lucide="book-open" style="width: 14px; height: 14px; color: #0d9488;"></i>
+                                @(storyObj?.Title ?? "Unassigned")
+                            </span>
+                            <span>@GetRelativeTime(c.UpdatedAt)</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Table Footer / Pagination -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white p-3 rounded-3 border shadow-sm" style="border-color: #e2e8f0;">
+            <div class="text-secondary small">
+                Showing <strong>1</strong> to <strong>@Model.Count()</strong> of <strong>@totalCount</strong> characters
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled"><a class="page-link border-0 text-muted" href="#"><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i></a></li>
+                        <li class="page-item active"><a class="page-link rounded-2 border-0 bg-teal text-white" style="background-color: #0d9488;" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link rounded-2 border-0 text-slate-700" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link rounded-2 border-0 text-slate-700" href="#">3</a></li>
+                        <li class="page-item disabled"><span class="page-link border-0 text-muted">&hellip;</span></li>
+                        <li class="page-item"><a class="page-link rounded-2 border-0 text-slate-700" href="#">5</a></li>
+                        <li class="page-item"><a class="page-link border-0 text-slate-700" href="#"><i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></a></li>
+                    </ul>
+                </nav>
+
+                <div class="d-flex align-items-center gap-1 text-secondary small">
+                    <select class="form-select form-select-sm border-0 bg-slate-100 text-slate-700 rounded-2" style="font-size: 0.8rem;">
+                        <option>10 / page</option>
+                        <option>25 / page</option>
+                        <option>50 / page</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    }
+
 </div>
 
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            const btnTable = document.getElementById("btnTableView");
+            const btnGrid = document.getElementById("btnGridView");
+            const tableContainer = document.getElementById("tableViewContainer");
+            const gridContainer = document.getElementById("gridViewContainer");
+
+            if (btnTable && btnGrid && tableContainer && gridContainer) {
+                btnTable.addEventListener("click", function () {
+                    tableContainer.classList.remove("d-none");
+                    gridContainer.classList.add("d-none");
+
+                    btnTable.classList.add("bg-white", "shadow-sm");
+                    btnTable.style.color = "#0d9488";
+
+                    btnGrid.classList.remove("bg-white", "shadow-sm");
+                    btnGrid.style.color = "#64748b";
+                });
+
+                btnGrid.addEventListener("click", function () {
+                    gridContainer.classList.remove("d-none");
+                    tableContainer.classList.add("d-none");
+
+                    btnGrid.classList.add("bg-white", "shadow-sm");
+                    btnGrid.style.color = "#0d9488";
+
+                    btnTable.classList.remove("bg-white", "shadow-sm");
+                    btnTable.style.color = "#64748b";
+                });
+            }
+        });
+    </script>
+}

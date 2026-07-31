@@ -79,6 +79,76 @@
                         </div>
                     </div>
 
+                    @if (!string.IsNullOrEmpty(Model.PersonalityTraits) || !string.IsNullOrEmpty(Model.PersonalityOverview) || !string.IsNullOrEmpty(Model.Motivations))
+                    {
+                        <div class="bg-white p-4 rounded-4 border">
+                            <h6 class="fw-bold text-peacock mb-3 small text-uppercase tracking-wider">Personality Profile</h6>
+                            <div class="row g-3" style="font-size: 13px;">
+                                @if (!string.IsNullOrEmpty(Model.PersonalityTraits))
+                                {
+                                    <div class="col-12">
+                                        <span class="text-muted d-block mb-1">Core Traits</span>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var trait in Model.PersonalityTraits.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                            {
+                                                <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-pill">@trait.Trim()</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.Temperament))
+                                {
+                                    <div class="col-md-6">
+                                        <span class="text-muted d-block mb-1">Temperament</span>
+                                        <span class="fw-bold">@Model.Temperament</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.ValuesBeliefs))
+                                {
+                                    <div class="col-md-6">
+                                        <span class="text-muted d-block mb-1">Values & Beliefs</span>
+                                        <span class="fw-bold">@Model.ValuesBeliefs</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.PersonalityOverview))
+                                {
+                                    <div class="col-12 mt-2">
+                                        <span class="text-muted d-block mb-1">Personality Overview</span>
+                                        <p class="text-slate-700 mb-0">@Model.PersonalityOverview</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.Motivations))
+                                {
+                                    <div class="col-md-6 mt-2">
+                                        <span class="text-muted d-block mb-1">Motivations</span>
+                                        <p class="text-slate-700 mb-0">@Model.Motivations</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.Strengths))
+                                {
+                                    <div class="col-md-6 mt-2">
+                                        <span class="text-muted d-block mb-1">Strengths</span>
+                                        <p class="text-slate-700 mb-0">@Model.Strengths</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.Flaws))
+                                {
+                                    <div class="col-md-6 mt-2">
+                                        <span class="text-muted d-block mb-1">Flaws</span>
+                                        <p class="text-slate-700 mb-0">@Model.Flaws</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.Fears))
+                                {
+                                    <div class="col-md-6 mt-2">
+                                        <span class="text-muted d-block mb-1">Greatest Fear</span>
+                                        <p class="text-slate-700 mb-0">@Model.Fears</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
                     <div class="p-4 bg-gradient-to-r from-light to-white rounded-4 border">
                         <h6 class="fw-bold text-secondary mb-2 small text-uppercase tracking-wider">Narrative Goals</h6>
                         <p class="text-muted italic mb-0" style="font-size: 13px;">
