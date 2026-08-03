@@ -1,46 +1,153 @@
 @model StoryVerse.Core.Entities.Character
 @{
-    var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
+    var stories = ViewBag.Stories as List<StoryVerse.Core.Entities.Story> ?? new List<StoryVerse.Core.Entities.Story>();
     ViewData["Title"] = $"Edit Character - {Model.Name}";
 }
 
-<div class="w-full pb-5 relative z-10 font-sans text-slate-800">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Back arrow -->
-            <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="text-secondary text-decoration-none d-inline-flex align-items-center mb-4 small fw-semibold hover-lift-subtle" style="color: var(--forest-green-dark);">
-                <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Back to Cast
-            </a>
+<style>
+    .edit-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+        padding: 2.25rem;
+    }
+    .form-label-custom {
+        font-size: 0.825rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+    .form-control-custom, .form-select-custom {
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0.65rem 0.9rem;
+        font-size: 0.88rem;
+        color: #0f172a;
+        background-color: #ffffff;
+        transition: all 0.2s ease;
+    }
+    .form-control-custom:focus, .form-select-custom:focus {
+        border-color: #0d9488;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+        outline: none;
+    }
+    .btn-teal {
+        background-color: #0d9488;
+        color: #ffffff;
+        border: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .btn-teal:hover {
+        background-color: #0f766e;
+        color: #ffffff;
+    }
+</style>
 
-            <div class="dashboard-glass-panel p-5" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <h3 class="font-serif fw-bold text-peacock-dark mb-2">Edit Character Info</h3>
-                <p class="text-secondary small mb-4">Modify character details and roles.</p>
+<div class="container py-4" style="max-width: 800px;">
+    <!-- Back button -->
+    <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="text-secondary text-decoration-none d-inline-flex align-items-center mb-4 small fw-semibold">
+        <i data-lucide="arrow-left" class="me-2" style="width: 16px; height: 16px; color: #0d9488;"></i> Back to Characters List
+    </a>
 
-                <form asp-action="Edit" method="post" class="needs-validation" novalidate>
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" asp-for="Id" />
-                    <input type="hidden" asp-for="StoryId" />
-                    <input type="hidden" asp-for="CreatedAt" />
-
-                    <div class="mb-4">
-                        <label asp-for="Name" class="form-label fw-bold text-slate-700 small text-uppercase tracking-wider">Character Name</label>
-                        <input asp-for="Name" class="form-control rounded-3 border-slate-200 py-2.5 px-3" required />
-                        <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
-                    </div>
-
-                    <div class="mb-4">
-                        <label asp-for="Role" class="form-label fw-bold text-slate-700 small text-uppercase tracking-wider">Role / Archetype</label>
-                        <input asp-for="Role" class="form-control rounded-3 border-slate-200 py-2.5 px-3" required />
-                        <span asp-validation-for="Role" class="text-danger small mt-1 d-block"></span>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-3 mt-5">
-                        <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="btn btn-outline-secondary rounded-pill px-4" style="border-color: var(--parchment-border) !important;">Cancel</a>
-                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold shadow-xs hover-lift-subtle" 
-                                style="background: var(--peacock-gradient); border: none;">Save Changes</button>
-                    </div>
-                </form>
+    <div class="edit-card">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <img src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(Model.Name)}" : Model.AvatarUrl)" alt="@Model.Name" class="rounded-circle shadow-sm" style="width: 64px; height: 64px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(Model.Name)';" />
+            <div>
+                <h3 class="fw-bold text-slate-900 mb-1" style="font-family: Georgia, serif;">Edit @Model.Name</h3>
+                <p class="text-secondary mb-0 small">Update character profile, story assignment, and role details.</p>
             </div>
         </div>
+
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreatedAt" />
+
+            <div class="row g-3 mb-3">
+                <!-- Character Name -->
+                <div class="col-12 col-md-6">
+                    <label asp-for="Name" class="form-label-custom">Character Name <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control form-control-custom" placeholder="e.g. Alaric Vayne" required />
+                    <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <!-- Story Assignment -->
+                <div class="col-12 col-md-6">
+                    <label asp-for="StoryId" class="form-label-custom">Story Assignment <span class="text-danger">*</span></label>
+                    <select asp-for="StoryId" class="form-select form-select-custom" required>
+                        @foreach (var s in stories)
+                        {
+                            <option value="@s.Id" selected="@(Model.StoryId == s.Id)">@s.Title</option>
+                        }
+                    </select>
+                    <span asp-validation-for="StoryId" class="text-danger small mt-1 d-block"></span>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <!-- Role -->
+                <div class="col-12 col-md-4">
+                    <label asp-for="Role" class="form-label-custom">Role / Archetype <span class="text-danger">*</span></label>
+                    <input asp-for="Role" class="form-control form-control-custom" placeholder="e.g. Protagonist, Mentor" required />
+                    <span asp-validation-for="Role" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <!-- Character Arc Type -->
+                <div class="col-12 col-md-4">
+                    <label asp-for="ArcType" class="form-label-custom">Character Arc Type</label>
+                    <select asp-for="ArcType" class="form-select form-select-custom">
+                        <option value="Main" selected="@(Model.ArcType == "Main")">Main (Protagonist / Antagonist)</option>
+                        <option value="Supporting" selected="@(Model.ArcType == "Supporting")">Supporting (Secondary Role)</option>
+                        <option value="Minor" selected="@(Model.ArcType == "Minor")">Minor (Background / Cameo)</option>
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div class="col-12 col-md-4">
+                    <label asp-for="Status" class="form-label-custom">Character Status</label>
+                    <select asp-for="Status" class="form-select form-select-custom">
+                        <option value="Active" selected="@(Model.Status == "Active")">Active</option>
+                        <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                        <option value="Archived" selected="@(Model.Status == "Archived")">Archived</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Avatar URL -->
+            <div class="mb-3">
+                <label asp-for="AvatarUrl" class="form-label-custom">Avatar Image URL</label>
+                <input asp-for="AvatarUrl" class="form-control form-control-custom" placeholder="https://example.com/image.jpg" />
+                <span class="text-muted small">Enter an image URL or upload via portrait manager.</span>
+            </div>
+
+            <!-- One-Line Description -->
+            <div class="mb-3">
+                <label asp-for="OneLineDescription" class="form-label-custom">One-Line Hook / Description</label>
+                <input asp-for="OneLineDescription" class="form-control form-control-custom" placeholder="e.g. A loyal warrior torn between duty and destiny." maxlength="250" />
+            </div>
+
+            <!-- Background Summary -->
+            <div class="mb-4">
+                <label asp-for="BackgroundSummary" class="form-label-custom">Background Summary / Notes</label>
+                <textarea asp-for="BackgroundSummary" class="form-control form-control-custom" rows="3" placeholder="Brief notes about the character's backstory, goals, or traits..."></textarea>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-end gap-3 pt-3 border-top" style="border-color: #f1f5f9;">
+                <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="btn btn-light border px-4 py-2 rounded-3 text-slate-700">Cancel</a>
+                <button type="submit" class="btn btn-teal px-4 py-2 rounded-3">Save Changes</button>
+            </div>
+        </form>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+}

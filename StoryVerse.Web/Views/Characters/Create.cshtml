@@ -928,6 +928,25 @@
             color: #334155;
             line-height: 1.4;
         }
+
+        /* Utility classes for text, background, and borders */
+        .text-slate-400 { color: #94A3B8 !important; }
+        .text-slate-500 { color: #64748B !important; }
+        .text-slate-600 { color: #475569 !important; }
+        .text-slate-700 { color: #334155 !important; }
+        .text-slate-800 { color: #1E293B !important; }
+        .text-slate-900 { color: #0F172A !important; }
+
+        .bg-slate-50 { background-color: #F8FAFC !important; }
+        .bg-slate-100 { background-color: #F1F5F9 !important; }
+        .bg-slate-200 { background-color: #E2E8F0 !important; }
+        .border-slate-200 { border-color: #E2E8F0 !important; }
+
+        .text-teal-600 { color: #0D9488 !important; }
+        .text-teal-700 { color: #0F766E !important; }
+        .text-teal-800 { color: #115E59 !important; }
+        .text-teal-900 { color: #134E4A !important; }
+        .bg-teal-subtle { background-color: #CCFBF1 !important; }
     </style>
 }
 
@@ -1009,9 +1028,9 @@
     </div>
 
     <!-- Layout Grid: Main Form (Left) & Sidebar Cards (Right) -->
-    <div class="row g-4">
+    <div class="row g-4 align-items-start">
         <!-- Main Form Column -->
-        <div class="col-12 col-md-7 col-lg-8">
+        <div class="col-12 col-lg-7 col-xl-8" style="min-width: 0;">
             <div class="glass-form-card">
                 <form id="characterForm" asp-action="Create" method="post" class="needs-validation" novalidate>
                     @Html.AntiForgeryToken()
@@ -1479,7 +1498,11 @@
                                                 <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748B;"></i>
                                             </div>
                                             <div class="theme-dropdown-menu">
-                                                <div class="theme-dropdown-option" onclick="selectThemeOption('EyeColor', 'Blue / Azure', 'Blue / Azure', 'dd-eyecolor-trigger-text', 'dd-eyecolor-wrapper')">
+                                                <div class="theme-dropdown-option" onclick="selectThemeOption('EyeColor', 'Black / Obsidian', 'Black / Obsidian', 'dd-eyecolor-trigger-text', 'dd-eyecolor-wrapper')">
+                                                     <div class="option-title">Black / Obsidian</div>
+                                                     <div class="option-desc">Deep black, obsidian, or jet black.</div>
+                                                 </div>
+                                                 <div class="theme-dropdown-option" onclick="selectThemeOption('EyeColor', 'Blue / Azure', 'Blue / Azure', 'dd-eyecolor-trigger-text', 'dd-eyecolor-wrapper')">
                                                     <div class="option-title">Blue / Azure</div>
                                                     <div class="option-desc">Deep ocean blue, ice blue, or sapphire.</div>
                                                 </div>
@@ -1977,7 +2000,7 @@
                                 <label class="form-label-custom">
                                     Place of Birth <span class="text-danger">*</span>
                                 </label>
-                                <p class="text-slate-500 mb-1" style="font-size: 0.75rem;">Where was your character born?</p>
+                                <p class="text-slate-500 mb-1" style="font-size: 0.75rem;">Select from World or type custom location</p>
                                 
                                 <div class="theme-dropdown-wrapper" id="dd-pob-wrapper">
                                     <div class="input-group">
@@ -1991,7 +2014,22 @@
                                             <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748B;"></i>
                                         </button>
                                     </div>
-                                    <div class="theme-dropdown-menu" style="max-height: 220px; overflow-y: auto;">
+                                    <div class="theme-dropdown-menu" id="dd-pob-menu" style="max-height: 220px; overflow-y: auto;">
+                                        @{
+                                            var worldLocs = ViewBag.WorldLocations as List<StoryVerse.Core.Entities.Location> ?? new List<StoryVerse.Core.Entities.Location>();
+                                        }
+                                        @if (worldLocs.Any())
+                                        {
+                                            <div class="dropdown-header small text-uppercase text-teal-600 fw-bold px-3 py-1 bg-slate-50">World Locations</div>
+                                            @foreach (var loc in worldLocs)
+                                            {
+                                                <div class="theme-dropdown-option" onclick="selectLocationOption('PlaceOfBirthInput', 'PlaceOfBirth', '@loc.Name', 'dd-pob-wrapper')">
+                                                    <div class="option-title"><i data-lucide="globe" style="width:13px; height:13px;" class="me-1 text-teal-600"></i>@loc.Name</div>
+                                                    <div class="option-desc">World location in @(story?.Title ?? "World")</div>
+                                                </div>
+                                            }
+                                            <div class="dropdown-divider my-1"></div>
+                                        }
                                         <div class="theme-dropdown-option" onclick="selectLocationOption('PlaceOfBirthInput', 'PlaceOfBirth', 'High Citadel of Arcanis', 'dd-pob-wrapper')">
                                             <div class="option-title">High Citadel of Arcanis</div>
                                             <div class="option-desc">Majestic mountain spire & royal seat of magic.</div>
@@ -2040,14 +2078,34 @@
                             <!-- Field 3: Nationality -->
                             <div class="col-md-4">
                                 <label class="form-label-custom">Nationality</label>
-                                <p class="text-slate-500 mb-1" style="font-size: 0.75rem;">What is their nationality?</p>
+                                <p class="text-slate-500 mb-1" style="font-size: 0.75rem;">Select from World or type custom nationality</p>
 
                                 <div class="theme-dropdown-wrapper" id="dd-nationality-wrapper">
-                                    <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-nationality-wrapper')">
-                                        <span id="dd-nationality-trigger-text">Select nationality</span>
-                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748B;"></i>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0 text-slate-400 rounded-start-2" style="border-color: #CBD5E1;">
+                                            <i data-lucide="globe" style="width: 16px; height: 16px; color: #64748B;"></i>
+                                        </span>
+                                        <input type="text" id="NationalityInput" class="form-control form-control-custom border-start-0 ps-0" 
+                                               placeholder="Select or type nationality" oninput="syncNationality(this.value); checkBackgroundChecklist();" 
+                                               onclick="toggleDropdown('dd-nationality-wrapper')" />
+                                        <button class="btn btn-outline-secondary border border-start-0 bg-white" type="button" onclick="toggleDropdown('dd-nationality-wrapper')">
+                                            <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748B;"></i>
+                                        </button>
                                     </div>
-                                    <div class="theme-dropdown-menu" style="max-height: 220px; overflow-y: auto;">
+                                    <div class="theme-dropdown-menu" id="dd-nationality-menu" style="max-height: 220px; overflow-y: auto;">
+                                        @if (worldLocs.Any())
+                                        {
+                                            <div class="dropdown-header small text-uppercase text-teal-600 fw-bold px-3 py-1 bg-slate-50">World Realms & Nations</div>
+                                            @foreach (var loc in worldLocs)
+                                            {
+                                                <div class="theme-dropdown-option" onclick="selectNationalityOption('@loc.Name', '@loc.Name', 'dd-nationality-wrapper')">
+                                                    <div class="option-title"><i data-lucide="shield" style="width:13px; height:13px;" class="me-1 text-teal-600"></i>@loc.Name</div>
+                                                    <div class="option-desc">Realm / World nation in @(story?.Title ?? "World")</div>
+                                                </div>
+                                            }
+                                            <div class="dropdown-divider my-1"></div>
+                                        }
+                                        <div class="dropdown-header small text-uppercase text-muted fw-bold px-3 py-1">Standard Nationalities</div>
                                         <div class="theme-dropdown-option" onclick="selectNationalityOption('Valorian', 'Valorian (Kingdom of Light)', 'dd-nationality-wrapper')">
                                             <div class="option-title">Valorian</div>
                                             <div class="option-desc">Proud citizen of the noble realm of chivalry and light.</div>
@@ -2184,16 +2242,29 @@
                                 <div class="theme-dropdown-wrapper" id="dd-residence-wrapper">
                                     <div class="input-group">
                                         <span class="input-group-text bg-white border-end-0 text-slate-400 rounded-start-2" style="border-color: #CBD5E1;">
-                                            <i data-lucide="map-pin" style="width: 16px; height: 16px; color: #64748B;"></i>
+                                            <i data-lucide="home" style="width: 16px; height: 16px; color: #64748B;"></i>
                                         </span>
                                         <input type="text" id="CurrentResidenceInput" class="form-control form-control-custom border-start-0 ps-0" 
-                                               placeholder="Select or type a location" oninput="syncCurrentResidence(this.value); checkBackgroundChecklist();" 
+                                               placeholder="Select from World or type residence" oninput="syncCurrentResidence(this.value); checkBackgroundChecklist();" 
                                                onclick="toggleDropdown('dd-residence-wrapper')" />
                                         <button class="btn btn-outline-secondary border border-start-0 bg-white" type="button" onclick="toggleDropdown('dd-residence-wrapper')">
                                             <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748B;"></i>
                                         </button>
                                     </div>
-                                    <div class="theme-dropdown-menu" style="max-height: 220px; overflow-y: auto;">
+                                    <div class="theme-dropdown-menu" id="dd-residence-menu" style="max-height: 220px; overflow-y: auto;">
+                                        @if (worldLocs.Any())
+                                        {
+                                            <div class="dropdown-header small text-uppercase text-teal-600 fw-bold px-3 py-1 bg-slate-50">World Residences & Cities</div>
+                                            @foreach (var loc in worldLocs)
+                                            {
+                                                <div class="theme-dropdown-option" onclick="selectLocationOption('CurrentResidenceInput', 'CurrentResidence', '@loc.Name', 'dd-residence-wrapper')">
+                                                    <div class="option-title"><i data-lucide="home" style="width:13px; height:13px;" class="me-1 text-teal-600"></i>@loc.Name</div>
+                                                    <div class="option-desc">World residence in @(story?.Title ?? "World")</div>
+                                                </div>
+                                            }
+                                            <div class="dropdown-divider my-1"></div>
+                                        }
+                                        <div class="dropdown-header small text-uppercase text-muted fw-bold px-3 py-1">Sample Residences</div>
                                         <div class="theme-dropdown-option" onclick="selectLocationOption('CurrentResidenceInput', 'CurrentResidence', 'High Citadel of Arcanis', 'dd-residence-wrapper')">
                                             <div class="option-title">High Citadel of Arcanis</div>
                                             <div class="option-desc">Spire quarters in the royal capital.</div>
@@ -2301,7 +2372,7 @@
                                 </button>
                             </div>
 
-                            <div class="rel-table-container mb-4">
+                            <div class="rel-table-container table-responsive mb-4">
                                 <table class="rel-table">
                                     <thead>
                                         <tr>
@@ -2460,10 +2531,10 @@
                             </span>
                         </div>
 
-                        <!-- 6 Cards Grid (3 Columns x 2 Rows Layout matching screenshot) -->
+                        <!-- 6 Cards Grid (2 Columns x 3 Rows Layout) -->
                         <div class="row g-3">
                             <!-- Card 1: Basic Information -->
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-6">
                                 <div class="review-section-card">
                                     <div class="review-card-header">
                                         <span class="review-card-title">Basic Information</span>
@@ -2474,7 +2545,8 @@
                                     <div class="mb-3 p-2 rounded-3 d-flex align-items-center gap-2" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
                                         <i data-lucide="book-open" style="width: 15px; height: 15px; color: #13A8A6;" class="flex-shrink-0"></i>
                                         <div class="flex-grow-1 overflow-hidden">
-                                            <div class="text-slate-500" style="font-size: 0.68rem; font-weight: 600;">Belongs to Story</div                                             <div id="rev-story-title" class="fw-bold text-slate-800 text-truncate" style="font-size: 0.8rem;">Select Story</div>
+                                            <div class="text-slate-500" style="font-size: 0.68rem; font-weight: 600;">Belongs to Story</div>
+                                            <div id="rev-story-title" class="fw-bold text-slate-800 text-truncate" style="font-size: 0.8rem;">Select Story</div>
                                         </div>
                                     </div>
                                     <div class="row g-2 mb-2">
@@ -2533,7 +2605,7 @@
                             </div>
 
                             <!-- Card 2: Appearance -->
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-6">
                                 <div class="review-section-card">
                                     <div class="review-card-header">
                                         <span class="review-card-title">Appearance</span>
@@ -2596,7 +2668,7 @@
                             </div>
 
                             <!-- Card 3: Personality -->
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-6">
                                 <div class="review-section-card">
                                     <div class="review-card-header">
                                         <span class="review-card-title">Personality</span>
@@ -2642,7 +2714,7 @@
                             </div>
 
                             <!-- Card 4: Background -->
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-6">
                                 <div class="review-section-card">
                                     <div class="review-card-header">
                                         <span class="review-card-title">Background</span>
@@ -2691,7 +2763,7 @@
                             </div>
 
                             <!-- Card 5: Relationships -->
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-6">
                                 <div class="review-section-card">
                                     <div class="review-card-header">
                                         <span class="review-card-title">Relationships</span>
@@ -2713,7 +2785,7 @@
                             </div>
 
                             <!-- Card 6: Additional Notes & Lore Uploads -->
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-6">
                                 <div class="review-section-card">
                                     <div class="review-card-header">
                                         <span class="review-card-title">Additional Notes</span>
@@ -2734,7 +2806,7 @@
                                         <div id="rev-tags-list" class="d-flex flex-wrap gap-1">
                                             <span class="text-muted small">No tags</span>
                                         </div>
-                                    </div>v>
+                                    </div>
 
                                     <div class="mb-3 pt-2 border-top">
                                         <div class="review-prop-label mb-2">Custom Fields & Theme</div>
@@ -2789,7 +2861,7 @@
         </div>
 
         <!-- Sidebar Right Column: Live Preview & Guidance -->
-        <div class="col-12 col-md-5 col-lg-4">
+        <div class="col-12 col-lg-5 col-xl-4">
             <div class="sticky-top" style="top: 1.5rem; z-index: 5;">
                 <!-- Card 1: Live Preview -->
                 <div class="preview-card">
@@ -3303,7 +3375,10 @@
             if (initAge) $('#AgeInputBg').val(initAge);
 
             var initNationality = $('#Nationality').val();
-            if (initNationality) $('#dd-nationality-trigger-text').text(initNationality);
+            if (initNationality) {
+                $('#NationalityInput').val(initNationality);
+                $('#dd-nationality-trigger-text').text(initNationality);
+            }
 
             var initStatus = $('#SocioeconomicStatus').val();
             if (initStatus) $('#dd-status-trigger-text').text(initStatus);
@@ -3354,6 +3429,7 @@
         }
 
         function selectStoryOption(storyId, storyTitle) {
+            loadWorldLocationsForStory(storyId);
             $('#StoryId').val(storyId);
             $('#dd-story-trigger-text').html('<i data-lucide="book" style="width:16px; height:16px; color:#13A8A6;"></i><span>' + storyTitle + '</span>');
             $('#dd-story-wrapper').removeClass('open');

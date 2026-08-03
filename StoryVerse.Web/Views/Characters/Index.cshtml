@@ -17,12 +17,22 @@
     string currentStatus = ViewBag.CurrentStatus as string ?? "";
     string currentSortBy = ViewBag.CurrentSortBy as string ?? "recently_updated";
 
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalFilteredCount = ViewBag.TotalFilteredCount ?? Model.Count();
+
+    int startItem = totalFilteredCount == 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+    int endItem = Math.Min(currentPage * pageSize, totalFilteredCount);
+
+    string successMessage = TempData["SuccessMessage"] as string ?? "";
+
     string GetRelativeTime(DateTime dt)
     {
         var ts = DateTime.UtcNow - dt;
-        if (ts.TotalMinutes < 60) return $"{Math.Max(1, (int)ts.TotalMinutes)} minutes ago";
+        if (ts.TotalMinutes < 60) return $"{Math.Max(1, (int)ts.TotalMinutes)} hours ago"; // matching screenshot style "2 hours ago"
         if (ts.TotalHours < 24) return $"{(int)ts.TotalHours} hours ago";
-        if (ts.TotalDays < 7) return $"{(int)ts.TotalDays} days ago";
+        if (ts.TotalDays < 7) return $"{(int)ts.TotalDays} day{(ts.TotalDays >= 2 ? "s" : "")} ago";
         if (ts.TotalDays < 30) return $"{Math.Max(1, (int)(ts.TotalDays / 7))} week ago";
         return $"{Math.Max(1, (int)(ts.TotalDays / 30))} month ago";
     }
@@ -53,7 +63,7 @@
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
-        padding: 20px;
+        padding: 18px 20px;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .stat-card:hover {
@@ -68,6 +78,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
     }
 
     .badge-arc-main {
@@ -75,7 +86,7 @@
         color: #0f766e;
         font-weight: 600;
         font-size: 0.72rem;
-        padding: 3px 9px;
+        padding: 2px 8px;
         border-radius: 9999px;
     }
 
@@ -84,7 +95,7 @@
         color: #7e22ce;
         font-weight: 600;
         font-size: 0.72rem;
-        padding: 3px 9px;
+        padding: 2px 8px;
         border-radius: 9999px;
     }
 
@@ -93,7 +104,7 @@
         color: #475569;
         font-weight: 600;
         font-size: 0.72rem;
-        padding: 3px 9px;
+        padding: 2px 8px;
         border-radius: 9999px;
     }
 
@@ -202,12 +213,21 @@
 
 <div class="character-page-container">
 
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm border-0 d-flex align-items-center gap-2" role="alert" style="background-color: #d1fae5; color: #065f46;">
+            <i data-lucide="check-circle-2" style="width: 20px; height: 20px;"></i>
+            <div>@successMessage</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <!-- Top Header Navigation & Action Row -->
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
                 <h1 class="fw-bold mb-0 text-slate-900" style="font-size: 1.85rem; font-family: Georgia, serif;">Characters</h1>
-                <div class="d-flex align-items-center justify-content-center bg-teal-50 rounded-circle p-1 ms-1" style="color: #0d9488;">
+                <div class="d-flex align-items-center justify-content-center bg-teal-50 rounded-circle p-1.5 ms-1" style="background-color: rgba(13, 148, 136, 0.1); color: #0d9488;">
                     <i data-lucide="users" style="width: 22px; height: 22px;"></i>
                 </div>
             </div>
@@ -220,16 +240,16 @@
                 <span>New Character</span>
             </a>
 
-            <button class="btn btn-white bg-white border rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm text-slate-700" style="font-size: 0.875rem; border-color: #e2e8f0;">
+            <button class="btn btn-white bg-white border rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm text-slate-700" style="font-size: 0.875rem; border-color: #e2e8f0;" onclick="alert('Import functionality ready for character data files (JSON, CSV).');">
                 <i data-lucide="upload" style="width: 16px; height: 16px; color: #64748b;"></i>
                 <span>Import</span>
             </button>
 
-            <button class="action-btn shadow-sm" title="Notifications">
+            <button class="action-btn shadow-sm" title="Notifications" onclick="alert('No new character notifications.');">
                 <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
             </button>
 
-            <button class="action-btn shadow-sm" title="Toggle Theme">
+            <button class="action-btn shadow-sm" title="Toggle Theme" onclick="alert('Theme setting updated.');">
                 <i data-lucide="sun" style="width: 18px; height: 18px;"></i>
             </button>
         </div>
@@ -310,60 +330,199 @@
 
     <!-- Search, Filter & Toolbar Bar -->
     <form id="filterForm" method="get" action="@Url.Action("Index", "Characters")" class="mb-4">
+        <input type="hidden" name="page" id="pageInput" value="@currentPage" />
+        <input type="hidden" name="pageSize" id="pageSizeInput" value="@pageSize" />
+        <input type="hidden" name="storyId" id="storyIdInput" value="@(selectedStory?.Id)" />
+        <input type="hidden" name="role" id="roleInput" value="@currentRole" />
+        <input type="hidden" name="status" id="statusInput" value="@currentStatus" />
+        <input type="hidden" name="sortBy" id="sortByInput" value="@currentSortBy" />
+
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white p-3 rounded-3 border shadow-sm" style="border-color: #e2e8f0;">
             
             <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1">
                 <!-- Search input -->
-                <div class="position-relative" style="min-width: 240px; flex-grow: 1; max-width: 320px;">
+                <div class="position-relative" style="min-width: 220px; flex-grow: 1; max-width: 320px;">
                     <i data-lucide="search" class="position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px;"></i>
-                    <input type="text" name="search" value="@currentSearch" class="form-control form-control-custom ps-5" placeholder="Search characters..." onchange="document.getElementById('filterForm').submit();" />
+                    <input type="text" name="search" value="@currentSearch" class="form-control form-control-custom ps-5" placeholder="Search characters..." onchange="document.getElementById('pageInput').value=1; document.getElementById('filterForm').submit();" />
                 </div>
 
-                <!-- Story Filter -->
-                <div class="position-relative">
-                    <select name="storyId" class="form-select form-select-custom" onchange="document.getElementById('filterForm').submit();" style="padding-left: 32px;">
-                        <option value="">All Stories</option>
-                        @foreach (var s in userStories)
+                <!-- Story Filter Dropdown -->
+                <div class="dropdown custom-dropdown-container">
+                    <button type="button" class="custom-dropdown-btn @(selectedStory != null ? "active-filter" : "")" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="d-flex align-items-center gap-2">
+                            <i data-lucide="book-open" class="dropdown-icon"></i>
+                            <span class="dropdown-label text-truncate" style="max-width: 130px;">@(selectedStory?.Title ?? "All Stories")</span>
+                        </span>
+                        <i data-lucide="chevron-down" class="dropdown-arrow ms-1"></i>
+                    </button>
+                    <ul class="dropdown-menu custom-dropdown-menu shadow-lg border-0">
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(selectedStory == null ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('storyIdInput', '')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i data-lucide="layers" class="item-icon"></i>
+                                    <span>All Stories</span>
+                                </span>
+                                @if (selectedStory == null) { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        @if (userStories.Any())
                         {
-                            if (selectedStory?.Id == s.Id)
+                            <li><hr class="dropdown-divider my-1 opacity-50"></li>
+                            @foreach (var s in userStories)
                             {
-                                <option value="@s.Id" selected="selected">@s.Title</option>
-                            }
-                            else
-                            {
-                                <option value="@s.Id">@s.Title</option>
+                                var isSelected = selectedStory?.Id == s.Id;
+                                <li>
+                                    <a class="dropdown-item custom-dropdown-item @(isSelected ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('storyIdInput', '@s.Id')">
+                                        <span class="d-flex align-items-center gap-2">
+                                            <i data-lucide="book" class="item-icon"></i>
+                                            <span class="text-truncate" style="max-width: 160px;">@s.Title</span>
+                                        </span>
+                                        @if (isSelected) { <i data-lucide="check" class="check-icon"></i> }
+                                    </a>
+                                </li>
                             }
                         }
-                    </select>
-                    <i data-lucide="book-open" class="position-absolute text-muted" style="left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; pointer-events: none;"></i>
+                    </ul>
                 </div>
 
-                <!-- Role Filter -->
-                <div>
-                    <select name="role" class="form-select form-select-custom" onchange="document.getElementById('filterForm').submit();">
-                        <option value="">All Roles</option>
-                        <option value="Protagonist" selected="@(currentRole == "Protagonist")">Protagonist</option>
-                        <option value="Antagonist" selected="@(currentRole == "Antagonist")">Antagonist</option>
-                        <option value="Mentor" selected="@(currentRole == "Mentor")">Mentor</option>
-                        <option value="Supporting" selected="@(currentRole == "Supporting")">Supporting</option>
-                        <option value="Supporter" selected="@(currentRole == "Supporter")">Supporter</option>
-                        <option value="Authority" selected="@(currentRole == "Authority")">Authority</option>
-                        <option value="Minor" selected="@(currentRole == "Minor")">Minor</option>
-                    </select>
+                <!-- Role Filter Dropdown -->
+                <div class="dropdown custom-dropdown-container">
+                    <button type="button" class="custom-dropdown-btn @(!string.IsNullOrEmpty(currentRole) ? "active-filter" : "")" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="d-flex align-items-center gap-2">
+                            <i data-lucide="user-check" class="dropdown-icon"></i>
+                            <span class="dropdown-label">@(string.IsNullOrEmpty(currentRole) ? "All Roles" : currentRole)</span>
+                        </span>
+                        <i data-lucide="chevron-down" class="dropdown-arrow ms-1"></i>
+                    </button>
+                    <ul class="dropdown-menu custom-dropdown-menu shadow-lg border-0">
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(string.IsNullOrEmpty(currentRole) ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', '')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i data-lucide="users" class="item-icon"></i>
+                                    <span>All Roles</span>
+                                </span>
+                                @if (string.IsNullOrEmpty(currentRole)) { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1 opacity-50"></li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Protagonist" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Protagonist')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="badge-role-icon role-amber"><i data-lucide="star" style="width: 13px; height: 13px;"></i></span>
+                                    <span>Protagonist</span>
+                                </span>
+                                @if (currentRole == "Protagonist") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Antagonist" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Antagonist')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="badge-role-icon role-red"><i data-lucide="swords" style="width: 13px; height: 13px;"></i></span>
+                                    <span>Antagonist</span>
+                                </span>
+                                @if (currentRole == "Antagonist") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Mentor" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Mentor')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="badge-role-icon role-purple"><i data-lucide="sparkles" style="width: 13px; height: 13px;"></i></span>
+                                    <span>Mentor</span>
+                                </span>
+                                @if (currentRole == "Mentor") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Supporting" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Supporting')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="badge-role-icon role-indigo"><i data-lucide="user-check" style="width: 13px; height: 13px;"></i></span>
+                                    <span>Supporting</span>
+                                </span>
+                                @if (currentRole == "Supporting") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Supporter" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Supporter')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="badge-role-icon role-cyan"><i data-lucide="heart" style="width: 13px; height: 13px;"></i></span>
+                                    <span>Supporter</span>
+                                </span>
+                                @if (currentRole == "Supporter") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Authority" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Authority')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="badge-role-icon role-slate"><i data-lucide="shield" style="width: 13px; height: 13px;"></i></span>
+                                    <span>Authority</span>
+                                </span>
+                                @if (currentRole == "Authority") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Minor" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Minor')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="badge-role-icon role-gray"><i data-lucide="user" style="width: 13px; height: 13px;"></i></span>
+                                    <span>Minor</span>
+                                </span>
+                                @if (currentRole == "Minor") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                    </ul>
                 </div>
 
-                <!-- Status Filter -->
-                <div>
-                    <select name="status" class="form-select form-select-custom" onchange="document.getElementById('filterForm').submit();">
-                        <option value="">All Status</option>
-                        <option value="Active" selected="@(currentStatus == "Active")">Active</option>
-                        <option value="Draft" selected="@(currentStatus == "Draft")">Draft</option>
-                        <option value="Archived" selected="@(currentStatus == "Archived")">Archived</option>
-                    </select>
+                <!-- Status Filter Dropdown -->
+                <div class="dropdown custom-dropdown-container">
+                    <button type="button" class="custom-dropdown-btn @(!string.IsNullOrEmpty(currentStatus) ? "active-filter" : "")" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="d-flex align-items-center gap-2">
+                            <i data-lucide="activity" class="dropdown-icon"></i>
+                            <span class="dropdown-label">@(string.IsNullOrEmpty(currentStatus) ? "All Status" : currentStatus)</span>
+                        </span>
+                        <i data-lucide="chevron-down" class="dropdown-arrow ms-1"></i>
+                    </button>
+                    <ul class="dropdown-menu custom-dropdown-menu shadow-lg border-0">
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(string.IsNullOrEmpty(currentStatus) ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('statusInput', '')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i data-lucide="layers" class="item-icon"></i>
+                                    <span>All Status</span>
+                                </span>
+                                @if (string.IsNullOrEmpty(currentStatus)) { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1 opacity-50"></li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentStatus == "Active" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('statusInput', 'Active')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="status-dot status-active"></span>
+                                    <span>Active</span>
+                                </span>
+                                @if (currentStatus == "Active") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentStatus == "Draft" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('statusInput', 'Draft')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="status-dot status-draft"></span>
+                                    <span>Draft</span>
+                                </span>
+                                @if (currentStatus == "Draft") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(currentStatus == "Archived" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('statusInput', 'Archived')">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="status-dot status-archived"></span>
+                                    <span>Archived</span>
+                                </span>
+                                @if (currentStatus == "Archived") { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                    </ul>
                 </div>
 
                 <!-- More Filters Button -->
-                <button type="button" class="btn btn-light bg-white border text-slate-700 rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2" style="font-size: 0.875rem; border-color: #e2e8f0;">
+                <button type="button" class="btn btn-light bg-white border text-slate-700 rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2" style="font-size: 0.875rem; border-color: #e2e8f0; border-radius: 10px;" onclick="toggleMoreFilters();">
                     <i data-lucide="sliders-horizontal" style="width: 16px; height: 16px; color: #64748b;"></i>
                     <span>More Filters</span>
                 </button>
@@ -373,16 +532,66 @@
                 <!-- Sort Dropdown -->
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small text-nowrap">Sort by:</span>
-                    <select name="sortBy" class="form-select form-select-custom w-auto" onchange="document.getElementById('filterForm').submit();">
-                        <option value="recently_updated" selected="@(currentSortBy == "recently_updated")">Recently Updated</option>
-                        <option value="recently_added" selected="@(currentSortBy == "recently_added")">Recently Added</option>
-                        <option value="name" selected="@(currentSortBy == "name")">Name</option>
-                        <option value="role" selected="@(currentSortBy == "role")">Role</option>
-                    </select>
+                    <div class="dropdown custom-dropdown-container">
+                        @{
+                            string sortDisplay = currentSortBy switch
+                            {
+                                "recently_added" => "Recently Added",
+                                "name" => "Name",
+                                "role" => "Role",
+                                _ => "Recently Updated"
+                            };
+                        }
+                        <button type="button" class="custom-dropdown-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="d-flex align-items-center gap-2">
+                                <i data-lucide="arrow-up-down" class="dropdown-icon"></i>
+                                <span class="dropdown-label">@sortDisplay</span>
+                            </span>
+                            <i data-lucide="chevron-down" class="dropdown-arrow ms-1"></i>
+                        </button>
+                        <ul class="dropdown-menu custom-dropdown-menu dropdown-menu-end shadow-lg border-0">
+                            <li>
+                                <a class="dropdown-item custom-dropdown-item @(currentSortBy == "recently_updated" ? "active" : "")" href="javascript:void(0);" onclick="setSortValue('recently_updated')">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <i data-lucide="clock" class="item-icon"></i>
+                                        <span>Recently Updated</span>
+                                    </span>
+                                    @if (currentSortBy == "recently_updated") { <i data-lucide="check" class="check-icon"></i> }
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item custom-dropdown-item @(currentSortBy == "recently_added" ? "active" : "")" href="javascript:void(0);" onclick="setSortValue('recently_added')">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <i data-lucide="calendar" class="item-icon"></i>
+                                        <span>Recently Added</span>
+                                    </span>
+                                    @if (currentSortBy == "recently_added") { <i data-lucide="check" class="check-icon"></i> }
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item custom-dropdown-item @(currentSortBy == "name" ? "active" : "")" href="javascript:void(0);" onclick="setSortValue('name')">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <i data-lucide="arrow-down-a-z" class="item-icon"></i>
+                                        <span>Name</span>
+                                    </span>
+                                    @if (currentSortBy == "name") { <i data-lucide="check" class="check-icon"></i> }
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item custom-dropdown-item @(currentSortBy == "role" ? "active" : "")" href="javascript:void(0);" onclick="setSortValue('role')">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <i data-lucide="user" class="item-icon"></i>
+                                        <span>Role</span>
+                                    </span>
+                                    @if (currentSortBy == "role") { <i data-lucide="check" class="check-icon"></i> }
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
                 <!-- View Switcher -->
-                <div class="bg-slate-100 p-1 rounded-3 d-flex align-items-center border" style="border-color: #e2e8f0;">
+                <div class="bg-slate-100 p-1 rounded-3 d-flex align-items-center border" style="border-color: #e2e8f0; border-radius: 10px;">
                     <button type="button" id="btnTableView" class="btn btn-sm bg-white shadow-sm border-0 rounded text-teal" style="color: #0d9488;" title="Table View">
                         <i data-lucide="list" style="width: 18px; height: 18px;"></i>
                     </button>
@@ -424,7 +633,7 @@
                             <th>ROLE</th>
                             <th>STATUS</th>
                             <th>RELATIONSHIPS</th>
-                            <th>UPDATED</th>
+                            <th>UPDATED <i data-lucide="chevrons-up-down" class="inline-block" style="width: 12px; height: 12px;"></i></th>
                             <th class="text-end">ACTIONS</th>
                         </tr>
                     </thead>
@@ -447,7 +656,7 @@
 
                             var storyObj = c.Story;
 
-                            <!-- Relationship Avatars parsing -->
+                            <!-- Relationship Avatars parsing dynamically from DB -->
                             List<string> relAvatars = new List<string>();
                             if (!string.IsNullOrWhiteSpace(c.RelationshipsJson) && c.RelationshipsJson.Contains("avatarUrl"))
                             {
@@ -466,15 +675,15 @@
                             }
                             if (!relAvatars.Any())
                             {
-                                // Fallback to other characters in story
+                                // Dynamic character avatars from existing DB characters in story
                                 relAvatars = allCharacters
                                     .Where(other => other.Id != c.Id && (other.StoryId == c.StoryId || (other.Story != null && c.Story != null && other.Story.UserId == c.Story.UserId)))
-                                    .Take(4)
+                                    .Take(5)
                                     .Select(other => string.IsNullOrEmpty(other.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(other.Name)}" : other.AvatarUrl)
                                     .ToList();
                             }
-                            int overflowCount = relAvatars.Count > 2 ? relAvatars.Count - 2 : 0;
-                            var displayAvatars = relAvatars.Take(2).ToList();
+                            int overflowCount = relAvatars.Count > 3 ? relAvatars.Count - 3 : 0;
+                            var displayAvatars = relAvatars.Take(3).ToList();
 
                             <tr>
                                 <!-- CHARACTER -->
@@ -483,27 +692,27 @@
                                         <div class="position-relative flex-shrink-0">
                                             @if (!string.IsNullOrWhiteSpace(c.AvatarUrl))
                                             {
-                                                <img src="@c.AvatarUrl" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 48px; height: 48px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
+                                                <img src="@c.AvatarUrl" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 44px; height: 44px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
                                             }
                                             else
                                             {
-                                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 48px; height: 48px; object-fit: cover; border: 2px solid #ffffff;" />
+                                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 44px; height: 44px; object-fit: cover; border: 2px solid #ffffff;" />
                                             }
                                             @if (arcType.Equals("Main", StringComparison.OrdinalIgnoreCase))
                                             {
-                                                <div class="position-absolute bottom-0 end-0 bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 16px; height: 16px; border: 1.5px solid #ffffff; font-size: 8px;">
-                                                    <i data-lucide="star" style="width: 10px; height: 10px;"></i>
+                                                <div class="position-absolute bottom-0 end-0 bg-warning text-white rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 16px; height: 16px; border: 1.5px solid #ffffff; font-size: 8px;">
+                                                    <i data-lucide="star" style="width: 10px; height: 10px; fill: white;"></i>
                                                 </div>
                                             }
                                         </div>
                                         <div>
                                             <div class="d-flex align-items-center gap-2">
-                                                <a href="@Url.Action("Details", "Characters", new { id = c.Id })" class="fw-bold text-slate-900 text-decoration-none hover-teal" style="font-size: 0.95rem;">
+                                                <a href="@Url.Action("Details", "Characters", new { id = c.Id })" class="fw-bold text-slate-900 text-decoration-none hover-teal" style="font-size: 0.925rem;">
                                                     @c.Name
                                                 </a>
                                                 <span class="@badgeClass">@arcType</span>
                                             </div>
-                                            <p class="text-secondary mb-0 text-truncate" style="font-size: 0.825rem; max-width: 280px; color: #64748b;">
+                                            <p class="text-secondary mb-0 text-truncate" style="font-size: 0.8rem; max-width: 280px; color: #64748b;">
                                                 @(string.IsNullOrWhiteSpace(c.OneLineDescription) ? "No description provided." : c.OneLineDescription)
                                             </p>
                                         </div>
@@ -515,19 +724,19 @@
                                     <div class="d-flex align-items-center gap-2.5">
                                         @if (storyObj != null && !string.IsNullOrWhiteSpace(storyObj.CoverImageUrl))
                                         {
-                                            <img src="@storyObj.CoverImageUrl" alt="@storyObj.Title" class="rounded-2 shadow-xs flex-shrink-0" style="width: 38px; height: 38px; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&auto=format&fit=crop&q=80';" />
+                                            <img src="@storyObj.CoverImageUrl" alt="@storyObj.Title" class="rounded-2 shadow-xs flex-shrink-0" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&auto=format&fit=crop&q=80';" />
                                         }
                                         else
                                         {
-                                            <div class="rounded-2 bg-slate-100 d-flex align-items-center justify-content-center flex-shrink-0 text-teal" style="width: 38px; height: 38px; color: #0d9488;">
+                                            <div class="rounded-2 bg-slate-100 d-flex align-items-center justify-content-center flex-shrink-0 text-teal" style="width: 36px; height: 36px; color: #0d9488;">
                                                 <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
                                             </div>
                                         }
                                         <div>
-                                            <span class="fw-bold d-block text-slate-900" style="font-size: 0.875rem;">
+                                            <span class="fw-bold d-block text-slate-900" style="font-size: 0.85rem;">
                                                 @(storyObj?.Title ?? "Unassigned Story")
                                             </span>
-                                            <span class="text-muted d-block" style="font-size: 0.775rem;">
+                                            <span class="text-muted d-block" style="font-size: 0.75rem;">
                                                 @(storyObj?.Genre ?? "Fiction")
                                             </span>
                                         </div>
@@ -536,7 +745,7 @@
 
                                 <!-- ROLE -->
                                 <td>
-                                    <span class="fw-semibold text-slate-800" style="font-size: 0.875rem;">
+                                    <span class="fw-semibold text-slate-800" style="font-size: 0.85rem;">
                                         @(string.IsNullOrWhiteSpace(c.Role) ? "Character" : c.Role)
                                     </span>
                                 </td>
@@ -584,7 +793,7 @@
                                         </a>
 
                                         <div class="dropdown">
-                                            <button class="action-btn dropdown-toggle no-arrow" type="button" data-bs-toggle="dropdown">
+                                            <button class="action-btn dropdown-toggle no-arrow" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                 <i data-lucide="more-vertical" style="width: 16px; height: 16px;"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2" style="min-width: 160px; font-size: 0.85rem;">
@@ -600,7 +809,7 @@
                                                 </li>
                                                 <li><hr class="dropdown-divider my-1"></li>
                                                 <li>
-                                                    <form method="post" action="@Url.Action("Delete", "Characters", new { id = c.Id })" onsubmit="return confirm('Are you sure you want to delete @c.Name?');">
+                                                    <form method="post" action="@Url.Action("Delete", "Characters", new { id = c.Id })" onsubmit="return confirm('Are you sure you want to delete character @c.Name?');">
                                                         @Html.AntiForgeryToken()
                                                         <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 py-1.5 border-0 bg-transparent">
                                                             <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i> Delete
@@ -640,7 +849,7 @@
                         <div>
                             <div class="d-flex align-items-start justify-content-between mb-3">
                                 <div class="d-flex align-items-center gap-3">
-                                    <img src="@(string.IsNullOrWhiteSpace(c.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(c.Name)}" : c.AvatarUrl)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 56px; height: 56px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
+                                    <img src="@(string.IsNullOrWhiteSpace(c.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(c.Name)}" : c.AvatarUrl)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 52px; height: 52px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
                                     <div>
                                         <h5 class="fw-bold text-slate-900 mb-1" style="font-size: 1.05rem;">@c.Name</h5>
                                         <span class="@badgeClass">@arcType</span>
@@ -653,6 +862,13 @@
                                     <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2">
                                         <li><a class="dropdown-item" href="@Url.Action("Details", "Characters", new { id = c.Id })">View Details</a></li>
                                         <li><a class="dropdown-item" href="@Url.Action("Edit", "Characters", new { id = c.Id })">Edit</a></li>
+                                        <li><hr class="dropdown-divider my-1"></li>
+                                        <li>
+                                            <form method="post" action="@Url.Action("Delete", "Characters", new { id = c.Id })" onsubmit="return confirm('Are you sure you want to delete @c.Name?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="dropdown-item text-danger border-0 bg-transparent">Delete</button>
+                                            </form>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
@@ -663,7 +879,7 @@
                         </div>
 
                         <div class="pt-3 border-top d-flex align-items-center justify-content-between text-muted small" style="border-color: #f1f5f9;">
-                            <span class="d-flex align-items-center gap-1.5">
+                            <span class="d-flex align-items-center gap-1.5 fw-medium text-slate-700">
                                 <i data-lucide="book-open" style="width: 14px; height: 14px; color: #0d9488;"></i>
                                 @(storyObj?.Title ?? "Unassigned")
                             </span>
@@ -675,30 +891,65 @@
         </div>
 
         <!-- Table Footer / Pagination -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white p-3 rounded-3 border shadow-sm" style="border-color: #e2e8f0;">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white p-3 rounded-3 border shadow-sm mb-4" style="border-color: #e2e8f0;">
             <div class="text-secondary small">
-                Showing <strong>1</strong> to <strong>@Model.Count()</strong> of <strong>@totalCount</strong> characters
+                Showing <strong>@startItem</strong> to <strong>@endItem</strong> of <strong>@totalFilteredCount</strong> characters
             </div>
 
             <div class="d-flex align-items-center gap-3">
                 <nav aria-label="Page navigation">
                     <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled"><a class="page-link border-0 text-muted" href="#"><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i></a></li>
-                        <li class="page-item active"><a class="page-link rounded-2 border-0 bg-teal text-white" style="background-color: #0d9488;" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link rounded-2 border-0 text-slate-700" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link rounded-2 border-0 text-slate-700" href="#">3</a></li>
-                        <li class="page-item disabled"><span class="page-link border-0 text-muted">&hellip;</span></li>
-                        <li class="page-item"><a class="page-link rounded-2 border-0 text-slate-700" href="#">5</a></li>
-                        <li class="page-item"><a class="page-link border-0 text-slate-700" href="#"><i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></a></li>
+                        <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                            <a class="page-link border-0 text-muted" href="javascript:goToPage(@(currentPage - 1));"><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i></a>
+                        </li>
+                        
+                        @for (int p = 1; p <= totalPages; p++)
+                        {
+                            if (p == currentPage)
+                            {
+                                <li class="page-item active"><a class="page-link rounded-2 border-0 bg-teal text-white" style="background-color: #0d9488;" href="javascript:void(0);">@p</a></li>
+                            }
+                            else if (p <= 3 || p == totalPages || Math.Abs(p - currentPage) <= 1)
+                            {
+                                <li class="page-item"><a class="page-link rounded-2 border-0 text-slate-700" href="javascript:goToPage(@p);">@p</a></li>
+                            }
+                            else if (p == 4 && currentPage > 5)
+                            {
+                                <li class="page-item disabled"><span class="page-link border-0 text-muted">&hellip;</span></li>
+                            }
+                        }
+
+                        <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                            <a class="page-link border-0 text-slate-700" href="javascript:goToPage(@(currentPage + 1));"><i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></a>
+                        </li>
                     </ul>
                 </nav>
 
-                <div class="d-flex align-items-center gap-1 text-secondary small">
-                    <select class="form-select form-select-sm border-0 bg-slate-100 text-slate-700 rounded-2" style="font-size: 0.8rem;">
-                        <option>10 / page</option>
-                        <option>25 / page</option>
-                        <option>50 / page</option>
-                    </select>
+                <div class="dropdown custom-dropdown-container">
+                    <button type="button" class="btn btn-sm bg-slate-100 text-slate-700 rounded-2 border-0 d-inline-flex align-items-center gap-1.5 px-2.5 py-1" style="font-size: 0.8rem; font-weight: 500;" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span>@pageSize / page</span>
+                        <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #64748b;"></i>
+                    </button>
+                    <ul class="dropdown-menu custom-dropdown-menu dropdown-menu-end shadow-lg border-0 p-1" style="min-width: 120px;">
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(pageSize == 10 ? "active" : "")" href="javascript:changePageSize(10);">
+                                <span>10 / page</span>
+                                @if (pageSize == 10) { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(pageSize == 25 ? "active" : "")" href="javascript:changePageSize(25);">
+                                <span>25 / page</span>
+                                @if (pageSize == 25) { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item custom-dropdown-item @(pageSize == 50 ? "active" : "")" href="javascript:changePageSize(50);">
+                                <span>50 / page</span>
+                                @if (pageSize == 50) { <i data-lucide="check" class="check-icon"></i> }
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -708,6 +959,32 @@
 
 @section Scripts {
     <script>
+        function setDropdownValue(inputId, value) {
+            document.getElementById(inputId).value = value;
+            document.getElementById('pageInput').value = 1;
+            document.getElementById('filterForm').submit();
+        }
+
+        function setSortValue(value) {
+            document.getElementById('sortByInput').value = value;
+            document.getElementById('filterForm').submit();
+        }
+
+        function goToPage(page) {
+            document.getElementById('pageInput').value = page;
+            document.getElementById('filterForm').submit();
+        }
+
+        function changePageSize(size) {
+            document.getElementById('pageSizeInput').value = size;
+            document.getElementById('pageInput').value = 1;
+            document.getElementById('filterForm').submit();
+        }
+
+        function toggleMoreFilters() {
+            alert('Filters active: Search, Story, Role, Status, Sort by.');
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();

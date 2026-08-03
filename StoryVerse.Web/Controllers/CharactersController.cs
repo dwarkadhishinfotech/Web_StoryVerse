@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +44,10 @@ namespace StoryVerse.Web.Controllers
                 selectedStory = userStories.FirstOrDefault(s => s.Id == storyId.Value);
             }
             ViewBag.Story = selectedStory;
+            var worldLocations = selectedStory != null
+                ? await _context.Locations.Where(l => l.StoryId == selectedStory.Id).OrderBy(l => l.Name).ToListAsync()
+                : new List<Location>();
+            ViewBag.WorldLocations = worldLocations;
 
             // Base query for characters
             var query = _context.Characters
@@ -158,6 +162,10 @@ namespace StoryVerse.Web.Controllers
             }
 
             ViewBag.Story = selectedStory;
+            var worldLocations = selectedStory != null
+                ? await _context.Locations.Where(l => l.StoryId == selectedStory.Id).OrderBy(l => l.Name).ToListAsync()
+                : new List<Location>();
+            ViewBag.WorldLocations = worldLocations;
             var character = new Character
             {
                 StoryId = selectedStory?.Id ?? Guid.Empty
@@ -459,6 +467,50 @@ namespace StoryVerse.Web.Controllers
 
             var documentUrl = $"/uploads/custom_docs/{fileName}";
             return Json(new { success = true, documentUrl, fileName = originalName, fileSize = file.Length });
+        }
+
+        // GET: Characters/GetWorldLocations?storyId=...
+        [HttpGet]
+        public async Task<IActionResult> GetWorldLocations(Guid storyId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var locations = await _context.Locations
+                .Where(l => l.StoryId == storyId && l.Story.UserId == user.Id)
+                .OrderBy(l => l.Name)
+                .Select(l => new { id = l.Id, name = l.Name })
+                .ToListAsync();
+
+            return Json(locations);
+        }
+
+        private async Task EnsureWorldLocationExistsAsync(Guid storyId, string? locationName)
+        {
+            if (string.IsNullOrWhiteSpace(locationName) || storyId == Guid.Empty) return;
+
+            var nameTrimmed = locationName.Trim();
+
+            if (nameTrimmed.Equals("None", StringComparison.OrdinalIgnoreCase) ||
+                nameTrimmed.Equals("Unknown", StringComparison.OrdinalIgnoreCase) ||
+                nameTrimmed.StartsWith("Wanderer", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var exists = await _context.Locations
+                .AnyAsync(l => l.StoryId == storyId && l.Name.ToLower() == nameTrimmed.ToLower());
+
+            if (!exists)
+            {
+                _context.Locations.Add(new Location
+                {
+                    Id = Guid.NewGuid(),
+                    StoryId = storyId,
+                    Name = nameTrimmed,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
         }
     }
 }
