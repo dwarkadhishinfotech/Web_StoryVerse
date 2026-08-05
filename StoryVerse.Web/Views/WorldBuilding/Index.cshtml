@@ -1,152 +1,824 @@
-@model IEnumerable<StoryVerse.Core.Entities.Location>
+@model StoryVerse.Web.Models.WorldBuildingIndexViewModel
 @{
-    var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
-    ViewData["Title"] = $"World Building - {story?.Title}";
+    ViewData["Title"] = $"World Entities - {Model.Story?.Title ?? "StoryVerse"}";
+    var activeCategory = Model.ActiveCategory ?? "All Entities";
+    var hasEntities = Model.Entities != null && Model.Entities.Any();
+}
+
+@section Styles {
+    <style>
+        /* Select2 StoryVerse Peacock Theme for Index Filters */
+        .select2-container--default .select2-selection--single {
+            height: 36px !important;
+            padding: 4px 10px !important;
+            border-radius: 10px !important;
+            border: 1px solid #e2e8f0 !important;
+            background-color: #ffffff !important;
+            transition: all 0.2s ease;
+            display: flex !important;
+            align-items: center !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .select2-container--default .select2-selection--single:hover {
+            border-color: #cbd5e1 !important;
+        }
+
+        .select2-container--default .select2-selection--single:focus,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #13A8A6 !important;
+            box-shadow: 0 0 0 3px rgba(19, 168, 166, 0.15) !important;
+            outline: none !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #1e293b !important;
+            font-size: 0.825rem !important;
+            font-weight: 500 !important;
+            padding-left: 2px !important;
+            line-height: 1.5 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100% !important;
+            top: 0 !important;
+            right: 8px !important;
+        }
+
+        .select2-dropdown {
+            border-radius: 12px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12) !important;
+            padding: 6px !important;
+            background: #ffffff !important;
+            z-index: 1060 !important;
+        }
+
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: #f0fdfa !important;
+            color: #0f766e !important;
+            border-radius: 8px !important;
+            font-weight: 500;
+        }
+
+        .select2-container--default .select2-results__option--selected {
+            background-color: #13A8A6 !important;
+            color: #ffffff !important;
+            border-radius: 8px !important;
+            font-weight: 600;
+        }
+
+        .select2-container--default .select2-results__option--selected i,
+        .select2-container--default .select2-results__option--selected span {
+            color: #ffffff !important;
+        }
+
+        .select2-results__option {
+            padding: 8px 12px !important;
+            font-size: 0.825rem !important;
+            margin-bottom: 2px;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+    </style>
 }
 
 <div class="w-full pb-5 relative z-10 font-sans text-slate-800">
-    <!-- Header Section -->
+    <!-- Top Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
         <div>
-            <h2 class="font-serif fw-bold text-slate-900 mb-1" style="font-size: 28px; color: var(--forest-green-dark);">
-                World Building <span class="text-warning fs-4">✦</span>
+            <h2 class="font-serif fw-bold text-slate-900 mb-1 d-flex align-items-center gap-2" style="font-size: 26px; color: #0A1128;">
+                World Entities
+                <i data-lucide="globe" style="width: 22px; height: 22px;" class="text-slate-600"></i>
             </h2>
-            <p class="text-secondary mb-0" style="font-size: 0.875rem;">Build and map the lore, factions, and locations of your story world.</p>
+            <p class="text-secondary mb-0" style="font-size: 0.875rem;">Build, organize, and connect every element of your story world.</p>
         </div>
 
-        <div class="d-flex gap-2">
-            <a href="@Url.Action("Details", "Stories", new { id = story?.Id })" class="btn btn-outline-secondary rounded-pill px-4 py-2 d-flex align-items-center hover-lift-subtle" style="font-size: 0.85rem; font-weight: 700; border-color: var(--parchment-border) !important;">
-                <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Story Overview
-            </a>
+        <div class="d-flex align-items-center gap-3">
+            <!-- Create Entity Dropdown -->
+            <div class="dropdown">
+                <button class="btn text-white rounded-3 px-4 py-2 d-flex align-items-center gap-2 shadow-xs hover-lift-subtle dropdown-toggle" 
+                        type="button" id="createEntityDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+                        style="background: #13A8A6; font-size: 0.85rem; font-weight: 600; border: none;">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Create Entity
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg rounded-3 border-0 py-2" aria-labelledby="createEntityDropdown" style="font-size: 0.85rem;">
+                    <li>
+                        <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" href="@Url.Action("Create", "WorldBuilding", new { storyId = Model.SelectedStoryId })">
+                            <i data-lucide="plus-circle" style="width: 16px; height: 16px;" class="text-peacock-teal"></i> New World Entity
+                        </a>
+                    </li>
+                    <li>
+                        <button class="dropdown-item py-2 px-3 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createEntityTypeModal">
+                            <i data-lucide="layers" style="width: 16px; height: 16px;" class="text-warning"></i> Define Custom Entity Type
+                        </button>
+                    </li>
+                </ul>
+            </div>
 
-            <button class="btn text-white rounded-pill px-4 py-2 d-flex align-items-center shadow-sm hover-lift-subtle" 
-                    style="background: var(--peacock-gradient); font-size: 0.85rem; font-weight: 700; border: none;"
-                    data-bs-toggle="modal" data-bs-target="#newLocationModal">
-                <i data-lucide="plus" class="me-1.5" style="width: 16px; height: 16px;"></i> New Location
+            <!-- Search Input -->
+            <form method="get" action="@Url.Action("Index", "WorldBuilding")" class="position-relative" style="width: 240px;">
+                <input type="hidden" name="storyId" value="@Model.SelectedStoryId" />
+                <input type="hidden" name="category" value="@Model.ActiveCategory" />
+                <input type="text" name="search" value="@Model.SearchQuery" class="form-control rounded-3 ps-3 pe-4 py-2 border-slate-200 bg-white" 
+                       placeholder="Search entities..." style="font-size: 0.85rem;" />
+                <button type="submit" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted me-1 p-0 border-0">
+                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                </button>
+            </form>
+
+            <button class="btn btn-white border rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-xs" style="width: 36px; height: 36px; border-color: #E2E8F0 !important;">
+                <i data-lucide="sun" style="width: 18px; height: 18px;" class="text-slate-600"></i>
+            </button>
+            <button class="btn btn-white border rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-xs position-relative" style="width: 36px; height: 36px; border-color: #E2E8F0 !important;">
+                <i data-lucide="bell" style="width: 18px; height: 18px;" class="text-slate-600"></i>
+                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="font-size: 8px;"></span>
             </button>
         </div>
     </div>
 
-    <!-- Stats summary grid -->
-    <div class="row g-4 mb-5">
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Total Entities</span>
-                <h3 class="fw-bold text-slate-800 mb-0 font-serif">45</h3>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Locations Mapped</span>
-                <h3 class="fw-bold text-slate-800 mb-0 font-serif">@Model.Count()</h3>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Factions & Guilds</span>
-                <h3 class="fw-bold text-slate-800 mb-0 font-serif">6</h3>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Lore Categories</span>
-                <h3 class="fw-bold text-slate-800 mb-0 font-serif">5</h3>
-            </div>
-        </div>
+    <!-- Category Filter Tabs -->
+    <div class="border-bottom mb-4">
+        <ul class="nav nav-tabs border-0 gap-4" style="font-size: 0.875rem; font-weight: 500;">
+            <li class="nav-item">
+                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "All Entities" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                   href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "All Entities" })">
+                    <i data-lucide="layout-grid" class="me-1.5" style="width: 16px; height: 16px;"></i> All Entities
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Locations" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                   href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Locations" })">
+                    <i data-lucide="map-pin" class="me-1.5" style="width: 16px; height: 16px;"></i> Locations
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Organizations" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                   href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Organizations" })">
+                    <i data-lucide="landmark" class="me-1.5" style="width: 16px; height: 16px;"></i> Organizations
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "People Groups" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                   href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "People Groups" })">
+                    <i data-lucide="users" class="me-1.5" style="width: 16px; height: 16px;"></i> People Groups
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Cultures" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                   href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Cultures" })">
+                    <i data-lucide="crown" class="me-1.5" style="width: 16px; height: 16px;"></i> Cultures
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Religions" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                   href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Religions" })">
+                    <i data-lucide="star" class="me-1.5" style="width: 16px; height: 16px;"></i> Religions
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Species" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                   href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Species" })">
+                    <i data-lucide="paw-print" class="me-1.5" style="width: 16px; height: 16px;"></i> Species
+                </a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link border-0 pb-3 px-1 text-secondary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    More
+                </a>
+                <ul class="dropdown-menu shadow-md border-0 rounded-3" style="font-size: 0.85rem;">
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Historical Events" })">Historical Events</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Other" })">Other Categories</a></li>
+                </ul>
+            </li>
+        </ul>
     </div>
 
-    <!-- Category Grid cards -->
-    <h5 class="font-serif fw-bold text-slate-900 mb-3">Entity Categories</h5>
-    <div class="row g-4 mb-5">
-        <div class="col-md-3 col-sm-6">
-            <div class="card border shadow-xs rounded-4 p-4 text-center cursor-pointer hover-lift-subtle" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
-                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3 text-peacock-teal" style="width: 48px; height: 48px;">
-                    <i data-lucide="map-pin"></i>
-                </div>
-                <h6 class="fw-bold text-slate-800 mb-1">Locations</h6>
-                <small class="text-secondary">@Model.Count() mapped</small>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card border shadow-xs rounded-4 p-4 text-center cursor-pointer hover-lift-subtle" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
-                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3 text-peacock-dark" style="width: 48px; height: 48px;">
-                    <i data-lucide="shield"></i>
-                </div>
-                <h6 class="fw-bold text-slate-800 mb-1">Organizations</h6>
-                <small class="text-secondary">6 factions</small>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card border shadow-xs rounded-4 p-4 text-center cursor-pointer hover-lift-subtle" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
-                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3 text-warning" style="width: 48px; height: 48px;">
-                    <i data-lucide="globe"></i>
-                </div>
-                <h6 class="fw-bold text-slate-800 mb-1">Cultures & Lore</h6>
-                <small class="text-secondary">4 mapped</small>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card border shadow-xs rounded-4 p-4 text-center cursor-pointer hover-lift-subtle" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
-                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3 text-danger" style="width: 48px; height: 48px;">
-                    <i data-lucide="award"></i>
-                </div>
-                <h6 class="fw-bold text-slate-800 mb-1">Artifacts</h6>
-                <small class="text-secondary">12 elements</small>
-            </div>
-        </div>
-    </div>
+    @if (!hasEntities)
+    {
+        <!-- EMPTY STATE LAYOUT (IMAGE 1) -->
+        <div class="row g-4 align-items-start">
+            <!-- Center Canvas Card -->
+            <div class="col-lg-8">
+                <div class="card border-0 rounded-4 p-5 text-center shadow-xs bg-white h-100 d-flex flex-column align-items-center justify-content-center position-relative overflow-hidden" 
+                     style="border: 1px solid #E2E8F0 !important; min-height: 540px;">
+                    
+                    <!-- Artwork Graphic -->
+                    <div class="mb-4 position-relative" style="width: 320px; height: 200px;">
+                        <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center overflow-hidden border shadow-sm"
+                             style="width: 220px; height: 220px; border-color: #E2E8F0 !important; background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);">
+                            <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80" alt="World Building Artwork" class="w-100 h-100 object-fit-cover opacity-85" onerror="this.src='/images/empty-states/live_preview_book.png'" />
+                        </div>
+                        <div class="position-absolute top-50 start-50 translate-middle w-100 h-100 pointer-events-none d-flex align-items-center justify-content-center">
+                            <i data-lucide="compass" class="text-warning opacity-50" style="width: 260px; height: 260px; stroke-width: 0.5;"></i>
+                        </div>
+                    </div>
 
-    <!-- Active locations list from database -->
-    <h5 class="font-serif fw-bold text-slate-900 mb-3">Mapped Locations</h5>
-    <div class="row g-4">
-        @if (Model != null && Model.Any())
-        {
-            foreach (var loc in Model)
-            {
-                <div class="col-md-4 col-sm-6">
-                    <div class="card border shadow-xs rounded-4 p-3 d-flex flex-row align-items-center justify-content-between bg-white" style="border-color: #F1F5F9 !important;">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="rounded p-2 bg-light text-peacock-teal">
-                                <i data-lucide="map-pin" style="width: 20px; height: 20px;"></i>
+                    <h3 class="font-serif fw-bold text-slate-900 mb-2" style="font-size: 1.8rem; color: #0A1128;">
+                        Your world is <span style="color: #13A8A6; font-style: italic;">waiting</span> to be built.
+                    </h3>
+                    <p class="text-secondary mb-4 mx-auto" style="max-width: 440px; font-size: 0.95rem; line-height: 1.6;">
+                        Create locations, organizations, cultures, and more.<br />
+                        Every great story begins with an unforgettable world.
+                    </p>
+
+                    <!-- Divider ornament -->
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-4" style="color: #CBD5E1;">
+                        <span style="width: 40px; height: 1px; background: #E2E8F0;"></span>
+                        <i data-lucide="sparkles" style="width: 14px; height: 14px;" class="text-warning"></i>
+                        <span style="width: 40px; height: 1px; background: #E2E8F0;"></span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
+                        <a href="@Url.Action("Create", "WorldBuilding", new { storyId = Model.SelectedStoryId })"
+                           class="btn text-white rounded-3 px-4 py-2.5 d-flex align-items-center gap-2 shadow-sm hover-lift-subtle text-decoration-none" 
+                           style="background: #13A8A6; font-weight: 600; font-size: 0.9rem; border: none;">
+                            <i data-lucide="plus" style="width: 18px; height: 18px;"></i> Create Your First Entity
+                        </a>
+
+                        <button class="btn btn-outline-secondary rounded-3 px-4 py-2.5 d-flex align-items-center gap-2 hover-lift-subtle" 
+                                style="font-weight: 600; font-size: 0.9rem; border-color: #CBD5E1; color: #475569;"
+                                data-bs-toggle="modal" data-bs-target="#templatesModal">
+                            <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i> Explore Templates
+                        </button>
+                    </div>
+
+                    <a href="#" class="text-decoration-none small text-secondary hover-text-teal d-flex align-items-center gap-1 mt-2" style="font-size: 0.825rem;">
+                        <i data-lucide="file-input" style="width: 14px; height: 14px;"></i> Import existing world data
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Sidebar Guide & Templates (Image 1) -->
+            <div class="col-lg-4">
+                <!-- Getting Started Card -->
+                <div class="card border-0 rounded-4 p-4 shadow-xs bg-white mb-4" style="border: 1px solid #E2E8F0 !important;">
+                    <h6 class="font-serif fw-bold text-slate-900 mb-3 d-flex align-items-center gap-1.5" style="font-size: 0.95rem;">
+                        <i data-lucide="sparkles" style="width: 16px; height: 16px;" class="text-warning"></i> Getting Started
+                    </h6>
+
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-light p-2 text-peacock-teal d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                <i data-lucide="shield" style="width: 18px; height: 18px;"></i>
                             </div>
                             <div>
-                                <h6 class="fw-bold mb-0 text-slate-800">@loc.Name</h6>
-                                <small class="text-secondary">Created @loc.CreatedAt.ToString("MM/dd/yyyy")</small>
+                                <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 0.85rem;">1. Create Your First Entity</h6>
+                                <p class="text-muted mb-0" style="font-size: 0.775rem;">Start with a key location, organization, or major element of your world.</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-light p-2 text-peacock-teal d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                <i data-lucide="share-2" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 0.85rem;">2. Connect Everything</h6>
+                                <p class="text-muted mb-0" style="font-size: 0.775rem;">Build relationships between entities, characters, and events.</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-light p-2 text-peacock-teal d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                <i data-lucide="maximize-2" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 0.85rem;">3. Enrich Your World</h6>
+                                <p class="text-muted mb-0" style="font-size: 0.775rem;">Add details, images, notes, and maps to bring your world to life.</p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="rounded-circle bg-light p-2 text-peacock-teal d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px;">
+                                <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 0.85rem;">4. Stay Consistent</h6>
+                                <p class="text-muted mb-0" style="font-size: 0.775rem;">Use relationships and timelines to keep your story world consistent.</p>
                             </div>
                         </div>
                     </div>
+
+                    <div class="mt-3 pt-3 border-top">
+                        <a href="#" class="text-decoration-none text-peacock-teal fw-semibold small d-inline-flex align-items-center gap-1" style="font-size: 0.8rem;">
+                            Learn more about World Building <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                        </a>
+                    </div>
                 </div>
-            }
-        }
-        else
-        {
-            <div class="col-12 text-center py-5">
-                <p class="text-muted mb-0">No locations mapped yet. Add locations to populate your world map.</p>
+
+                <!-- Suggested Templates Card -->
+                <div class="card border-0 rounded-4 p-4 shadow-xs bg-white position-relative overflow-hidden" style="border: 1px solid #E2E8F0 !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="font-serif fw-bold text-slate-900 mb-0 d-flex align-items-center gap-1.5" style="font-size: 0.95rem;">
+                            <i data-lucide="sparkles" style="width: 16px; height: 16px;" class="text-warning"></i> Suggested Templates
+                        </h6>
+                        <a href="#" class="text-decoration-none text-peacock-teal small fw-semibold" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#templatesModal">View all</a>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        @if (Model.SuggestedTemplates != null && Model.SuggestedTemplates.Any())
+                        {
+                            foreach (var tmpl in Model.SuggestedTemplates.Take(5))
+                            {
+                                <div class="d-flex align-items-center gap-3 cursor-pointer hover-lift-subtle p-1.5 rounded-3">
+                                    <div class="rounded-circle bg-light p-2 text-peacock-teal d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                        <i data-lucide="@tmpl.Icon" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 0.85rem;">@tmpl.Name</h6>
+                                        <p class="text-muted mb-0 text-truncate" style="font-size: 0.75rem; max-width: 220px;">@tmpl.SubTypesSummary</p>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- Watermark graphic -->
+                    <div class="position-absolute bottom-0 end-0 me-n3 mb-n3 pointer-events-none opacity-20">
+                        <i data-lucide="feather" class="text-peacock-teal" style="width: 140px; height: 140px;"></i>
+                    </div>
+                </div>
             </div>
-        }
-    </div>
+        </div>
+    }
+    else
+    {
+        <!-- POPULATED DASHBOARD LAYOUT (IMAGE 2) -->
+        <!-- Stats Summary Grid -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-light p-2.5 text-peacock-teal d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                            <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted text-uppercase fw-semibold d-block" style="font-size: 10px; letter-spacing: 0.05em;">Total Entities</small>
+                            <h4 class="fw-bold text-slate-900 mb-0 font-serif" style="font-size: 1.5rem;">@Model.TotalEntities</h4>
+                            <small class="text-muted" style="font-size: 10px;">Across all categories</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-light p-2.5 text-warning d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                            <i data-lucide="map-pin" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted text-uppercase fw-semibold d-block" style="font-size: 10px; letter-spacing: 0.05em;">Locations</small>
+                            <h4 class="fw-bold text-slate-900 mb-0 font-serif" style="font-size: 1.5rem;">@Model.LocationsCount</h4>
+                            <small class="text-muted" style="font-size: 10px;">Physical places</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-light p-2.5 text-indigo d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                            <i data-lucide="landmark" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted text-uppercase fw-semibold d-block" style="font-size: 10px; letter-spacing: 0.05em;">Organizations</small>
+                            <h4 class="fw-bold text-slate-900 mb-0 font-serif" style="font-size: 1.5rem;">@Model.OrganizationsCount</h4>
+                            <small class="text-muted" style="font-size: 10px;">Groups & factions</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-light p-2.5 text-info d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                            <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted text-uppercase fw-semibold d-block" style="font-size: 10px; letter-spacing: 0.05em;">People Groups</small>
+                            <h4 class="fw-bold text-slate-900 mb-0 font-serif" style="font-size: 1.5rem;">@Model.PeopleGroupsCount</h4>
+                            <small class="text-muted" style="font-size: 10px;">Races & cultures</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-light p-2.5 text-success d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                            <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted text-uppercase fw-semibold d-block" style="font-size: 10px; letter-spacing: 0.05em;">Historical Events</small>
+                            <h4 class="fw-bold text-slate-900 mb-0 font-serif" style="font-size: 1.5rem;">@Model.HistoricalEventsCount</h4>
+                            <small class="text-muted" style="font-size: 10px;">Past occurrences</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Toolbar Bar -->
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+            <!-- View Switcher -->
+            <div class="btn-group bg-white p-1 rounded-3 border shadow-xs" style="border-color: #E2E8F0 !important;">
+                <button type="button" class="btn btn-sm btn-white fw-semibold rounded-2 active" style="font-size: 0.8rem;">
+                    <i data-lucide="layout-grid" style="width: 14px; height: 14px;" class="me-1"></i> Grid View
+                </button>
+                <button type="button" class="btn btn-sm btn-white text-secondary rounded-2" style="font-size: 0.8rem;">
+                    <i data-lucide="list" style="width: 14px; height: 14px;" class="me-1"></i> List View
+                </button>
+            </div>
+
+            <!-- Dropdown Filters -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div style="min-width: 150px;">
+                    <select class="form-select select2-filter" id="filterTypeSelect" style="width: 100%;">
+                        <option value="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = Model.ActiveCategory, status = Model.SelectedStatus, sort = Model.SortBy })" data-icon="layers">All Types</option>
+                        @foreach (var st in Model.SystemTypes)
+                        {
+                            var isSelected = Model.SelectedTypeId == st.Id;
+                            <option value="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = Model.ActiveCategory, typeId = st.Id, status = Model.SelectedStatus, sort = Model.SortBy })" 
+                                    data-icon="@st.Icon" 
+                                    selected="@isSelected">@st.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div style="min-width: 135px;">
+                    <select class="form-select select2-filter" id="filterStatusSelect" style="width: 100%;">
+                        <option value="" selected="@(string.IsNullOrEmpty(Model.SelectedStatus))" data-icon="activity">All Status</option>
+                        <option value="Active" selected="@(Model.SelectedStatus == "Active")" data-icon="check-circle">Active</option>
+                        <option value="Draft" selected="@(Model.SelectedStatus == "Draft")" data-icon="file-edit">Draft</option>
+                        <option value="Archived" selected="@(Model.SelectedStatus == "Archived")" data-icon="archive">Archived</option>
+                    </select>
+                </div>
+
+                <div style="min-width: 165px;">
+                    <select class="form-select select2-filter" id="filterSortSelect" style="width: 100%;">
+                        <option value="Recently Updated" selected="@(Model.SortBy == "Recently Updated")" data-icon="clock">Recently Updated</option>
+                        <option value="Name (A-Z)" selected="@(Model.SortBy == "Name (A-Z)")" data-icon="sort-asc">Name (A-Z)</option>
+                        <option value="Name (Z-A)" selected="@(Model.SortBy == "Name (Z-A)")" data-icon="sort-desc">Name (Z-A)</option>
+                        <option value="Oldest" selected="@(Model.SortBy == "Oldest")" data-icon="history">Oldest</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-sm btn-white border rounded-3 bg-white text-secondary d-flex align-items-center gap-1.5 px-3 py-2 shadow-xs hover-lift-subtle" style="font-size: 0.825rem; border-color: #E2E8F0 !important; height: 36px;">
+                    <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px;"></i> Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area: Grid + Drawer -->
+        <div class="row g-4">
+            <!-- Entities Grid -->
+            <div class="@(Model.SelectedEntityDetail != null ? "col-lg-7 col-xl-8" : "col-12")">
+                <div class="row g-3">
+                    @foreach (var item in Model.Entities)
+                    {
+                        <div class="col-md-6 col-xl-3">
+                            <div class="card border-0 rounded-4 overflow-hidden shadow-xs bg-white hover-lift cursor-pointer h-100 position-relative" 
+                                 style="border: 1px solid #E2E8F0 !important;"
+                                 onclick="loadEntityDetail('@item.Id')">
+                                <!-- Card Header Image -->
+                                <div class="position-relative" style="height: 120px; background: #0A1128;">
+                                    <img src="@item.CoverImage" alt="@item.Name" class="w-100 h-100 object-fit-cover" onerror="this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80'" />
+                                    <div class="position-absolute bottom-0 start-0 ms-3 mb-n3 rounded-circle bg-white shadow-xs p-1 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border: 2px solid white; z-index: 2;">
+                                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center w-100 h-100 text-slate-800">
+                                            <i data-lucide="@item.Icon" style="width: 18px; height: 18px;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Body -->
+                                <div class="px-3 pt-4 pb-3 d-flex flex-column justify-content-between h-100">
+                                    <div>
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <h6 class="fw-bold text-slate-900 mb-0 text-truncate font-serif" style="font-size: 0.95rem;">
+                                                @item.Name
+                                            </h6>
+                                            <i data-lucide="star" class="@(item.IsFavorite ? "text-warning fill-warning" : "text-muted opacity-40")" style="width: 14px; height: 14px;"></i>
+                                        </div>
+                                        <small class="text-muted d-block mb-2" style="font-size: 0.75rem;">@item.Category • @item.TypeName</small>
+                                        <p class="text-secondary small mb-3 line-clamp-2" style="font-size: 0.775rem; line-height: 1.4;">
+                                            @item.Summary
+                                        </p>
+                                    </div>
+
+                                    <!-- Card Footer Meta -->
+                                    <div class="pt-2 border-top d-flex align-items-center justify-content-between text-muted" style="font-size: 0.725rem; border-color: #F1F5F9 !important;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span title="Connected Characters"><i data-lucide="user" style="width: 12px; height: 12px;"></i> @item.ConnectedCharactersCount</span>
+                                            <span title="Timeline Events"><i data-lucide="book-open" style="width: 12px; height: 12px;"></i> @item.ConnectedTimelineEventsCount</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <span>@item.UpdatedAgo</span>
+                                            <i data-lucide="more-horizontal" style="width: 14px; height: 14px;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Footer Pagination -->
+                <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top text-muted" style="font-size: 0.8rem;">
+                    <span>Showing 1 to @Model.Entities.Count of @Model.TotalEntities entities</span>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled"><a class="page-link border-0" href="#"><i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i></a></li>
+                        <li class="page-item active"><a class="page-link rounded-circle text-white bg-teal" style="background: #13A8A6; border: none;" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link border-0 text-slate-700" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link border-0 text-slate-700" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link border-0" href="#"><i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Slide-Out Entity Profile Panel (Image 2 Drawer) -->
+            <div class="col-lg-5 col-xl-4" id="entityDetailDrawerContainer">
+                @if (Model.SelectedEntityDetail != null)
+                {
+                    @await Html.PartialAsync("_EntityDetailDrawer", Model.SelectedEntityDetail)
+                }
+            </div>
+        </div>
+    }
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="newLocationModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<!-- Modal: Create Entity -->
+<div class="modal fade" id="createEntityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="p-4">
-                <h4 class="font-serif fw-bold text-slate-800 mb-2">Create Location</h4>
-                <p class="text-secondary small mb-4">Add a new city, region, or visual landmark to your world-building records.</p>
-                
-                <form onsubmit="event.preventDefault(); bootstrap.Modal.getInstance(document.getElementById('newLocationModal')).hide();">
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Location Name</label>
-                        <input type="text" class="form-control rounded-3" placeholder="e.g. Citadel of Aethelgard" required />
+            <div class="p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+                    <div>
+                        <h4 class="font-serif fw-bold text-slate-900 mb-0" style="font-size: 1.25rem;">Create World Entity</h4>
+                        <p class="text-secondary small mb-0">Add a new location, organization, or element to your story world.</p>
                     </div>
-                    
-                    <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="post" action="@Url.Action("CreateEntity", "WorldBuilding")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="StoryId" value="@Model.SelectedStoryId" />
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-slate-700">Entity Name *</label>
+                            <input type="text" name="Name" class="form-control rounded-3" placeholder="e.g. Citadel of Aethelgard" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-slate-700">Entity Type *</label>
+                            <select name="EntityTypeId" id="createEntityTypeSelect" class="form-select rounded-3" required onchange="loadDynamicTypeFields(this.value)">
+                                <option value="">Select Type...</option>
+                                @foreach (var st in Model.SystemTypes)
+                                {
+                                    <option value="@st.Id">@st.Name (@st.Category)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-slate-700">Short Summary</label>
+                        <input type="text" name="Summary" class="form-control rounded-3" placeholder="A brief one-line description..." />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-slate-700">Full Description / Lore</label>
+                        <textarea name="Description" class="form-control rounded-3" rows="3" placeholder="Detailed backstory and lore..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-slate-700">Status</label>
+                            <select name="Status" class="form-select rounded-3">
+                                <option value="Active">Active</option>
+                                <option value="Draft">Draft</option>
+                                <option value="Archived">Archived</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-slate-700">Importance</label>
+                            <select name="Importance" class="form-select rounded-3">
+                                <option value="Major">Major</option>
+                                <option value="Minor">Minor</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Type Fields Container -->
+                    <div id="dynamicFieldsContainer" class="border rounded-3 p-3 bg-light mb-3 d-none">
+                        <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.85rem;">Custom Fields for Selected Type</h6>
+                        <div id="dynamicFieldsInputs" class="row g-3"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                         <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold" style="background: var(--peacock-gradient); border: none;">Create Location</button>
+                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold" style="background: #13A8A6; border: none;">Create Entity</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal: Custom Entity Type -->
+<div class="modal fade" id="createEntityTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+                    <h5 class="font-serif fw-bold text-slate-900 mb-0">Define Custom Entity Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="@Url.Action("CreateEntityType", "WorldBuilding")">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Type Name</label>
+                        <input type="text" name="name" class="form-control rounded-3" placeholder="e.g. Detective Agency, Dragon Clan, Coffee Shop" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Category</label>
+                        <select name="category" class="form-select rounded-3">
+                            <option value="Locations">Locations</option>
+                            <option value="Organizations">Organizations</option>
+                            <option value="People Groups">People Groups</option>
+                            <option value="Cultures">Cultures</option>
+                            <option value="Religions">Religions</option>
+                            <option value="Species">Species</option>
+                            <option value="Historical Events">Historical Events</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold" style="background: #13A8A6; border: none;">Save Type</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Templates Modal -->
+<div class="modal fade" id="templatesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+                    <h5 class="font-serif fw-bold text-slate-900 mb-0">Explore Genre Templates</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="row g-3">
+                    @if (Model.SuggestedTemplates != null)
+                    {
+                        foreach (var tmpl in Model.SuggestedTemplates)
+                        {
+                            <div class="col-md-6">
+                                <div class="card border rounded-3 p-3 hover-lift-subtle" style="border-color: #E2E8F0 !important;">
+                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                        <div class="rounded-circle bg-light p-2.5 text-peacock-teal">
+                                            <i data-lucide="@tmpl.Icon" style="width: 20px; height: 20px;"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-slate-800">@tmpl.Name</h6>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 10px;">Genre: @tmpl.Genre</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small mb-2">@tmpl.Description</p>
+                                    <small class="text-peacock-teal fw-semibold">Subtypes: @tmpl.SubTypesSummary</small>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            function formatSelect2Option(opt) {
+                if (!opt.id) return opt.text;
+                var $el = $(opt.element);
+                var icon = $el.data('icon') || '';
+                if (icon) {
+                    return $('<span class="d-flex align-items-center gap-2"><i data-lucide="' + icon + '" style="width:14px;height:14px;color:#13A8A6;"></i><span>' + opt.text + '</span></span>');
+                }
+                return opt.text;
+            }
+
+            $('.select2-filter').select2({
+                templateResult: formatSelect2Option,
+                templateSelection: formatSelect2Option,
+                minimumResultsForSearch: 8,
+                width: '100%'
+            }).on('select2:open', function() {
+                setTimeout(function() {
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }, 10);
+            });
+
+            $('#filterTypeSelect').on('change', function() {
+                if (this.value) {
+                    window.location.href = this.value;
+                }
+            });
+
+            $('#filterStatusSelect').on('change', function() {
+                var status = $(this).val();
+                var url = new URL(window.location.href);
+                if (status) {
+                    url.searchParams.set('status', status);
+                } else {
+                    url.searchParams.delete('status');
+                }
+                window.location.href = url.toString();
+            });
+
+            $('#filterSortSelect').on('change', function() {
+                var sort = $(this).val();
+                var url = new URL(window.location.href);
+                if (sort) {
+                    url.searchParams.set('sort', sort);
+                } else {
+                    url.searchParams.delete('sort');
+                }
+                window.location.href = url.toString();
+            });
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+
+        function loadEntityDetail(id) {
+            fetch('/WorldBuilding/GetEntityDetails/' + id)
+                .then(res => res.text())
+                .then(html => {
+                    const container = document.getElementById('entityDetailDrawerContainer');
+                    if (container) {
+                        container.innerHTML = html;
+                        if (window.lucide) lucide.createIcons();
+                    }
+                })
+                .catch(err => console.error('Error loading entity detail:', err));
+        }
+
+        function closeEntityDetailPanel() {
+            const container = document.getElementById('entityDetailDrawerContainer');
+            if (container) {
+                container.innerHTML = '';
+            }
+        }
+
+        function toggleFavorite(id) {
+            fetch('/WorldBuilding/ToggleFavorite/' + id, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+        }
+
+        function loadDynamicTypeFields(typeId) {
+            if (!typeId) {
+                document.getElementById('dynamicFieldsContainer').classList.add('d-none');
+                return;
+            }
+
+            fetch('/WorldBuilding/GetTypeFields?typeId=' + typeId)
+                .then(res => res.json())
+                .then(fields => {
+                    const container = document.getElementById('dynamicFieldsInputs');
+                    const box = document.getElementById('dynamicFieldsContainer');
+                    container.innerHTML = '';
+
+                    if (fields && fields.length > 0) {
+                        box.classList.remove('d-none');
+                        fields.forEach((f, idx) => {
+                            const col = document.createElement('div');
+                            col.className = 'col-md-6';
+                            col.innerHTML = `
+                                <label class="form-label fw-semibold small text-slate-700">${f.fieldName} ${f.required ? '*' : ''}</label>
+                                <input type="hidden" name="Fields[${idx}].FieldId" value="${f.id}" />
+                                <input type="text" name="Fields[${idx}].Value" class="form-control form-control-sm rounded-3" ${f.required ? 'required' : ''} />
+                            `;
+                            container.appendChild(col);
+                        });
+                    } else {
+                        box.classList.add('d-none');
+                    }
+                });
+        }
+    </script>
+}

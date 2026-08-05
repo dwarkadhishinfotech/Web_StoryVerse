@@ -1,0 +1,226 @@
+@model StoryVerse.Web.Models.WorldEntityDetailViewModel
+
+@if (Model != null)
+{
+    <div id="entityDetailPanel" class="card border-0 rounded-4 shadow-sm overflow-hidden bg-white h-100" style="border: 1px solid #E2E8F0 !important;">
+        <!-- Header Banner Image & Avatar Icon -->
+        <div class="position-relative" style="height: 180px; background-color: #0A1128;">
+            <img src="@Model.CoverImage" alt="@Model.Name" class="w-100 h-100 object-fit-cover opacity-90" onerror="this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80'" />
+            <button type="button" class="btn btn-sm btn-light rounded-circle position-absolute top-0 end-0 m-3 d-flex align-items-center justify-content-center shadow-xs" style="width: 32px; height: 32px; opacity: 0.8;" onclick="closeEntityDetailPanel()">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+            </button>
+            <div class="position-absolute bottom-0 start-0 ms-4 mb-n4 rounded-circle bg-white shadow-md p-1 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; border: 3px solid white; z-index: 2;">
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center w-100 h-100 text-slate-800">
+                    <i data-lucide="@(string.IsNullOrEmpty(Model.Icon) ? "globe" : Model.Icon)" style="width: 28px; height: 28px;"></i>
+                </div>
+            </div>
+            <button class="btn btn-teal rounded-circle position-absolute bottom-0 end-0 me-4 mb-n3 p-0 d-flex align-items-center justify-content-center text-white shadow-md hover-scale" style="width: 40px; height: 40px; background: #13A8A6; border: none; z-index: 2;" title="Edit Entity">
+                <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i>
+            </button>
+        </div>
+
+        <!-- Entity Identity Info -->
+        <div class="px-4 pt-5 pb-3">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <h4 class="font-serif fw-bold text-slate-900 mb-0 d-flex align-items-center gap-2" style="font-size: 1.4rem;">
+                    @Model.Name
+                    <i data-lucide="star" onclick="toggleFavorite('@Model.Id')" class="cursor-pointer @(Model.IsFavorite ? "text-warning fill-warning" : "text-muted")" style="width: 18px; height: 18px;"></i>
+                </h4>
+            </div>
+            <div class="mb-3">
+                <span class="badge rounded-pill bg-light text-secondary border px-3 py-1 fw-semibold" style="font-size: 0.75rem; border-color: #E2E8F0 !important;">
+                    @Model.Category • @Model.TypeName
+                </span>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Quote))
+            {
+                <div class="text-center my-3 py-2 px-3 rounded-3" style="background: rgba(19, 168, 166, 0.04); border-top: 1px solid rgba(19, 168, 166, 0.1); border-bottom: 1px solid rgba(19, 168, 166, 0.1);">
+                    <p class="font-serif italic text-muted mb-0" style="font-size: 0.85rem; font-style: italic;">
+                        @Model.Quote
+                    </p>
+                </div>
+            }
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs nav-tabs-subtle border-bottom mb-4 d-flex flex-nowrap overflow-x-auto no-scrollbar gap-2" style="font-size: 0.825rem;" id="entityDetailTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active py-2 px-2 text-nowrap fw-semibold" id="tab-overview-btn" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button" role="tab">
+                        <i data-lucide="layout" class="me-1" style="width: 14px; height: 14px;"></i> Overview
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-2 px-2 text-nowrap fw-semibold text-secondary" id="tab-details-btn" data-bs-toggle="tab" data-bs-target="#tab-details" type="button" role="tab">
+                        <i data-lucide="file-text" class="me-1" style="width: 14px; height: 14px;"></i> Details
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-2 px-2 text-nowrap fw-semibold text-secondary" id="tab-relationships-btn" data-bs-toggle="tab" data-bs-target="#tab-relationships" type="button" role="tab">
+                        <i data-lucide="users" class="me-1" style="width: 14px; height: 14px;"></i> Relationships
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-2 px-2 text-nowrap fw-semibold text-secondary" id="tab-map-btn" data-bs-toggle="tab" data-bs-target="#tab-map" type="button" role="tab">
+                        <i data-lucide="map" class="me-1" style="width: 14px; height: 14px;"></i> Map
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-2 px-2 text-nowrap fw-semibold text-secondary" id="tab-timeline-btn" data-bs-toggle="tab" data-bs-target="#tab-timeline" type="button" role="tab">
+                        <i data-lucide="clock" class="me-1" style="width: 14px; height: 14px;"></i> Timeline
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="entityDetailTabContent">
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+                    @if (!string.IsNullOrEmpty(Model.Summary))
+                    {
+                        <p class="text-secondary mb-4" style="font-size: 0.875rem; line-height: 1.6;">
+                            @Model.Summary
+                        </p>
+                    }
+
+                    <!-- Key Value Attributes -->
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        @if (Model.FieldValues != null && Model.FieldValues.Any())
+                        {
+                            foreach (var fv in Model.FieldValues)
+                            {
+                                <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-light">
+                                    <div class="d-flex align-items-center gap-2 text-secondary" style="font-size: 0.85rem;">
+                                        <i data-lucide="@fv.Icon" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                        <span>@fv.FieldName</span>
+                                    </div>
+                                    <span class="fw-semibold text-slate-800 text-end" style="font-size: 0.85rem;">@fv.Value</span>
+                                </div>
+                            }
+                        }
+
+                        <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-light">
+                            <div class="d-flex align-items-center gap-2 text-secondary" style="font-size: 0.85rem;">
+                                <i data-lucide="star" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                <span>Importance</span>
+                            </div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-2.5 py-1" style="font-size: 0.75rem;">@Model.Importance</span>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-light">
+                            <div class="d-flex align-items-center gap-2 text-secondary" style="font-size: 0.85rem;">
+                                <i data-lucide="activity" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                <span>Status</span>
+                            </div>
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-2.5 py-1" style="font-size: 0.75rem;">@Model.Status</span>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="mt-4">
+                        <label class="form-label fw-bold text-uppercase text-slate-400 mb-2" style="font-size: 10px; letter-spacing: 0.05em;">Tags</label>
+                        <div class="d-flex flex-wrap gap-1.5 align-items-center">
+                            @if (Model.Tags != null && Model.Tags.Any())
+                            {
+                                foreach (var tag in Model.Tags)
+                                {
+                                    <span class="badge rounded-pill bg-light text-slate-700 border px-3 py-1.5" style="font-size: 0.75rem; border-color: #E2E8F0 !important;">
+                                        @tag
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill bg-light text-slate-700 border px-3 py-1.5" style="font-size: 0.75rem; border-color: #E2E8F0 !important;">
+                                    #@Model.Category
+                                </span>
+                            }
+                            <button class="btn btn-sm btn-light rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border: 1px dashed #CBD5E1;">
+                                <i data-lucide="plus" style="width: 12px; height: 12px;" class="text-slate-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Tab -->
+                <div class="tab-pane fade" id="tab-details" role="tabpanel">
+                    <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.9rem;">Description & Lore</h6>
+                    <p class="text-secondary" style="font-size: 0.875rem; line-height: 1.6;">
+                        @(string.IsNullOrEmpty(Model.Description) ? "No detailed lore written yet. Click edit to add backstory and details." : Model.Description)
+                    </p>
+                </div>
+
+                <!-- Relationships Tab -->
+                <div class="tab-pane fade" id="tab-relationships" role="tabpanel">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 0.9rem;">Connected Entities</h6>
+                        <button class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1" style="font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#createRelationshipModal">
+                            + Add Link
+                        </button>
+                    </div>
+
+                    @if (Model.Relationships != null && Model.Relationships.Any())
+                    {
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var rel in Model.Relationships)
+                            {
+                                <div class="p-2.5 rounded-3 border bg-light d-flex align-items-center justify-content-between" style="border-color: #F1F5F9 !important;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-white p-1.5 text-peacock-teal border shadow-xs">
+                                            <i data-lucide="@rel.TargetIcon" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.85rem;">@rel.TargetEntityName</h6>
+                                            <small class="text-muted" style="font-size: 0.75rem;">@rel.RelationshipType • @rel.TargetTypeName</small>
+                                        </div>
+                                    </div>
+                                    <i data-lucide="chevron-right" style="width: 16px; height: 16px;" class="text-muted"></i>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 bg-light rounded-3">
+                            <p class="text-muted small mb-0">No direct relationships linked yet.</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- Map Tab -->
+                <div class="tab-pane fade" id="tab-map" role="tabpanel">
+                    <div class="text-center py-5 bg-light rounded-3 border border-dashed">
+                        <i data-lucide="map-pin" class="text-peacock-teal mb-2" style="width: 32px; height: 32px;"></i>
+                        <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.9rem;">Map Location</h6>
+                        <p class="text-muted small mb-3">Place this entity on your story world map.</p>
+                        <button class="btn btn-sm text-white rounded-pill px-3 py-1.5 fw-semibold" style="background: #13A8A6; font-size: 0.8rem;">
+                            View World Map
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timeline Tab -->
+                <div class="tab-pane fade" id="tab-timeline" role="tabpanel">
+                    @if (Model.TimelineEvents != null && Model.TimelineEvents.Any())
+                    {
+                        <div class="timeline-compact">
+                            @foreach (var ev in Model.TimelineEvents)
+                            {
+                                <div class="mb-3 border-start border-2 border-primary ps-3">
+                                    <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.85rem;">@ev.EventTitle</h6>
+                                    <small class="text-primary fw-semibold" style="font-size: 0.75rem;">@ev.EventDate</small>
+                                    <p class="text-muted small mb-0 mt-1">@ev.Description</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 bg-light rounded-3">
+                            <p class="text-muted small mb-0">No timeline events associated with this entity yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

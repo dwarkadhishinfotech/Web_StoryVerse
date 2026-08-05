@@ -1,152 +1,2358 @@
 @model StoryVerse.Core.Entities.Character
 @{
     var stories = ViewBag.Stories as List<StoryVerse.Core.Entities.Story> ?? new List<StoryVerse.Core.Entities.Story>();
+    var worldLocations = ViewBag.WorldLocations as List<StoryVerse.Core.Entities.Location> ?? new List<StoryVerse.Core.Entities.Location>();
+    var otherCharacters = ViewBag.OtherCharacters as List<StoryVerse.Core.Entities.Character> ?? new List<StoryVerse.Core.Entities.Character>();
     ViewData["Title"] = $"Edit Character - {Model.Name}";
 }
 
-<style>
-    .edit-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
-        padding: 2.25rem;
-    }
-    .form-label-custom {
-        font-size: 0.825rem;
-        font-weight: 600;
-        color: #334155;
-        margin-bottom: 6px;
-    }
-    .form-control-custom, .form-select-custom {
-        border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        padding: 0.65rem 0.9rem;
-        font-size: 0.88rem;
-        color: #0f172a;
-        background-color: #ffffff;
-        transition: all 0.2s ease;
-    }
-    .form-control-custom:focus, .form-select-custom:focus {
-        border-color: #0d9488;
-        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
-        outline: none;
-    }
-    .btn-teal {
-        background-color: #0d9488;
-        color: #ffffff;
-        border: none;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-    .btn-teal:hover {
-        background-color: #0f766e;
-        color: #ffffff;
-    }
-</style>
+@section Styles {
+    <style>
+        #addRelationshipModal {
+            z-index: 1060 !important;
+        }
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
 
-<div class="container py-4" style="max-width: 800px;">
-    <!-- Back button -->
-    <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="text-secondary text-decoration-none d-inline-flex align-items-center mb-4 small fw-semibold">
-        <i data-lucide="arrow-left" class="me-2" style="width: 16px; height: 16px; color: #0d9488;"></i> Back to Characters List
-    </a>
+        .character-edit-container {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #0f172a;
+        }
 
-    <div class="edit-card">
-        <div class="d-flex align-items-center gap-3 mb-4">
-            <img src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(Model.Name)}" : Model.AvatarUrl)" alt="@Model.Name" class="rounded-circle shadow-sm" style="width: 64px; height: 64px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(Model.Name)';" />
-            <div>
-                <h3 class="fw-bold text-slate-900 mb-1" style="font-family: Georgia, serif;">Edit @Model.Name</h3>
-                <p class="text-secondary mb-0 small">Update character profile, story assignment, and role details.</p>
-            </div>
+        .page-header-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 1.85rem;
+            text-transform: none !important;
+        }
+
+        .page-header-subtitle {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        /* Stepper styles */
+        .stepper-nav {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 2rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px -2px rgba(0, 0, 0, 0.03);
+            overflow-x: auto;
+        }
+
+        .stepper-line {
+            position: absolute;
+            top: 37px;
+            left: 45px;
+            right: 45px;
+            height: 2px;
+            background-color: #e2e8f0;
+            z-index: 1;
+        }
+
+        .stepper-step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 0 8px;
+        }
+
+        .step-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            color: #64748b;
+            border: 2px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all 0.25s ease;
+            margin-bottom: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        .stepper-step.active .step-circle {
+            background-color: #0d9488;
+            color: #ffffff;
+            border-color: #0d9488;
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.2);
+        }
+
+        .stepper-step.completed .step-circle {
+            background-color: #0d9488;
+            color: #ffffff;
+            border-color: #0d9488;
+        }
+
+        .step-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #64748b;
+            transition: color 0.25s ease;
+            position: relative;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .stepper-step.active .step-label {
+            color: #0d9488;
+            font-weight: 700;
+            background: #f0fdfa;
+        }
+
+        /* Glass Card Container */
+        .glass-form-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+            padding: 2.25rem;
+        }
+
+        .form-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .section-icon-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background-color: #f0fdfa;
+            color: #0d9488;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccfbf1;
+        }
+
+        .required-indicator {
+            color: #ef4444;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        .form-section-subtitle {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .form-label-custom {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .input-char-counter {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .form-control-custom, .form-select-custom {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.88rem;
+            color: #0f172a;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .form-control-custom:focus, .form-select-custom:focus {
+            border-color: #0d9488;
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+            outline: none;
+        }
+
+        /* Theme Wise Custom Dropdown styling */
+        .theme-dropdown-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .theme-dropdown-trigger {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.88rem;
+            color: #0f172a;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            width: 100%;
+            font-weight: 500;
+        }
+
+        .theme-dropdown-trigger:hover, .theme-dropdown-wrapper.open .theme-dropdown-trigger {
+            border-color: #0d9488;
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+        }
+
+        .theme-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            z-index: 99;
+            max-height: 280px;
+            overflow-y: auto;
+            display: none;
+            padding: 6px;
+        }
+
+        .theme-dropdown-wrapper.open .theme-dropdown-menu {
+            display: block;
+            animation: fadeInDown 0.15s ease-out forwards;
+        }
+
+        @@keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .theme-dropdown-option {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .theme-dropdown-option:hover {
+            background-color: #f0fdfa;
+        }
+
+        .theme-dropdown-option.active-option {
+            background-color: #e6fffa;
+            border-left: 3px solid #0d9488;
+        }
+
+        .option-title {
+            font-weight: 600;
+            font-size: 0.86rem;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .option-desc {
+            font-size: 0.76rem;
+            color: #64748b;
+            margin-top: 2px;
+            line-height: 1.35;
+        }
+
+        /* Buttons */
+        .btn-teal {
+            background-color: #0d9488;
+            color: #ffffff;
+            border: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-teal:hover {
+            background-color: #0f766e;
+            color: #ffffff;
+        }
+
+        .btn-outline-teal {
+            border: 1px solid #0d9488;
+            color: #0d9488;
+            background: transparent;
+            font-weight: 600;
+        }
+        .btn-outline-teal:hover {
+            background-color: #f0fdfa;
+            color: #0f766e;
+        }
+
+        /* Live Preview Card styling */
+        .preview-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+            padding: 1.75rem 1.5rem;
+            text-align: center;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .avatar-preview-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1.25rem auto;
+        }
+
+        .avatar-img-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #0f172a;
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .avatar-pencil-edit {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #0d9488;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .avatar-pencil-edit:hover {
+            transform: scale(1.1);
+        }
+
+        .preview-name {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+            text-transform: none !important;
+        }
+
+        .preview-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background-color: #ccfbf1;
+            color: #0f766e;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .preview-one-line {
+            font-size: 0.82rem;
+            color: #64748b;
+            font-style: italic;
+            margin-bottom: 1.25rem;
+            min-height: 1.4rem;
+        }
+
+        .preview-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 1.25rem;
+            text-align: left;
+        }
+
+        .preview-stat-item {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+
+        .preview-stat-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .preview-stat-value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Teal & Utility Color Badges */
+        .bg-teal-subtle {
+            background-color: #ccfbf1 !important;
+            color: #0f766e !important;
+        }
+        .text-teal-800 {
+            color: #115e59 !important;
+        }
+        .border-teal-200 {
+            border-color: #99f6e4 !important;
+        }
+
+        /* Trait & Tag Pill Badges */
+        .trait-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 16px;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: 1px solid #bae6fd;
+            margin: 2px;
+        }
+
+        .tag-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.3;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            margin-top: 4px;
+        }
+
+        .tag-chip-green {
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .tag-chip-red {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .tag-chip-blue {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #93c5fd;
+        }
+
+        .tag-chip-pink {
+            background-color: #fce7f3;
+            color: #be185d;
+            border: 1px solid #f9a8d4;
+        }
+
+        .tag-chip-teal {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .tag-chip-remove {
+            border: none;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            font-size: 0.95rem;
+            line-height: 1;
+            padding: 0;
+            margin-left: 2px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.65;
+            transition: opacity 0.15s ease;
+        }
+        .tag-chip-remove:hover {
+            opacity: 1;
+        }
+
+        .trait-suggestion {
+            transition: all 0.15s ease;
+            cursor: pointer;
+            border-radius: 14px !important;
+            padding: 4px 10px !important;
+            font-size: 0.76rem !important;
+        }
+        .trait-suggestion:hover {
+            background-color: #0d9488 !important;
+            color: #ffffff !important;
+            border-color: #0d9488 !important;
+        }
+
+        .color-swatch-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 1px #cbd5e1;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .color-swatch-btn:hover {
+            transform: scale(1.15);
+        }
+
+        .info-tooltip-icon {
+            color: #94a3b8;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .info-tooltip-icon:hover { color: #0d9488; }
+    </style>
+}
+
+<div class="character-edit-container w-full pb-5 relative z-10 px-4 px-xl-5 py-4" style="max-width: 1600px; margin: 0 auto;">
+    <!-- Breadcrumb & Header Bar -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small fw-medium" style="font-size: 0.82rem;">
+                    <li class="breadcrumb-item">
+                        <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="d-inline-flex align-items-center" style="color: #0d9488; text-decoration: none;">
+                            <i data-lucide="arrow-left" class="me-1" style="width: 14px; height: 14px;"></i> Characters List
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active text-slate-500" aria-current="page">Edit Character</li>
+                </ol>
+            </nav>
+            <h1 class="page-header-title d-flex align-items-center gap-2 mb-1">
+                Edit @Model.Name <span style="color: #D4AF37; font-size: 1.4rem;">✦</span>
+            </h1>
+            <p class="page-header-subtitle mb-0">Update character details, appearance, personality, backstory, and relationships.</p>
         </div>
 
-        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
-            @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="Id" />
-            <input type="hidden" asp-for="CreatedAt" />
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <span class="badge rounded-pill px-3 py-2 fw-semibold" style="background-color: #ccfbf1; color: #0f766e; font-size: 0.85rem;">
+                <i data-lucide="user-check" class="me-1" style="width: 14px; height: 14px;"></i>
+                <span id="headerRoleBadge">@(string.IsNullOrWhiteSpace(Model.Role) ? "Character" : Model.Role)</span>
+            </span>
 
-            <div class="row g-3 mb-3">
-                <!-- Character Name -->
-                <div class="col-12 col-md-6">
-                    <label asp-for="Name" class="form-label-custom">Character Name <span class="text-danger">*</span></label>
-                    <input asp-for="Name" class="form-control form-control-custom" placeholder="e.g. Alaric Vayne" required />
-                    <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
+            <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="btn bg-white rounded-pill px-4 py-2 fw-semibold text-slate-700 hover-lift-subtle" style="border: 1px solid #cbd5e1; font-size: 0.85rem;">
+                Cancel
+            </a>
+
+            <button type="submit" form="editCharacterForm" class="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm hover-lift-subtle d-inline-flex align-items-center gap-2" style="background: linear-gradient(135deg, #0d9488, #0f766e); border: none; font-size: 0.85rem;">
+                <i data-lucide="save" style="width: 16px; height: 16px;"></i> Save Changes
+            </button>
+        </div>
+    </div>
+
+    <!-- Stepper Navigation (6 Steps) -->
+    <div class="stepper-nav" id="editStepperNav">
+        <div class="stepper-line"></div>
+
+        <button type="button" class="stepper-step active" data-step="1" id="step-btn-1">
+            <div class="step-circle">1</div>
+            <span class="step-label">Basic Info</span>
+        </button>
+
+        <button type="button" class="stepper-step" data-step="2" id="step-btn-2">
+            <div class="step-circle">2</div>
+            <span class="step-label">Appearance</span>
+        </button>
+
+        <button type="button" class="stepper-step" data-step="3" id="step-btn-3">
+            <div class="step-circle">3</div>
+            <span class="step-label">Personality</span>
+        </button>
+
+        <button type="button" class="stepper-step" data-step="4" id="step-btn-4">
+            <div class="step-circle">4</div>
+            <span class="step-label">Background</span>
+        </button>
+
+        <button type="button" class="stepper-step" data-step="5" id="step-btn-5">
+            <div class="step-circle">5</div>
+            <span class="step-label">Relationships</span>
+        </button>
+
+        <button type="button" class="stepper-step" data-step="6" id="step-btn-6">
+            <div class="step-circle">6</div>
+            <span class="step-label">Notes & Lore</span>
+        </button>
+    </div>
+
+    <form asp-action="Edit" method="post" id="editCharacterForm" class="needs-validation" novalidate>
+        @Html.AntiForgeryToken()
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div asp-validation-summary="All" class="alert alert-danger mb-4" style="font-size: 0.85rem;"></div>
+        }
+
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CreatedAt" />
+        <input type="hidden" asp-for="StoryId" id="StoryId" />
+        <input type="hidden" asp-for="Role" id="Role" />
+        <input type="hidden" asp-for="ArcType" id="ArcType" />
+        <input type="hidden" asp-for="Gender" id="Gender" />
+        <input type="hidden" asp-for="Status" id="Status" />
+        <input type="hidden" asp-for="Alignment" id="Alignment" />
+        <input type="hidden" asp-for="Temperament" id="Temperament" />
+        <input type="hidden" asp-for="RelationshipsJson" id="RelationshipsJsonInput" />
+
+        <div class="row g-4 align-items-start">
+            <!-- Left Main Form Column (7-8 cols) -->
+            <div class="col-12 col-lg-7 col-xl-8">
+                <div class="glass-form-card">
+
+                    <!-- STEP 1: BASIC INFORMATION -->
+                    <div class="tab-pane-content" id="tab-step-1">
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <div class="section-icon-badge">
+                                    <i data-lucide="user" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <span>Basic Character Information</span>
+                            </div>
+                            <span class="required-indicator">* Required fields</span>
+                        </div>
+                        <p class="form-section-subtitle">Core identity details about your character.</p>
+
+                        <!-- Row 1: Name and Story -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Name" class="form-label-custom">
+                                    Character Name <span class="text-danger">*</span>
+                                    <i data-lucide="info" class="info-tooltip-icon" style="width: 13px; height: 13px;" data-bs-toggle="tooltip" title="Full primary name of the character."></i>
+                                </label>
+                                <input asp-for="Name" id="inputName" class="form-control form-control-custom" placeholder="e.g. Sameer Rathore" maxlength="100" required />
+                                <div id="name-counter" class="input-char-counter">0/100</div>
+                                <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label-custom">
+                                    Story Assignment <span class="text-danger">*</span>
+                                    <i data-lucide="info" class="info-tooltip-icon" style="width: 13px; height: 13px;" data-bs-toggle="tooltip" title="Story universe this character belongs to."></i>
+                                </label>
+                                <div class="theme-dropdown-wrapper" id="dd-story-wrapper">
+                                    <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-story-wrapper')">
+                                        <span id="dd-story-trigger-text" class="d-flex align-items-center gap-2">
+                                            <i data-lucide="book" style="width: 16px; height: 16px; color: #0d9488;"></i>
+                                            <span>Select Story</span>
+                                        </span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        @foreach (var s in stories)
+                                        {
+                                            <div class="theme-dropdown-option @(Model.StoryId == s.Id ? "active-option" : "")"
+                                                 onclick="selectThemeOption('StoryId', '@s.Id', '@s.Title.Replace("'", "\\'")', 'dd-story-trigger-text', 'dd-story-wrapper')">
+                                                <div class="option-title">
+                                                    <i data-lucide="book-open" style="width: 15px; height: 15px; color: #0d9488;"></i>
+                                                    @s.Title
+                                                </div>
+                                                <div class="option-desc">Genre: @s.Genre</div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <span asp-validation-for="StoryId" class="text-danger small mt-1 d-block"></span>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Role, Arc Type, Status -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label-custom">
+                                    Role / Archetype <span class="text-danger">*</span>
+                                </label>
+                                <div class="theme-dropdown-wrapper" id="dd-role-wrapper">
+                                    <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-role-wrapper')">
+                                        <span id="dd-role-trigger-text">@(string.IsNullOrWhiteSpace(Model.Role) ? "Protagonist" : Model.Role)</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Role', 'Protagonist', 'Protagonist (Hero / Lead)', 'dd-role-trigger-text', 'dd-role-wrapper')">
+                                            <div class="option-title">Protagonist</div>
+                                            <div class="option-desc">The main character driving the primary narrative arc.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Role', 'Antagonist', 'Antagonist (Villain / Rival)', 'dd-role-trigger-text', 'dd-role-wrapper')">
+                                            <div class="option-title">Antagonist</div>
+                                            <div class="option-desc">Primary opposing force in narrative.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Role', 'Deuteragonist', 'Deuteragonist', 'dd-role-trigger-text', 'dd-role-wrapper')">
+                                            <div class="option-title">Deuteragonist</div>
+                                            <div class="option-desc">Second most important character.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Role', 'Mentor', 'Mentor / Guide', 'dd-role-trigger-text', 'dd-role-wrapper')">
+                                            <div class="option-title">Mentor</div>
+                                            <div class="option-desc">Guide, teacher, or counselor.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Role', 'Sidekick', 'Sidekick / Companion', 'dd-role-trigger-text', 'dd-role-wrapper')">
+                                            <div class="option-title">Sidekick</div>
+                                            <div class="option-desc">Loyal companion or assistant.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Role', 'Love Interest', 'Love Interest', 'dd-role-trigger-text', 'dd-role-wrapper')">
+                                            <div class="option-title">Love Interest</div>
+                                            <div class="option-desc">Romantic interest.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Role', 'Rival', 'Rival', 'dd-role-trigger-text', 'dd-role-wrapper')">
+                                            <div class="option-title">Rival</div>
+                                            <div class="option-desc">Competitive counterpart.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Role', 'Supporting', 'Supporting Character', 'dd-role-trigger-text', 'dd-role-wrapper')">
+                                            <div class="option-title">Supporting</div>
+                                            <div class="option-desc">Secondary supporting cast.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label-custom">Character Arc Type</label>
+                                <div class="theme-dropdown-wrapper" id="dd-arctype-wrapper">
+                                    <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-arctype-wrapper')">
+                                        <span id="dd-arctype-trigger-text">@(string.IsNullOrWhiteSpace(Model.ArcType) ? "Main" : Model.ArcType)</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('ArcType', 'Main', 'Main (Protagonist / Antagonist)', 'dd-arctype-trigger-text', 'dd-arctype-wrapper')">
+                                            <div class="option-title">Main Arc</div>
+                                            <div class="option-desc">Drives primary story plotline.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('ArcType', 'Supporting', 'Supporting (Secondary Role)', 'dd-arctype-trigger-text', 'dd-arctype-wrapper')">
+                                            <div class="option-title">Supporting Arc</div>
+                                            <div class="option-desc">Secondary character development.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('ArcType', 'Minor', 'Minor (Background / Cameo)', 'dd-arctype-trigger-text', 'dd-arctype-wrapper')">
+                                            <div class="option-title">Minor Arc</div>
+                                            <div class="option-desc">Episodic or background role.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label-custom">Status</label>
+                                <div class="theme-dropdown-wrapper" id="dd-status-wrapper">
+                                    <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-status-wrapper')">
+                                        <span id="dd-status-trigger-text">@(string.IsNullOrWhiteSpace(Model.Status) ? "Active" : Model.Status)</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Status', 'Alive', 'Alive', 'dd-status-trigger-text', 'dd-status-wrapper')">
+                                            <div class="option-title">Alive</div>
+                                            <div class="option-desc">Active in current narrative timeline.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Status', 'Active', 'Active', 'dd-status-trigger-text', 'dd-status-wrapper')">
+                                            <div class="option-title">Active</div>
+                                            <div class="option-desc">Active status in character database.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Status', 'Deceased', 'Deceased', 'dd-status-trigger-text', 'dd-status-wrapper')">
+                                            <div class="option-title">Deceased</div>
+                                            <div class="option-desc">Passed away in lore or narrative timeline.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Status', 'Missing', 'Missing', 'dd-status-trigger-text', 'dd-status-wrapper')">
+                                            <div class="option-title">Missing</div>
+                                            <div class="option-desc">Whereabouts unknown.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Status', 'Draft', 'Draft', 'dd-status-trigger-text', 'dd-status-wrapper')">
+                                            <div class="option-title">Draft</div>
+                                            <div class="option-desc">Character under development.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Nicknames, Age, Gender, Pronouns -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-3">
+                                <label asp-for="Nicknames" class="form-label-custom">Nicknames</label>
+                                <input asp-for="Nicknames" id="inputNicknames" class="form-control form-control-custom" placeholder="e.g. Sam, Red" maxlength="100" />
+                                <div id="nick-counter" class="input-char-counter">0/100</div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label asp-for="Age" class="form-label-custom">Age</label>
+                                <input asp-for="Age" id="inputAge" class="form-control form-control-custom" placeholder="e.g. 28" maxlength="10" />
+                                <div id="age-counter" class="input-char-counter">0/10</div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label-custom">Gender</label>
+                                <div class="theme-dropdown-wrapper" id="dd-gender-wrapper">
+                                    <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-gender-wrapper')">
+                                        <span id="dd-gender-trigger-text">@(string.IsNullOrWhiteSpace(Model.Gender) ? "Select gender" : Model.Gender)</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Gender', 'Male', 'Male', 'dd-gender-trigger-text', 'dd-gender-wrapper')">
+                                            <div class="option-title">Male</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Gender', 'Female', 'Female', 'dd-gender-trigger-text', 'dd-gender-wrapper')">
+                                            <div class="option-title">Female</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Gender', 'Non-Binary', 'Non-Binary', 'dd-gender-trigger-text', 'dd-gender-wrapper')">
+                                            <div class="option-title">Non-Binary</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Gender', 'Other', 'Other / Custom', 'dd-gender-trigger-text', 'dd-gender-wrapper')">
+                                            <div class="option-title">Other / Custom</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label asp-for="Pronouns" class="form-label-custom">Pronouns</label>
+                                <input asp-for="Pronouns" id="inputPronouns" class="form-control form-control-custom" placeholder="e.g. He/Him" maxlength="20" />
+                                <div id="pronouns-counter" class="input-char-counter">0/20</div>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Occupation, Alignment -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Occupation" class="form-label-custom">Occupation</label>
+                                <input asp-for="Occupation" id="inputOccupation" class="form-control form-control-custom" placeholder="e.g. ETF Officer, Commander" maxlength="100" />
+                                <div id="occ-counter" class="input-char-counter">0/100</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label-custom">Alignment</label>
+                                <div class="theme-dropdown-wrapper" id="dd-alignment-wrapper">
+                                    <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-alignment-wrapper')">
+                                        <span id="dd-alignment-trigger-text">@(string.IsNullOrWhiteSpace(Model.Alignment) ? "Select Alignment" : Model.Alignment)</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'Lawful Good', 'Lawful Good (Crusader)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">Lawful Good</div>
+                                            <div class="option-desc">Acts with honor and compassion within rules.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'Neutral Good', 'Neutral Good (Benefactor)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">Neutral Good</div>
+                                            <div class="option-desc">Does what is right regardless of law.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'Chaotic Good', 'Chaotic Good (Rebel)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">Chaotic Good</div>
+                                            <div class="option-desc">Follows personal moral compass.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'Lawful Neutral', 'Lawful Neutral (Judge)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">Lawful Neutral</div>
+                                            <div class="option-desc">Upholds law, order, and tradition.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'True Neutral', 'True Neutral (Undecided)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">True Neutral</div>
+                                            <div class="option-desc">Prefers balance and non-alignment.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'Chaotic Neutral', 'Chaotic Neutral (Free Spirit)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">Chaotic Neutral</div>
+                                            <div class="option-desc">Follows personal desires and freedom.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'Lawful Evil', 'Lawful Evil (Dominator)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">Lawful Evil</div>
+                                            <div class="option-desc">Takes advantage of system for evil goals.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'Neutral Evil', 'Neutral Evil (Malefactor)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">Neutral Evil</div>
+                                            <div class="option-desc">Selfish pursuit without honor.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Alignment', 'Chaotic Evil', 'Chaotic Evil (Destroyer)', 'dd-alignment-trigger-text', 'dd-alignment-wrapper')">
+                                            <div class="option-title">Chaotic Evil</div>
+                                            <div class="option-desc">Unpredictable malice and destruction.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Avatar Image Card Section -->
+                        <div class="p-3 mb-3 border rounded-3 bg-light">
+                            <label class="form-label-custom mb-2">
+                                <i data-lucide="image" style="width: 15px; height: 15px; color: #0d9488;"></i>
+                                Avatar Image & Media
+                            </label>
+                            <div class="d-flex align-items-center gap-3">
+                                <img id="avatarThumbnail" src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(Model.Name ?? "Character")}" : Model.AvatarUrl)" alt="Avatar" class="rounded-circle border bg-white shadow-xs flex-shrink-0" style="width: 64px; height: 64px; object-fit: cover;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Character';" />
+                                <div class="flex-grow-1">
+                                    <input asp-for="AvatarUrl" id="inputAvatarUrl" class="form-control form-control-custom mb-2" placeholder="https://example.com/avatar.jpg or /uploads/..." />
+                                    <div class="d-flex align-items-center gap-2">
+                                        <label for="avatarFileInput" class="btn btn-sm btn-outline-teal cursor-pointer mb-0">
+                                            <i data-lucide="upload" style="width: 14px; height: 14px;" class="me-1"></i> Upload Image
+                                        </label>
+                                        <input type="file" id="avatarFileInput" accept="image/*" class="d-none" />
+                                        
+                                        <button type="button" class="btn btn-sm btn-light border" id="btnPresetAvatars" data-bs-toggle="modal" data-bs-target="#avatarPresetsModal">
+                                            <i data-lucide="smile" style="width: 14px; height: 14px;" class="me-1"></i> Presets
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="OneLineDescription" class="form-label-custom">One-Line Hook / Description</label>
+                            <input asp-for="OneLineDescription" id="inputHook" class="form-control form-control-custom" placeholder="A brief one-sentence overview..." maxlength="250" />
+                            <div class="text-end text-muted small mt-1" id="hookCharCounter">0 / 250</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="BackgroundSummary" class="form-label-custom">Background Summary / Quick Notes</label>
+                            <textarea asp-for="BackgroundSummary" id="inputSummary" class="form-control form-control-custom" rows="3" placeholder="Overview notes about the character..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Tags" class="form-label-custom">Tags (comma-separated)</label>
+                            <input asp-for="Tags" id="inputTags" class="form-control form-control-custom" placeholder="e.g. Hero, ETF, Royal Lineage" />
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: APPEARANCE -->
+                    <div class="tab-pane-content d-none" id="tab-step-2">
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <div class="section-icon-badge">
+                                    <i data-lucide="palette" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <span>Physical Appearance Details</span>
+                            </div>
+                        </div>
+                        <p class="form-section-subtitle">Define physical attributes, facial features, attire, and speech.</p>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Height" class="form-label-custom">Height</label>
+                                <input asp-for="Height" class="form-control form-control-custom" placeholder="e.g. 5'10&quot; / 178 cm" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Build" class="form-label-custom">Build / Body Type</label>
+                                <input asp-for="Build" class="form-control form-control-custom" placeholder="e.g. Athletic, Slim, Muscular" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Complexion" class="form-label-custom">Complexion</label>
+                                <input asp-for="Complexion" class="form-control form-control-custom" placeholder="e.g. Fair, Olive, Tan" />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label asp-for="EyeColor" class="form-label-custom">Eye Color</label>
+                                <input asp-for="EyeColor" class="form-control form-control-custom" placeholder="e.g. Dark Brown, Emerald Green" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="HairColor" class="form-label-custom">Hair Color</label>
+                                <input asp-for="HairColor" class="form-control form-control-custom" placeholder="e.g. Black, Chestnut" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="HairStyle" class="form-label-custom">Hair Style</label>
+                                <input asp-for="HairStyle" class="form-control form-control-custom" placeholder="e.g. Short Crop, Braided" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="DistinguishingFeatures" class="form-label-custom">Distinctive Features</label>
+                            <input asp-for="DistinguishingFeatures" class="form-control form-control-custom" placeholder="e.g. Scar over right brow, Tattoos" />
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label asp-for="ClothingStyle" class="form-label-custom">Clothing Style</label>
+                                <input asp-for="ClothingStyle" class="form-control form-control-custom" placeholder="e.g. Tactical Officer Uniform" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="PreferredColors" class="form-label-custom">Preferred Colors</label>
+                                <input asp-for="PreferredColors" class="form-control form-control-custom" placeholder="e.g. Black, Navy, Silver" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Accessories" class="form-label-custom">Accessories</label>
+                                <input asp-for="Accessories" class="form-control form-control-custom" placeholder="e.g. Silver Ring, ETF Badge" />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label asp-for="VoiceTone" class="form-label-custom">Voice Tone</label>
+                                <input asp-for="VoiceTone" class="form-control form-control-custom" placeholder="e.g. Deep, Commandive, Calm" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Accent" class="form-label-custom">Accent</label>
+                                <input asp-for="Accent" class="form-control form-control-custom" placeholder="e.g. Standard, Urban, Regal" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="SpeechPattern" class="form-label-custom">Speech Pattern</label>
+                                <input asp-for="SpeechPattern" class="form-control form-control-custom" placeholder="e.g. Direct, Formal, Sarcastic" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AppearanceNotes" class="form-label-custom">Appearance Notes</label>
+                            <textarea asp-for="AppearanceNotes" class="form-control form-control-custom" rows="3" placeholder="Additional notes about physical appearance..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: PERSONALITY -->
+                    <div class="tab-pane-content d-none" id="tab-step-3">
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <div class="section-icon-badge">
+                                    <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <span>Personality & Psychology</span>
+                            </div>
+                        </div>
+                        <p class="form-section-subtitle">Character traits, values, strengths, flaws, and motivations.</p>
+
+                        <div class="mb-3">
+                            <label asp-for="PersonalityTraits" class="form-label-custom">Core Personality Traits</label>
+                            <input asp-for="PersonalityTraits" id="inputTraits" class="form-control form-control-custom mb-1" placeholder="e.g. Loyal, Duty-Bound, Tactical, Reserved" />
+                            <div id="traitsTagsContainer" class="d-flex flex-wrap gap-1 mb-2"></div>
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                <span class="small text-muted me-1">Quick Add:</span>
+                                <button type="button" class="badge btn btn-sm btn-light border text-secondary trait-suggestion" data-trait="Brave">+ Brave</button>
+                                <button type="button" class="badge btn btn-sm btn-light border text-secondary trait-suggestion" data-trait="Loyal">+ Loyal</button>
+                                <button type="button" class="badge btn btn-sm btn-light border text-secondary trait-suggestion" data-trait="Ambitious">+ Ambitious</button>
+                                <button type="button" class="badge btn btn-sm btn-light border text-secondary trait-suggestion" data-trait="Tactical">+ Tactical</button>
+                                <button type="button" class="badge btn btn-sm btn-light border text-secondary trait-suggestion" data-trait="Protective">+ Protective</button>
+                                <button type="button" class="badge btn btn-sm btn-light border text-secondary trait-suggestion" data-trait="Stubborn">+ Stubborn</button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PersonalityOverview" class="form-label-custom">Personality Overview</label>
+                            <textarea asp-for="PersonalityOverview" class="form-control form-control-custom" rows="3" placeholder="General description of their psychological profile..."></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label asp-for="ValuesBeliefs" class="form-label-custom">Values & Beliefs</label>
+                                <input asp-for="ValuesBeliefs" class="form-control form-control-custom" placeholder="e.g. Honor, Country, Loyalty" />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label-custom">Temperament</label>
+                                <div class="theme-dropdown-wrapper" id="dd-temperament-wrapper">
+                                    <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-temperament-wrapper')">
+                                        <span id="dd-temperament-trigger-text">@(string.IsNullOrWhiteSpace(Model.Temperament) ? "Select Temperament" : Model.Temperament)</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Temperament', 'Choleric', 'Choleric (Leader / Ambitious)', 'dd-temperament-trigger-text', 'dd-temperament-wrapper')">
+                                            <div class="option-title">Choleric</div>
+                                            <div class="option-desc">Leader, ambitious, goal-driven.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Temperament', 'Sanguine', 'Sanguine (Social / Optimistic)', 'dd-temperament-trigger-text', 'dd-temperament-wrapper')">
+                                            <div class="option-title">Sanguine</div>
+                                            <div class="option-desc">Social, optimistic, lively.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Temperament', 'Phlegmatic', 'Phlegmatic (Calm / Peaceful)', 'dd-temperament-trigger-text', 'dd-temperament-wrapper')">
+                                            <div class="option-title">Phlegmatic</div>
+                                            <div class="option-desc">Calm, peaceful, reliable.</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectThemeOption('Temperament', 'Melancholic', 'Melancholic (Analytical / Quiet)', 'dd-temperament-trigger-text', 'dd-temperament-wrapper')">
+                                            <div class="option-title">Melancholic</div>
+                                            <div class="option-desc">Analytical, reflective, quiet.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Strengths" class="form-label-custom">Strengths</label>
+                                <textarea asp-for="Strengths" class="form-control form-control-custom" rows="2" placeholder="Strategic thinking, leadership under pressure..."></textarea>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Motivations" class="form-label-custom">Motivations</label>
+                                <textarea asp-for="Motivations" class="form-control form-control-custom" rows="2" placeholder="What drives them? Protecting family, justice..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Flaws" class="form-label-custom">Flaws</label>
+                                <textarea asp-for="Flaws" class="form-control form-control-custom" rows="2" placeholder="Overthinks, reluctant to show vulnerability..."></textarea>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Fears" class="form-label-custom">Greatest Fear</label>
+                                <textarea asp-for="Fears" class="form-control form-control-custom" rows="2" placeholder="Failing mission, losing loved ones..."></textarea>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Desires" class="form-label-custom">Core Desires</label>
+                                <textarea asp-for="Desires" class="form-control form-control-custom" rows="2" placeholder="Peace, fulfilling duty..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: BACKGROUND -->
+                    <div class="tab-pane-content d-none" id="tab-step-4">
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <div class="section-icon-badge">
+                                    <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <span>Origin & Backstory</span>
+                            </div>
+                        </div>
+                        <p class="form-section-subtitle">Birthplace, upbringing, key life milestones, and full narrative backstory.</p>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label asp-for="PlaceOfBirth" class="form-label-custom">Place of Birth</label>
+                                <input asp-for="PlaceOfBirth" class="form-control form-control-custom" list="locationOptions" placeholder="e.g. Royal Palace, High Citadel" />
+                                <datalist id="locationOptions">
+                                    @foreach (var loc in worldLocations)
+                                    {
+                                        <option value="@loc.Name"></option>
+                                    }
+                                </datalist>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="DateOfBirth" class="form-label-custom">Date of Birth</label>
+                                <input asp-for="DateOfBirth" class="form-control form-control-custom" placeholder="e.g. 14th August" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Nationality" class="form-label-custom">Nationality / Realm</label>
+                                <input asp-for="Nationality" class="form-control form-control-custom" placeholder="e.g. Indian, Valorian" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="FamilyBackground" class="form-label-custom">Family Background</label>
+                            <textarea asp-for="FamilyBackground" class="form-control form-control-custom" rows="2" placeholder="Belongs to a royal family..."></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Upbringing" class="form-label-custom">Upbringing</label>
+                                <textarea asp-for="Upbringing" class="form-control form-control-custom" rows="2" placeholder="Strict military and royal training..."></textarea>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Education" class="form-label-custom">Education</label>
+                                <textarea asp-for="Education" class="form-control form-control-custom" rows="2" placeholder="National Defense Academy, ETF Special Ops..."></textarea>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="KeyEvents" class="form-label-custom">Key Life Events</label>
+                                <textarea asp-for="KeyEvents" class="form-control form-control-custom" rows="2" placeholder="Joined ETF, Secret Operation..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Backstory" class="form-label-custom">Full Backstory Narrative</label>
+                            <textarea asp-for="Backstory" class="form-control form-control-custom" rows="4" placeholder="Detailed narrative of character's life story..."></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-4">
+                                <label asp-for="SocioeconomicStatus" class="form-label-custom">Socioeconomic Status</label>
+                                <input asp-for="SocioeconomicStatus" class="form-control form-control-custom" placeholder="e.g. Royal / Wealthy" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="CurrentResidence" class="form-label-custom">Current Residence</label>
+                                <input asp-for="CurrentResidence" class="form-control form-control-custom" list="locationOptions" placeholder="e.g. ETF HQ, Capital City" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label asp-for="Languages" class="form-label-custom">Languages Spoken</label>
+                                <input asp-for="Languages" class="form-control form-control-custom" placeholder="e.g. Hindi, English" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="BackgroundDocumentUrl" class="form-label-custom">Background Document File</label>
+                            <div class="input-group">
+                                <input asp-for="BackgroundDocumentUrl" id="inputBackgroundDocUrl" class="form-control form-control-custom" placeholder="/uploads/background_docs/file.pdf" />
+                                <label for="bgDocFileInput" class="btn btn-outline-teal cursor-pointer mb-0">
+                                    <i data-lucide="upload" style="width: 14px; height: 14px;" class="me-1"></i> Upload
+                                </label>
+                                <input type="file" id="bgDocFileInput" class="d-none" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 5: RELATIONSHIPS -->
+                    <div class="tab-pane-content d-none" id="tab-step-5">
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <div class="section-icon-badge">
+                                    <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <span>Character Relationships</span>
+                            </div>
+                            <button type="button" class="btn btn-teal px-3 py-1.5 rounded-3 fw-semibold shadow-xs" id="btnAddRelationship">
+                                <i data-lucide="plus" style="width: 15px; height: 15px;" class="me-1"></i> Add Relationship
+                            </button>
+                        </div>
+                        <p class="form-section-subtitle">Manage character ties, allies, rivals, family, and romantic relationships.</p>
+
+                        <!-- Beautified Interactive Relationships Table Container -->
+                        <div class="card border rounded-3 mb-4 overflow-hidden shadow-xs" style="border-color: #e2e8f0;">
+                            <div class="card-header bg-slate-50 border-bottom py-2.5 px-3 d-flex align-items-center justify-content-between">
+                                <span class="fw-bold text-slate-800 small text-uppercase" style="letter-spacing: 0.5px;">
+                                    <i data-lucide="link-2" style="width: 14px; height: 14px;" class="me-1 text-teal"></i>
+                                    Defined Character Ties
+                                </span>
+                                <span class="badge bg-teal-subtle text-teal-800 rounded-pill px-2.5 py-1 small fw-semibold" id="relCountBadge">0 Relationships</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" id="relationshipsTable">
+                                    <thead class="table-light text-slate-700" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <tr>
+                                            <th style="width: 32%;">Related Character</th>
+                                            <th style="width: 22%;">Relation Type</th>
+                                            <th style="width: 32%;">Dynamics / Description</th>
+                                            <th class="text-end" style="width: 14%;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="relationshipTableBody">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- General Relationship Fields -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Allies" class="form-label-custom">
+                                    <i data-lucide="user-check" style="width: 14px; height: 14px; color: #10b981;"></i>
+                                    Allies & Friends
+                                </label>
+                                <input asp-for="Allies" id="fieldAllies" class="form-control form-control-custom mb-1" placeholder="Names of key allies (e.g. Commander Roy, Priya)" />
+                                <div id="alliesTagsContainer" class="d-flex flex-wrap gap-1"></div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Enemies" class="form-label-custom">
+                                    <i data-lucide="user-x" style="width: 14px; height: 14px; color: #ef4444;"></i>
+                                    Enemies & Antagonists
+                                </label>
+                                <input asp-for="Enemies" id="fieldEnemies" class="form-control form-control-custom mb-1" placeholder="Names of key enemies (e.g. Vikram, General Shadow)" />
+                                <div id="enemiesTagsContainer" class="d-flex flex-wrap gap-1"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Family" class="form-label-custom">
+                                    <i data-lucide="users" style="width: 14px; height: 14px; color: #3b82f6;"></i>
+                                    Family Members
+                                </label>
+                                <input asp-for="Family" id="fieldFamily" class="form-control form-control-custom mb-1" placeholder="Family relationships (e.g. Damsingh Rathore, Meera Rathore)" />
+                                <div id="familyTagsContainer" class="d-flex flex-wrap gap-1"></div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label asp-for="LoveInterests" class="form-label-custom">
+                                    <i data-lucide="heart" style="width: 14px; height: 14px; color: #ec4899;"></i>
+                                    Love Interests
+                                </label>
+                                <input asp-for="LoveInterests" id="fieldLoveInterests" class="form-control form-control-custom mb-1" placeholder="Romantic relationships..." />
+                                <div id="loveInterestsTagsContainer" class="d-flex flex-wrap gap-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- Styled Relationship Diagram Upload Box -->
+                        <div class="p-3.5 mt-4 rounded-3 border bg-slate-50" style="border: 1.5px dashed #cbd5e1; background-color: #f8fafc;">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; background-color: #f0fdfa; color: #0d9488; border: 1px solid #ccfbf1;">
+                                        <i data-lucide="share-2" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-slate-900" style="font-size: 0.9rem;">Relationship Chart / Diagram File</h6>
+                                        <span class="text-slate-500 small">Upload mindmap, diagram, or family tree file (SVG, PNG, PDF)</span>
+                                    </div>
+                                </div>
+                                <div class="input-group" style="max-width: 360px;">
+                                    <input asp-for="RelationshipChartUrl" id="inputRelChartUrl" class="form-control form-control-custom" placeholder="/uploads/relationship_docs/chart.svg" />
+                                    <label for="relChartFileInput" class="btn btn-outline-teal cursor-pointer mb-0">
+                                        <i data-lucide="upload" style="width: 14px; height: 14px;" class="me-1"></i> Upload
+                                    </label>
+                                    <input type="file" id="relChartFileInput" class="d-none" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 6: NOTES & LORE -->
+                    <div class="tab-pane-content d-none" id="tab-step-6">
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <div class="section-icon-badge">
+                                    <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <span>Author Notes & Lore</span>
+                            </div>
+                        </div>
+                        <p class="form-section-subtitle">Writing reminders, insignia, custom lore documents, and theme customization.</p>
+
+                        <div class="mb-3">
+                            <label asp-for="AuthorNotes" class="form-label-custom">Author's Notes & Writing Hints</label>
+                            <textarea asp-for="AuthorNotes" class="form-control form-control-custom" rows="4" placeholder="Personal writing notes, character voice reminders..."></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label asp-for="FamilyCrest" class="form-label-custom">Family Crest / Insignia Name</label>
+                                <input asp-for="FamilyCrest" class="form-control form-control-custom" placeholder="e.g. Royal Crest, Falcon Emblem" />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label asp-for="ThemeColor" class="form-label-custom">Theme Color (Hex)</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input asp-for="ThemeColor" type="color" id="inputThemeColorPicker" class="form-control form-control-color" style="width: 45px; height: 38px; border-radius: 8px; padding: 2px;" value="@(string.IsNullOrWhiteSpace(Model.ThemeColor) ? "#0d9488" : Model.ThemeColor)" />
+                                    <input asp-for="ThemeColor" id="inputThemeColorHex" class="form-control form-control-custom flex-grow-1" placeholder="#0d9488" />
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mt-2">
+                                    <span class="small text-muted me-1">Swatches:</span>
+                                    <div class="color-swatch-btn" style="background-color: #0d9488;" data-color="#0d9488"></div>
+                                    <div class="color-swatch-btn" style="background-color: #3b82f6;" data-color="#3b82f6"></div>
+                                    <div class="color-swatch-btn" style="background-color: #8b5cf6;" data-color="#8b5cf6"></div>
+                                    <div class="color-swatch-btn" style="background-color: #ec4899;" data-color="#ec4899"></div>
+                                    <div class="color-swatch-btn" style="background-color: #f59e0b;" data-color="#f59e0b"></div>
+                                    <div class="color-swatch-btn" style="background-color: #ef4444;" data-color="#ef4444"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CustomDocumentUrl" class="form-label-custom">Custom Lore / Document File</label>
+                            <div class="input-group">
+                                <input asp-for="CustomDocumentUrl" id="inputCustomDocUrl" class="form-control form-control-custom" placeholder="/uploads/custom_docs/file.pdf" />
+                                <label for="customDocFileInput" class="btn btn-outline-teal cursor-pointer mb-0">
+                                    <i data-lucide="upload" style="width: 14px; height: 14px;" class="me-1"></i> Upload
+                                </label>
+                                <input type="file" id="customDocFileInput" class="d-none" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Action Footer -->
+                    <div class="d-flex align-items-center justify-content-between pt-4 mt-4 border-top">
+                        <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="btn btn-light border px-4 py-2 rounded-3 text-slate-700">
+                            Cancel
+                        </a>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-light border px-3 py-2 rounded-3 d-none" id="btnPrevStep">
+                                <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous
+                            </button>
+                            <button type="button" class="btn btn-outline-teal px-3 py-2 rounded-3" id="btnNextStep">
+                                Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
+                            </button>
+                            <button type="submit" class="btn btn-teal px-4 py-2 rounded-3 shadow-sm">
+                                <i data-lucide="save" style="width: 16px; height: 16px;" class="me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Live Preview Card (4-5 cols) -->
+            <div class="col-12 col-lg-5 col-xl-4">
+                <div class="preview-card">
+                    <div class="d-flex align-items-center justify-content-between mb-3 text-start">
+                        <span class="small fw-bold text-uppercase text-muted" style="letter-spacing: 0.5px;">Live Preview</span>
+                        <i data-lucide="sparkles" style="width: 16px; height: 16px; color: #0d9488;"></i>
+                    </div>
+
+                    <div class="avatar-preview-container">
+                        <div class="avatar-img-circle">
+                            <img id="previewAvatar" src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(Model.Name ?? "Character")}" : Model.AvatarUrl)" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Character';" />
+                        </div>
+                        <div class="avatar-pencil-edit" onclick="document.getElementById('avatarFileInput').click();" data-bs-toggle="tooltip" title="Change Avatar Image">
+                            <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                        </div>
+                    </div>
+
+                    <h4 class="preview-name" id="previewName">@(string.IsNullOrWhiteSpace(Model.Name) ? "Character Name" : Model.Name)</h4>
+                    <span class="preview-role-badge" id="previewRoleBadge">
+                        <i data-lucide="shield" style="width: 12px; height: 12px;"></i>
+                        <span id="previewRole">@(string.IsNullOrWhiteSpace(Model.Role) ? "Protagonist" : Model.Role)</span>
+                    </span>
+
+                    <p class="preview-one-line" id="previewHook">
+                        "@(string.IsNullOrWhiteSpace(Model.OneLineDescription) ? "No one-line description set yet." : Model.OneLineDescription)"
+                    </p>
+
+                    <div class="preview-stats-grid">
+                        <div class="preview-stat-item">
+                            <div class="preview-stat-label">Age</div>
+                            <div class="preview-stat-value" id="previewAge">@(string.IsNullOrWhiteSpace(Model.Age) ? "—" : Model.Age)</div>
+                        </div>
+                        <div class="preview-stat-item">
+                            <div class="preview-stat-label">Gender</div>
+                            <div class="preview-stat-value" id="previewGender">@(string.IsNullOrWhiteSpace(Model.Gender) ? "—" : Model.Gender)</div>
+                        </div>
+                        <div class="preview-stat-item">
+                            <div class="preview-stat-label">Status</div>
+                            <div class="preview-stat-value" id="previewStatus">@(string.IsNullOrWhiteSpace(Model.Status) ? "Active" : Model.Status)</div>
+                        </div>
+                        <div class="preview-stat-item">
+                            <div class="preview-stat-label">Alignment</div>
+                            <div class="preview-stat-value" id="previewAlignment">@(string.IsNullOrWhiteSpace(Model.Alignment) ? "—" : Model.Alignment)</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-start">
+                        <div class="preview-stat-label mb-1">Occupation</div>
+                        <div class="small fw-semibold text-slate-800" id="previewOccupation">@(string.IsNullOrWhiteSpace(Model.Occupation) ? "Not specified" : Model.Occupation)</div>
+                    </div>
+
+                    <div class="mt-3 text-start">
+                        <div class="preview-stat-label mb-1">Personality Traits</div>
+                        <div id="previewTraitsContainer" class="d-flex flex-wrap gap-1">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal: Preset Avatars -->
+<div class="modal fade" id="avatarPresetsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold">Select Preset Avatar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3" id="presetAvatarsGrid">
+                    <!-- Preset avatars rendered via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add / Edit Relationship -->
+<div class="modal fade" id="addRelationshipModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom bg-light">
+                <h5 class="modal-title fw-bold text-slate-900 d-flex align-items-center gap-2" id="modalRelTitleHeader">
+                    <i data-lucide="user-plus" class="text-teal" style="width: 20px; height: 20px; color: #0d9488;"></i>
+                    <span>Add Character Relationship</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Duplicate / Error Warning Box -->
+                <div id="modalRelError" class="alert alert-danger d-none py-2 px-3 small mb-3 align-items-center gap-2">
+                    <i data-lucide="alert-circle" style="width: 16px; height: 16px;" class="flex-shrink-0"></i>
+                    <span id="modalRelErrorText"></span>
                 </div>
 
-                <!-- Story Assignment -->
-                <div class="col-12 col-md-6">
-                    <label asp-for="StoryId" class="form-label-custom">Story Assignment <span class="text-danger">*</span></label>
-                    <select asp-for="StoryId" class="form-select form-select-custom" required>
-                        @foreach (var s in stories)
-                        {
-                            <option value="@s.Id" selected="@(Model.StoryId == s.Id)">@s.Title</option>
-                        }
-                    </select>
-                    <span asp-validation-for="StoryId" class="text-danger small mt-1 d-block"></span>
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label-custom">
+                            Select Existing Character
+                            <i data-lucide="info" class="info-tooltip-icon" style="width: 13px; height: 13px;" data-bs-toggle="tooltip" title="Select a character from your story cast to auto-fill their info."></i>
+                        </label>
+                        <select id="modalRelTargetChar" class="form-select form-select-custom mb-2">
+                            <option value="">-- Choose Existing Character --</option>
+                            @foreach (var oc in otherCharacters)
+                            {
+                                <option value="@oc.Name" data-avatar="@(string.IsNullOrEmpty(oc.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(oc.Name)}" : oc.AvatarUrl)" data-role="@oc.Role">@oc.Name (@oc.Role)</option>
+                            }
+                        </select>
+                        
+                        <label class="form-label-custom mt-2">Or Type New / Custom Character Name</label>
+                        <input type="text" id="modalRelCustomName" class="form-control form-control-custom" placeholder="e.g. Damsingh Rathore" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label-custom">Role / Archetype</label>
+                        <select id="modalRelRole" class="form-select form-select-custom">
+                            <option value="Supporting" selected>Supporting Character</option>
+                            <option value="Protagonist">Protagonist</option>
+                            <option value="Antagonist">Antagonist</option>
+                            <option value="Mentor">Mentor</option>
+                            <option value="Sidekick">Sidekick</option>
+                            <option value="Love Interest">Love Interest</option>
+                            <option value="Rival">Rival</option>
+                            <option value="Minor">Minor Character</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Avatar Upload Section for Relationship Character -->
+                <div class="p-3 mb-3 border rounded-3 bg-light">
+                    <label class="form-label-custom mb-2 d-block">Relationship Character Avatar</label>
+                    <div class="d-flex align-items-center gap-3">
+                        <img id="modalRelAvatarPreview" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Character" alt="Avatar Preview" class="rounded-circle border bg-white shadow-xs" style="width: 54px; height: 54px; object-fit: cover;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=Character';" />
+                        <div class="flex-grow-1">
+                            <input type="text" id="modalRelAvatarUrl" class="form-control form-control-custom mb-2" placeholder="https://images.unsplash.com/... or upload image below" />
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="modalRelAvatarFileInput" class="btn btn-sm btn-outline-teal cursor-pointer mb-0">
+                                    <i data-lucide="upload" style="width: 14px; height: 14px;" class="me-1"></i> Upload Image
+                                </label>
+                                <input type="file" id="modalRelAvatarFileInput" accept="image/*" class="d-none" />
+                                <span class="small text-muted">Supports JPG, PNG, WebP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label-custom">Relationship Title / Type</label>
+                        <select id="modalRelType" class="form-select form-select-custom">
+                            <option value="Father">Father</option>
+                            <option value="Mother">Mother</option>
+                            <option value="Parent">Parent</option>
+                            <option value="Sibling">Sibling / Brother / Sister</option>
+                            <option value="Child">Son / Daughter</option>
+                            <option value="Ally">Ally / Friend</option>
+                            <option value="Enemy">Enemy / Adversary</option>
+                            <option value="Love Interest">Love Interest / Spouse</option>
+                            <option value="Mentor">Mentor / Guide</option>
+                            <option value="Rival">Rival</option>
+                            <option value="Neutral">Neutral / Associate</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label-custom">Dynamics Type</label>
+                        <select id="modalRelDynamicsType" class="form-select form-select-custom">
+                            <option value="Positive" selected>Positive (Friendly / Supportive)</option>
+                            <option value="Negative">Negative (Hostile / Antagonistic)</option>
+                            <option value="Neutral">Neutral (Professional / Distant)</option>
+                            <option value="Complex">Complex (Complicated / Mixed)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-custom">Dynamics / Relationship Description</label>
+                    <textarea id="modalRelNotes" class="form-control form-control-custom" rows="2" placeholder="Standard relationship dynamics, history, or conflict notes..."></textarea>
                 </div>
             </div>
-
-            <div class="row g-3 mb-3">
-                <!-- Role -->
-                <div class="col-12 col-md-4">
-                    <label asp-for="Role" class="form-label-custom">Role / Archetype <span class="text-danger">*</span></label>
-                    <input asp-for="Role" class="form-control form-control-custom" placeholder="e.g. Protagonist, Mentor" required />
-                    <span asp-validation-for="Role" class="text-danger small mt-1 d-block"></span>
-                </div>
-
-                <!-- Character Arc Type -->
-                <div class="col-12 col-md-4">
-                    <label asp-for="ArcType" class="form-label-custom">Character Arc Type</label>
-                    <select asp-for="ArcType" class="form-select form-select-custom">
-                        <option value="Main" selected="@(Model.ArcType == "Main")">Main (Protagonist / Antagonist)</option>
-                        <option value="Supporting" selected="@(Model.ArcType == "Supporting")">Supporting (Secondary Role)</option>
-                        <option value="Minor" selected="@(Model.ArcType == "Minor")">Minor (Background / Cameo)</option>
-                    </select>
-                </div>
-
-                <!-- Status -->
-                <div class="col-12 col-md-4">
-                    <label asp-for="Status" class="form-label-custom">Character Status</label>
-                    <select asp-for="Status" class="form-select form-select-custom">
-                        <option value="Active" selected="@(Model.Status == "Active")">Active</option>
-                        <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
-                        <option value="Archived" selected="@(Model.Status == "Archived")">Archived</option>
-                    </select>
-                </div>
+            <div class="modal-footer border-top bg-light">
+                <button type="button" class="btn btn-light border px-4 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-teal px-4 rounded-3 shadow-sm" id="btnSaveModalRelationship">
+                    <i data-lucide="check" style="width: 15px; height: 15px;" class="me-1"></i> <span id="modalSaveBtnText">Add Relationship</span>
+                </button>
             </div>
-
-            <!-- Avatar URL -->
-            <div class="mb-3">
-                <label asp-for="AvatarUrl" class="form-label-custom">Avatar Image URL</label>
-                <input asp-for="AvatarUrl" class="form-control form-control-custom" placeholder="https://example.com/image.jpg" />
-                <span class="text-muted small">Enter an image URL or upload via portrait manager.</span>
-            </div>
-
-            <!-- One-Line Description -->
-            <div class="mb-3">
-                <label asp-for="OneLineDescription" class="form-label-custom">One-Line Hook / Description</label>
-                <input asp-for="OneLineDescription" class="form-control form-control-custom" placeholder="e.g. A loyal warrior torn between duty and destiny." maxlength="250" />
-            </div>
-
-            <!-- Background Summary -->
-            <div class="mb-4">
-                <label asp-for="BackgroundSummary" class="form-label-custom">Background Summary / Notes</label>
-                <textarea asp-for="BackgroundSummary" class="form-control form-control-custom" rows="3" placeholder="Brief notes about the character's backstory, goals, or traits..."></textarea>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-end gap-3 pt-3 border-top" style="border-color: #f1f5f9;">
-                <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="btn btn-light border px-4 py-2 rounded-3 text-slate-700">Cancel</a>
-                <button type="submit" class="btn btn-teal px-4 py-2 rounded-3">Save Changes</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
+        // Custom dropdown helpers
+        function toggleDropdown(wrapperId) {
+            const allWrappers = document.querySelectorAll('.theme-dropdown-wrapper');
+            allWrappers.forEach(w => {
+                if (w.id !== wrapperId) w.classList.remove('open');
+            });
+            const target = document.getElementById(wrapperId);
+            if (target) target.classList.toggle('open');
+        }
+
+        function selectThemeOption(hiddenFieldId, value, labelText, triggerTextId, wrapperId) {
+            const hiddenInput = document.getElementById(hiddenFieldId);
+            if (hiddenInput) {
+                hiddenInput.value = value;
+                hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            const triggerText = document.getElementById(triggerTextId);
+            if (triggerText) {
+                triggerText.textContent = labelText;
+            }
+            const wrapper = document.getElementById(wrapperId);
+            if (wrapper) {
+                wrapper.classList.remove('open');
+                wrapper.querySelectorAll('.theme-dropdown-option').forEach(opt => {
+                    if (opt.getAttribute('onclick')?.includes(`'${value}'`)) {
+                        opt.classList.add('active-option');
+                    } else {
+                        opt.classList.remove('active-option');
+                    }
+                });
+            }
+        }
+
+        // Close custom dropdowns on click outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.theme-dropdown-wrapper')) {
+                document.querySelectorAll('.theme-dropdown-wrapper').forEach(w => w.classList.remove('open'));
+            }
+        });
+
+        // Character counter update helper
+        function updateCharCounter(inputId, counterId) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(counterId);
+            if (input && counter) {
+                const max = input.getAttribute('maxlength') || 100;
+                counter.textContent = `${input.value.length}/${max}`;
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
+            }
+
+            // Character counters initialization
+            updateCharCounter('inputName', 'name-counter');
+            updateCharCounter('inputNicknames', 'nick-counter');
+            updateCharCounter('inputAge', 'age-counter');
+            updateCharCounter('inputPronouns', 'pronouns-counter');
+            updateCharCounter('inputOccupation', 'occ-counter');
+
+            // Stepper Navigation
+            const stepperSteps = document.querySelectorAll('.stepper-step');
+            const tabContents = document.querySelectorAll('.tab-pane-content');
+            const btnPrevStep = document.getElementById('btnPrevStep');
+            const btnNextStep = document.getElementById('btnNextStep');
+
+            let currentStep = 1;
+            const totalSteps = 6;
+
+            function goToStep(stepNum) {
+                if (stepNum < 1) stepNum = 1;
+                if (stepNum > totalSteps) stepNum = totalSteps;
+                currentStep = stepNum;
+
+                stepperSteps.forEach(btn => {
+                    const s = parseInt(btn.getAttribute('data-step'));
+                    if (s === stepNum) {
+                        btn.classList.add('active');
+                        btn.classList.remove('completed');
+                    } else if (s < stepNum) {
+                        btn.classList.remove('active');
+                        btn.classList.add('completed');
+                    } else {
+                        btn.classList.remove('active');
+                        btn.classList.remove('completed');
+                    }
+                });
+
+                tabContents.forEach(c => {
+                    if (c.id === `tab-step-${stepNum}`) {
+                        c.classList.remove('d-none');
+                    } else {
+                        c.classList.add('d-none');
+                    }
+                });
+
+                // Update Prev/Next buttons
+                if (currentStep === 1) {
+                    btnPrevStep.classList.add('d-none');
+                } else {
+                    btnPrevStep.classList.remove('d-none');
+                }
+
+                if (currentStep === totalSteps) {
+                    btnNextStep.classList.add('d-none');
+                } else {
+                    btnNextStep.classList.remove('d-none');
+                }
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            stepperSteps.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const s = parseInt(this.getAttribute('data-step'));
+                    goToStep(s);
+                });
+            });
+
+            if (btnPrevStep) {
+                btnPrevStep.addEventListener('click', function () {
+                    goToStep(currentStep - 1);
+                });
+            }
+
+            if (btnNextStep) {
+                btnNextStep.addEventListener('click', function () {
+                    goToStep(currentStep + 1);
+                });
+            }
+
+            // Live Preview Syncing
+            const inputName = document.getElementById('inputName');
+            const hiddenRole = document.getElementById('Role');
+            const hiddenStatus = document.getElementById('Status');
+            const hiddenAlignment = document.getElementById('Alignment');
+            const inputAge = document.getElementById('inputAge');
+            const hiddenGender = document.getElementById('Gender');
+            const inputOccupation = document.getElementById('inputOccupation');
+            const inputAvatarUrl = document.getElementById('inputAvatarUrl');
+            const inputHook = document.getElementById('inputHook');
+            const inputTraits = document.getElementById('inputTraits');
+
+            const previewName = document.getElementById('previewName');
+            const previewRole = document.getElementById('previewRole');
+            const headerRoleBadge = document.getElementById('headerRoleBadge');
+            const previewAge = document.getElementById('previewAge');
+            const previewGender = document.getElementById('previewGender');
+            const previewStatus = document.getElementById('previewStatus');
+            const previewAlignment = document.getElementById('previewAlignment');
+            const previewOccupation = document.getElementById('previewOccupation');
+            const previewAvatar = document.getElementById('previewAvatar');
+            const avatarThumbnail = document.getElementById('avatarThumbnail');
+            const previewHook = document.getElementById('previewHook');
+            const hookCharCounter = document.getElementById('hookCharCounter');
+            const previewTraitsContainer = document.getElementById('previewTraitsContainer');
+
+            function updatePreview() {
+                if (inputName && previewName) previewName.textContent = inputName.value.trim() || "Character Name";
+                if (hiddenRole) {
+                    const r = hiddenRole.value || "Protagonist";
+                    if (previewRole) previewRole.textContent = r;
+                    if (headerRoleBadge) headerRoleBadge.textContent = r;
+                }
+                if (inputAge && previewAge) previewAge.textContent = inputAge.value.trim() || "—";
+                if (hiddenGender && previewGender) previewGender.textContent = hiddenGender.value.trim() || "—";
+                if (hiddenStatus && previewStatus) previewStatus.textContent = hiddenStatus.value || "Active";
+                if (hiddenAlignment && previewAlignment) previewAlignment.textContent = hiddenAlignment.value || "—";
+                if (inputOccupation && previewOccupation) previewOccupation.textContent = inputOccupation.value.trim() || "Not specified";
+
+                if (inputHook && previewHook) {
+                    previewHook.textContent = inputHook.value.trim() ? `"${inputHook.value.trim()}"` : '"No one-line description set yet."';
+                    if (hookCharCounter) hookCharCounter.textContent = `${inputHook.value.length} / 250`;
+                }
+
+                if (inputAvatarUrl) {
+                    const url = inputAvatarUrl.value.trim() || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(inputName?.value || "Character")}`;
+                    if (previewAvatar) previewAvatar.src = url;
+                    if (avatarThumbnail) avatarThumbnail.src = url;
+                }
+
+                if (inputTraits && previewTraitsContainer) {
+                    previewTraitsContainer.innerHTML = '';
+                    const traits = inputTraits.value.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                    if (traits.length === 0) {
+                        previewTraitsContainer.innerHTML = '<span class="small text-muted italic">No traits added</span>';
+                    } else {
+                        traits.forEach(t => {
+                            const pill = document.createElement('span');
+                            pill.className = 'trait-pill';
+                            pill.textContent = t;
+                            previewTraitsContainer.appendChild(pill);
+                        });
+                    }
+                }
+            }
+
+            [inputName, hiddenRole, hiddenStatus, hiddenAlignment, inputAge, hiddenGender, inputOccupation, inputAvatarUrl, inputHook, inputTraits].forEach(el => {
+                if (el) {
+                    el.addEventListener('input', updatePreview);
+                    el.addEventListener('change', updatePreview);
+                }
+            });
+
+            updatePreview();
+
+            // Trait suggestions
+            document.querySelectorAll('.trait-suggestion').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const trait = this.getAttribute('data-trait');
+                    if (inputTraits && trait) {
+                        let current = inputTraits.value.trim();
+                        if (current) {
+                            const list = current.split(',').map(s => s.trim());
+                            if (!list.includes(trait)) {
+                                inputTraits.value = current + ', ' + trait;
+                            }
+                        } else {
+                            inputTraits.value = trait;
+                        }
+                        inputTraits.dispatchEvent(new Event('input'));
+                        updatePreview();
+                    }
+                });
+            });
+
+            // Interactive Tag Chips Setup for Traits, Allies, Enemies, Family, and Love Interests
+            function setupTagInput(inputId, containerId, chipClass) {
+                const inputEl = document.getElementById(inputId);
+                const containerEl = document.getElementById(containerId);
+                if (!inputEl || !containerEl) return;
+
+                function renderTags() {
+                    containerEl.innerHTML = '';
+                    const items = inputEl.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                    items.forEach((item, idx) => {
+                        const chip = document.createElement('span');
+                        chip.className = `tag-chip ${chipClass}`;
+                        chip.innerHTML = `${item} <button type="button" class="tag-chip-remove" title="Remove">&times;</button>`;
+                        chip.querySelector('.tag-chip-remove').addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            items.splice(idx, 1);
+                            inputEl.value = items.join(', ');
+                            renderTags();
+                            if (inputId === 'inputTraits') updatePreview();
+                        });
+                        containerEl.appendChild(chip);
+                    });
+                }
+
+                inputEl.addEventListener('input', renderTags);
+                inputEl.addEventListener('change', renderTags);
+                renderTags();
+            }
+
+            setupTagInput('inputTraits', 'traitsTagsContainer', 'tag-chip-teal');
+            setupTagInput('fieldAllies', 'alliesTagsContainer', 'tag-chip-green');
+            setupTagInput('fieldEnemies', 'enemiesTagsContainer', 'tag-chip-red');
+            setupTagInput('fieldFamily', 'familyTagsContainer', 'tag-chip-blue');
+            setupTagInput('fieldLoveInterests', 'loveInterestsTagsContainer', 'tag-chip-pink');
+
+            // AJAX File Upload Helper
+            function setupFileUpload(fileInputId, urlInputId, endpoint, formDataKey, successCallback) {
+                const fileInput = document.getElementById(fileInputId);
+                const urlInput = document.getElementById(urlInputId);
+                if (!fileInput) return;
+
+                fileInput.addEventListener('change', function () {
+                    const file = this.files[0];
+                    if (!file) return;
+
+                    const formData = new FormData();
+                    formData.append(formDataKey, file);
+
+                    fetch(endpoint, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (urlInput) urlInput.value = data.avatarUrl || data.documentUrl || '';
+                            if (successCallback) successCallback(data);
+                            updatePreview();
+                        } else {
+                            alert(data.message || 'Upload failed.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error uploading file.');
+                    });
+                });
+            }
+
+            setupFileUpload('avatarFileInput', 'inputAvatarUrl', '/Characters/UploadAvatar', 'file', function (data) {
+                if (previewAvatar) previewAvatar.src = data.avatarUrl;
+                if (avatarThumbnail) avatarThumbnail.src = data.avatarUrl;
+            });
+
+            setupFileUpload('bgDocFileInput', 'inputBackgroundDocUrl', '/Characters/UploadBackgroundDoc', 'file');
+            setupFileUpload('relChartFileInput', 'inputRelChartUrl', '/Characters/UploadRelationshipDoc', 'file');
+            setupFileUpload('customDocFileInput', 'inputCustomDocUrl', '/Characters/UploadCustomDoc', 'file');
+
+            // Preset Avatars Generation
+            const presetGrid = document.getElementById('presetAvatarsGrid');
+            if (presetGrid) {
+                const styles = ['avataaars', 'bottts', 'lorelei', 'micah', 'personas', 'adventurer'];
+                presetGrid.innerHTML = '';
+                styles.forEach((style, i) => {
+                    for (let j = 1; j <= 2; j++) {
+                        const seed = `seed_${style}_${j}`;
+                        const imgUrl = `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}`;
+                        const col = document.createElement('div');
+                        col.className = 'col-4 col-md-3 text-center';
+                        col.innerHTML = `
+                            <div class="p-2 border rounded-3 cursor-pointer preset-card hover-shadow" style="transition: all 0.2s ease;">
+                                <img src="${imgUrl}" alt="${style}" class="rounded-circle mb-2" style="width: 64px; height: 64px; object-fit: cover;" />
+                                <div class="small fw-semibold text-capitalize text-truncate">${style}</div>
+                            </div>
+                        `;
+                        col.querySelector('.preset-card').addEventListener('click', function () {
+                            if (inputAvatarUrl) inputAvatarUrl.value = imgUrl;
+                            updatePreview();
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('avatarPresetsModal'));
+                            if (modal) modal.hide();
+                        });
+                        presetGrid.appendChild(col);
+                    }
+                });
+            }
+
+            // Theme Color Picker Sync
+            const themePicker = document.getElementById('inputThemeColorPicker');
+            const themeHex = document.getElementById('inputThemeColorHex');
+            if (themePicker && themeHex) {
+                themePicker.addEventListener('input', function () {
+                    themeHex.value = this.value;
+                });
+                themeHex.addEventListener('input', function () {
+                    if (this.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                        themePicker.value = this.value;
+                    }
+                });
+            }
+
+            document.querySelectorAll('.color-swatch-btn').forEach(swatch => {
+                swatch.addEventListener('click', function () {
+                    const color = this.getAttribute('data-color');
+                    if (color && themePicker && themeHex) {
+                        themePicker.value = color;
+                        themeHex.value = color;
+                    }
+                });
+            });
+
+            // ==========================================
+            // RELATIONSHIPS MANAGEMENT (WITH EDIT & BEAUTIFIED BADGES)
+            // ==========================================
+            let relationshipsList = [];
+            let editingRelIndex = -1;
+
+            const relJsonInput = document.getElementById('RelationshipsJsonInput');
+            const relTableBody = document.getElementById('relationshipTableBody');
+            const relCountBadge = document.getElementById('relCountBadge');
+
+            if (relJsonInput && relJsonInput.value.trim()) {
+                try {
+                    relationshipsList = JSON.parse(relJsonInput.value.trim());
+                } catch (e) {
+                    relationshipsList = [];
+                }
+            }
+
+            function renderRelationships() {
+                if (!relTableBody) return;
+                relTableBody.innerHTML = '';
+
+                if (relCountBadge) {
+                    relCountBadge.textContent = `${relationshipsList.length} Relationship${relationshipsList.length === 1 ? '' : 's'}`;
+                }
+
+                if (!Array.isArray(relationshipsList) || relationshipsList.length === 0) {
+                    relTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <div class="d-flex flex-column align-items-center gap-2">
+                                    <i data-lucide="users-round" style="width: 32px; height: 32px; color: #94a3b8;"></i>
+                                    <div class="fw-semibold text-slate-700">No relationships added yet</div>
+                                    <div class="small text-slate-500">Click "+ Add Relationship" above to connect this character with cast members.</div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                relationshipsList.forEach((rel, index) => {
+                    const name = rel.name || rel.targetName || rel.TargetName || rel.characterName || 'Unknown Character';
+                    const avatar = rel.avatar || rel.avatarUrl || rel.AvatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+                    const rawRelation = rel.relationship || rel.relationType || rel.RelationType || rel.relation || rel.Relation || rel.type || rel.Type || rel.title || rel.Title || '';
+                    const relation = (rawRelation && rawRelation.trim().length > 0) ? rawRelation.trim() : 'Related';
+                    const role = rel.role || rel.Role || '';
+                    const notes = rel.dynamicsText || rel.notes || rel.Notes || rel.description || rel.Description || 'Standard relationship dynamics.';
+                    const dynamicsType = rel.dynamicsType || rel.DynamicsType || 'Positive';
+
+                    // Beautified badge for Dynamics Type
+                    let dynamicsBadge = '';
+                    if (dynamicsType === 'Positive') {
+                        dynamicsBadge = '<span class="badge px-2.5 py-1 me-1 rounded-pill d-inline-flex align-items-center" style="background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 0.74rem; font-weight: 600;"><i data-lucide="smile" style="width:12px;height:12px;" class="me-1"></i> Positive</span>';
+                    } else if (dynamicsType === 'Negative') {
+                        dynamicsBadge = '<span class="badge px-2.5 py-1 me-1 rounded-pill d-inline-flex align-items-center" style="background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 0.74rem; font-weight: 600;"><i data-lucide="frown" style="width:12px;height:12px;" class="me-1"></i> Negative</span>';
+                    } else if (dynamicsType === 'Neutral') {
+                        dynamicsBadge = '<span class="badge px-2.5 py-1 me-1 rounded-pill d-inline-flex align-items-center" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 0.74rem; font-weight: 600;"><i data-lucide="minus-circle" style="width:12px;height:12px;" class="me-1"></i> Neutral</span>';
+                    } else {
+                        dynamicsBadge = '<span class="badge px-2.5 py-1 me-1 rounded-pill d-inline-flex align-items-center" style="background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; font-size: 0.74rem; font-weight: 600;"><i data-lucide="shuffle" style="width:12px;height:12px;" class="me-1"></i> Complex</span>';
+                    }
+
+                    // Role pill HTML only rendered if role is non-empty
+                    const roleBadgeHtml = (role && role.trim().length > 0)
+                        ? `<span class="badge rounded-pill border mt-1 d-inline-flex align-items-center" style="background-color: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; font-size: 0.68rem; font-weight: 600; padding: 2px 8px;"><i data-lucide="shield" style="width: 10px; height: 10px;" class="me-1"></i>${role.trim()}</span>`
+                        : '';
+
+                    // Relation badge (Guaranteed color & icon rendering)
+                    const relationBadgeHtml = `<span class="badge px-2.5 py-1 fw-semibold border rounded-pill d-inline-flex align-items-center" style="background-color: #ccfbf1; color: #0f766e; border-color: #99f6e4; font-size: 0.78rem;"><i data-lucide="link-2" style="width: 12px; height: 12px;" class="me-1"></i>${relation}</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="d-flex align-items-center gap-2.5">
+                                <img src="${avatar}" alt="${name}" class="rounded-circle border flex-shrink-0 bg-white shadow-xs" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}';" />
+                                <div class="d-flex flex-column align-items-start">
+                                    <div class="fw-bold text-slate-900" style="font-size: 0.9rem;">${name}</div>
+                                    ${roleBadgeHtml}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            ${relationBadgeHtml}
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column gap-1">
+                                <div>${dynamicsBadge}</div>
+                                <span class="small text-secondary" style="max-width: 280px; font-size: 0.82rem; line-height: 1.3;">${notes}</span>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-teal py-1 px-2.5 rounded-2 edit-rel-btn" data-index="${index}" title="Edit Relationship">
+                                    <i data-lucide="pencil" style="width: 13px; height: 13px;" class="me-1"></i> Edit
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-2 delete-rel-btn" data-index="${index}" title="Delete Relationship">
+                                    <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+
+                    tr.querySelector('.edit-rel-btn').addEventListener('click', function () {
+                        openEditModal(index);
+                    });
+
+                    tr.querySelector('.delete-rel-btn').addEventListener('click', function () {
+                        if (confirm(`Are you sure you want to remove the relationship with ${name}?`)) {
+                            relationshipsList.splice(index, 1);
+                            syncRelationships();
+                        }
+                    });
+
+                    relTableBody.appendChild(tr);
+                });
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            function syncRelationships() {
+                if (relJsonInput) {
+                    relJsonInput.value = JSON.stringify(relationshipsList);
+                }
+                renderRelationships();
+            }
+
+            renderRelationships();
+
+            // Modal elements & error helpers
+            const modalRelTargetChar = document.getElementById('modalRelTargetChar');
+            const modalRelCustomName = document.getElementById('modalRelCustomName');
+            const modalRelAvatarUrl = document.getElementById('modalRelAvatarUrl');
+            const modalRelAvatarPreview = document.getElementById('modalRelAvatarPreview');
+            const modalRelAvatarFileInput = document.getElementById('modalRelAvatarFileInput');
+            const modalRelRole = document.getElementById('modalRelRole');
+            const modalRelType = document.getElementById('modalRelType');
+            const modalRelDynamicsType = document.getElementById('modalRelDynamicsType');
+            const modalRelNotes = document.getElementById('modalRelNotes');
+            const modalTitleHeader = document.getElementById('modalRelTitleHeader');
+            const modalSaveBtnText = document.getElementById('modalSaveBtnText');
+            const modalRelError = document.getElementById('modalRelError');
+            const modalRelErrorText = document.getElementById('modalRelErrorText');
+
+            function showModalError(msg) {
+                if (modalRelErrorText && modalRelError) {
+                    modalRelErrorText.textContent = msg;
+                    modalRelError.classList.remove('d-none');
+                    modalRelError.classList.add('d-flex');
+                } else {
+                    alert(msg);
+                }
+            }
+
+            function clearModalError() {
+                if (modalRelError) {
+                    modalRelError.classList.add('d-none');
+                    modalRelError.classList.remove('d-flex');
+                }
+                if (modalRelErrorText) modalRelErrorText.textContent = '';
+            }
+
+            // Open Modal in ADD mode
+            const btnAddRel = document.getElementById('btnAddRelationship');
+            if (btnAddRel) {
+                btnAddRel.addEventListener('click', function () {
+                    editingRelIndex = -1;
+                    clearModalError();
+
+                    if (modalTitleHeader) {
+                        modalTitleHeader.innerHTML = '<i data-lucide="user-plus" class="text-teal" style="width: 20px; height: 20px; color: #0d9488;"></i> <span>Add Character Relationship</span>';
+                    }
+                    if (modalSaveBtnText) modalSaveBtnText.textContent = 'Add Relationship';
+
+                    // Clear fields & enable inputs
+                    if (modalRelTargetChar) modalRelTargetChar.value = '';
+                    if (modalRelCustomName) {
+                        modalRelCustomName.value = '';
+                        modalRelCustomName.removeAttribute('disabled');
+                    }
+                    if (modalRelAvatarUrl) modalRelAvatarUrl.value = '';
+                    if (modalRelAvatarPreview) modalRelAvatarPreview.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Character';
+                    if (modalRelRole) modalRelRole.value = 'Supporting';
+                    if (modalRelType) modalRelType.value = 'Ally';
+                    if (modalRelDynamicsType) modalRelDynamicsType.value = 'Positive';
+                    if (modalRelNotes) modalRelNotes.value = '';
+
+                    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('addRelationshipModal'));
+                    modal.show();
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+            }
+
+            // Open Modal in EDIT mode
+            function openEditModal(index) {
+                editingRelIndex = index;
+                clearModalError();
+
+                const rel = relationshipsList[index];
+                if (!rel) return;
+
+                const name = rel.name || rel.targetName || rel.TargetName || rel.characterName || '';
+                const avatar = rel.avatar || rel.avatarUrl || rel.AvatarUrl || '';
+                const relation = rel.relationship || rel.relationType || rel.RelationType || rel.relation || rel.Relation || rel.type || rel.Type || 'Father';
+                const role = rel.role || rel.Role || 'Supporting';
+                const dynamicsType = rel.dynamicsType || rel.DynamicsType || 'Positive';
+                const notes = rel.dynamicsText || rel.notes || rel.Notes || rel.description || '';
+
+                if (modalTitleHeader) {
+                    modalTitleHeader.innerHTML = `<i data-lucide="pencil" class="text-teal" style="width: 20px; height: 20px; color: #0d9488;"></i> <span>Edit Relationship with ${name}</span>`;
+                }
+                if (modalSaveBtnText) modalSaveBtnText.textContent = 'Save Relationship';
+
+                // Pre-fill dropdown or custom text
+                let matchedDropdown = false;
+                if (modalRelTargetChar) {
+                    for (let i = 0; i < modalRelTargetChar.options.length; i++) {
+                        if (modalRelTargetChar.options[i].value.toLowerCase() === name.toLowerCase()) {
+                            modalRelTargetChar.selectedIndex = i;
+                            matchedDropdown = true;
+                            break;
+                        }
+                    }
+                    if (!matchedDropdown) modalRelTargetChar.value = '';
+                }
+
+                if (modalRelCustomName) {
+                    modalRelCustomName.value = name;
+                    modalRelCustomName.removeAttribute('disabled');
+                }
+
+                if (modalRelRole) modalRelRole.value = role;
+                if (modalRelAvatarUrl) modalRelAvatarUrl.value = avatar;
+                if (modalRelAvatarPreview) {
+                    modalRelAvatarPreview.src = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
+                }
+
+                // Match relation dropdown option
+                if (modalRelType) {
+                    let matchedRelation = false;
+                    for (let i = 0; i < modalRelType.options.length; i++) {
+                        if (modalRelType.options[i].value.toLowerCase() === relation.toLowerCase() ||
+                            modalRelType.options[i].text.toLowerCase().includes(relation.toLowerCase())) {
+                            modalRelType.selectedIndex = i;
+                            matchedRelation = true;
+                            break;
+                        }
+                    }
+                    if (!matchedRelation) modalRelType.value = 'Father';
+                }
+
+                if (modalRelDynamicsType) modalRelDynamicsType.value = dynamicsType;
+                if (modalRelNotes) modalRelNotes.value = notes;
+
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('addRelationshipModal'));
+                modal.show();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // AUTO-FILL WHEN SELECTING FROM DROPDOWN
+            if (modalRelTargetChar) {
+                modalRelTargetChar.addEventListener('change', function () {
+                    clearModalError();
+                    const opt = this.selectedOptions[0];
+                    if (opt && opt.value) {
+                        // User selected an existing character: auto-fill custom name, avatar, and role!
+                        if (modalRelCustomName) {
+                            modalRelCustomName.value = opt.value;
+                            modalRelCustomName.removeAttribute('disabled');
+                        }
+                        
+                        const av = opt.getAttribute('data-avatar');
+                        const r = opt.getAttribute('data-role');
+                        if (av && modalRelAvatarUrl) {
+                            modalRelAvatarUrl.value = av;
+                            if (modalRelAvatarPreview) modalRelAvatarPreview.src = av;
+                        }
+                        if (r && modalRelRole) modalRelRole.value = r;
+                    } else {
+                        // User selected blank dropdown option
+                        if (modalRelCustomName) {
+                            modalRelCustomName.removeAttribute('disabled');
+                            modalRelCustomName.focus();
+                        }
+                        if (modalRelAvatarUrl) modalRelAvatarUrl.value = '';
+                        if (modalRelAvatarPreview) modalRelAvatarPreview.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Character';
+                    }
+                });
+            }
+
+            // CLEAR DROPDOWN SELECTION WHEN TYPING CUSTOM NAME
+            if (modalRelCustomName) {
+                modalRelCustomName.addEventListener('input', function () {
+                    clearModalError();
+                    if (this.value.trim().length > 0) {
+                        const nameVal = this.value.trim();
+                        if (modalRelAvatarUrl && !modalRelAvatarUrl.value.trim()) {
+                            if (modalRelAvatarPreview) {
+                                modalRelAvatarPreview.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nameVal)}`;
+                            }
+                        }
+                    }
+                });
+            }
+
+            if (modalRelAvatarUrl && modalRelAvatarPreview) {
+                modalRelAvatarUrl.addEventListener('input', function () {
+                    modalRelAvatarPreview.src = this.value || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Character';
+                });
+            }
+
+            if (modalRelAvatarFileInput) {
+                modalRelAvatarFileInput.addEventListener('change', async function () {
+                    if (!this.files || !this.files[0]) return;
+                    const formData = new FormData();
+                    formData.append('file', this.files[0]);
+                    try {
+                        const resp = await fetch('/Characters/UploadAvatar', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await resp.json();
+                        if (data.success && data.avatarUrl) {
+                            if (modalRelAvatarUrl) modalRelAvatarUrl.value = data.avatarUrl;
+                            if (modalRelAvatarPreview) modalRelAvatarPreview.src = data.avatarUrl;
+                        }
+                    } catch (e) {
+                        console.error("Avatar upload failed:", e);
+                    }
+                });
+            }
+
+            // Save relationship with DUPLICATE CHECK & ALL ALIASES
+            const btnSaveModalRel = document.getElementById('btnSaveModalRelationship');
+            if (btnSaveModalRel) {
+                btnSaveModalRel.addEventListener('click', function () {
+                    clearModalError();
+
+                    const selChar = modalRelTargetChar ? modalRelTargetChar.value.trim() : '';
+                    const customChar = modalRelCustomName ? modalRelCustomName.value.trim() : '';
+                    const targetName = customChar || selChar;
+                    const currentName = (inputName ? inputName.value.trim() : '@Model.Name').trim();
+
+                    if (!targetName) {
+                        showModalError('Please select an existing character or enter a custom character name.');
+                        return;
+                    }
+
+                    // 1. Prevent self-relationship
+                    if (currentName && targetName.toLowerCase() === currentName.toLowerCase()) {
+                        showModalError(`A character cannot have a relationship with themselves (${targetName}).`);
+                        return;
+                    }
+
+                    // 2. Prevent duplicate character relationship
+                    const duplicateIndex = relationshipsList.findIndex((rel, idx) => {
+                        if (editingRelIndex >= 0 && idx === editingRelIndex) return false;
+                        const relName = (rel.name || rel.targetName || rel.TargetName || rel.characterName || '').trim();
+                        return relName.toLowerCase() === targetName.toLowerCase();
+                    });
+
+                    if (duplicateIndex >= 0) {
+                        showModalError(`A relationship with "${targetName}" already exists! Please edit the existing entry in the table.`);
+                        return;
+                    }
+
+                    const roleVal = modalRelRole ? modalRelRole.value : 'Supporting';
+                    const relationType = modalRelType ? modalRelType.value : 'Father';
+                    const dynamicsType = modalRelDynamicsType ? modalRelDynamicsType.value : 'Positive';
+                    const notes = modalRelNotes ? modalRelNotes.value.trim() : '';
+                    const avatarUrl = (modalRelAvatarUrl && modalRelAvatarUrl.value.trim()) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(targetName || 'Character')}`;
+
+                    // Object containing all property name variants to guarantee compatibility across views
+                    const relObj = {
+                        id: editingRelIndex >= 0 ? (relationshipsList[editingRelIndex].id || ("rel-" + Date.now())) : ("rel-" + Date.now()),
+                        name: targetName,
+                        subtitle: "Story Character",
+                        role: roleVal,
+                        Role: roleVal,
+                        avatar: avatarUrl,
+                        avatarUrl: avatarUrl,
+                        AvatarUrl: avatarUrl,
+                        relationship: relationType,
+                        relationType: relationType,
+                        RelationType: relationType,
+                        relation: relationType,
+                        type: relationType,
+                        Type: relationType,
+                        dynamicsType: dynamicsType,
+                        DynamicsType: dynamicsType,
+                        dynamicsText: notes,
+                        notes: notes,
+                        Notes: notes,
+                        description: notes,
+                        targetName: targetName,
+                        TargetName: targetName
+                    };
+
+                    if (editingRelIndex >= 0) {
+                        relationshipsList[editingRelIndex] = relObj;
+                    } else {
+                        relationshipsList.push(relObj);
+                    }
+
+                    syncRelationships();
+
+                    // Hide modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addRelationshipModal'));
+                    if (modal) modal.hide();
+                    editingRelIndex = -1;
+                });
             }
         });
     </script>

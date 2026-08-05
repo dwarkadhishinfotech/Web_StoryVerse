@@ -15,6 +15,7 @@
     string currentSearch = ViewBag.CurrentSearch as string ?? "";
     string currentRole = ViewBag.CurrentRole as string ?? "";
     string currentStatus = ViewBag.CurrentStatus as string ?? "";
+    string currentArcType = ViewBag.CurrentArcType as string ?? "";
     string currentSortBy = ViewBag.CurrentSortBy as string ?? "recently_updated";
 
     int currentPage = ViewBag.CurrentPage ?? 1;
@@ -29,13 +30,46 @@
 
     string GetRelativeTime(DateTime dt)
     {
-        var ts = DateTime.UtcNow - dt;
-        if (ts.TotalMinutes < 60) return $"{Math.Max(1, (int)ts.TotalMinutes)} hours ago"; // matching screenshot style "2 hours ago"
-        if (ts.TotalHours < 24) return $"{(int)ts.TotalHours} hours ago";
-        if (ts.TotalDays < 7) return $"{(int)ts.TotalDays} day{(ts.TotalDays >= 2 ? "s" : "")} ago";
-        if (ts.TotalDays < 30) return $"{Math.Max(1, (int)(ts.TotalDays / 7))} week ago";
-        return $"{Math.Max(1, (int)(ts.TotalDays / 30))} month ago";
+        var utcNow = DateTime.UtcNow;
+        var targetUtc = dt.Kind == DateTimeKind.Utc ? dt : (dt.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dt, DateTimeKind.Utc) : dt.ToUniversalTime());
+        var ts = utcNow - targetUtc;
+
+        if (ts.TotalSeconds < 45) return "Just now";
+        if (ts.TotalMinutes < 60)
+        {
+            int mins = Math.Max(1, (int)ts.TotalMinutes);
+            return $"{mins} minute{(mins > 1 ? "s" : "")} ago";
+        }
+        if (ts.TotalHours < 24)
+        {
+            int hrs = (int)ts.TotalHours;
+            return $"{hrs} hour{(hrs > 1 ? "s" : "")} ago";
+        }
+        if (ts.TotalDays < 7)
+        {
+            int days = (int)ts.TotalDays;
+            return $"{days} day{(days > 1 ? "s" : "")} ago";
+        }
+        if (ts.TotalDays < 30)
+        {
+            int weeks = Math.Max(1, (int)(ts.TotalDays / 7));
+            return $"{weeks} week{(weeks > 1 ? "s" : "")} ago";
+        }
+        int months = Math.Max(1, (int)(ts.TotalDays / 30));
+        return $"{months} month{(months > 1 ? "s" : "")} ago";
     }
+
+    string CleanHookText(string? hook)
+    {
+        if (string.IsNullOrWhiteSpace(hook)) return "";
+        return hook.Trim().Trim('*', '"', '\'').Trim();
+    }
+
+    bool hasActiveFilters = !string.IsNullOrEmpty(currentSearch) || 
+                            !string.IsNullOrEmpty(currentRole) || 
+                            !string.IsNullOrEmpty(currentStatus) || 
+                            !string.IsNullOrEmpty(currentArcType) || 
+                            selectedStory != null;
 }
 
 <style>
@@ -47,6 +81,13 @@
         padding: 0;
     }
 
+    /* Remove Bootstrap dropdown caret arrow artifact */
+    .no-arrow::after,
+    .dropdown-toggle.no-arrow::after {
+        display: none !important;
+    }
+
+    /* Primary Action Buttons */
     .btn-teal {
         background-color: #0d9488;
         color: #ffffff;
@@ -57,18 +98,22 @@
     .btn-teal:hover {
         background-color: #0f766e;
         color: #ffffff;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
     }
 
+    /* Metric Cards */
     .stat-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
+        border-radius: 16px;
         padding: 18px 20px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.03);
     }
     .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px -4px rgba(0, 0, 0, 0.06);
+        border-color: #cbd5e1;
     }
 
     .icon-box {
@@ -81,13 +126,15 @@
         flex-shrink: 0;
     }
 
+    /* Arc Badges */
     .badge-arc-main {
-        background-color: #ccfbf1;
-        color: #0f766e;
+        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+        color: #ffffff;
         font-weight: 600;
         font-size: 0.72rem;
-        padding: 2px 8px;
+        padding: 3px 10px;
         border-radius: 9999px;
+        box-shadow: 0 2px 6px rgba(13, 148, 136, 0.2);
     }
 
     .badge-arc-supporting {
@@ -95,26 +142,46 @@
         color: #7e22ce;
         font-weight: 600;
         font-size: 0.72rem;
-        padding: 2px 8px;
+        padding: 3px 10px;
         border-radius: 9999px;
+        border: 1px solid #e9d5ff;
     }
 
     .badge-arc-minor {
-        background-color: #e2e8f0;
+        background-color: #f1f5f9;
         color: #475569;
         font-weight: 600;
         font-size: 0.72rem;
-        padding: 2px 8px;
+        padding: 3px 10px;
         border-radius: 9999px;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Modern Table styling & Explicit Column Widths */
+    #tableViewContainer {
+        overflow: visible !important;
+    }
+
+    .table-responsive {
+        overflow: visible !important;
+    }
+
+    .custom-table-container {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
     }
 
     .custom-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
+        table-layout: fixed;
     }
+
     .custom-table th {
-        background-color: #ffffff;
+        background-color: #f8fafc;
         color: #64748b;
         font-size: 0.75rem;
         font-weight: 700;
@@ -122,7 +189,9 @@
         text-transform: uppercase;
         padding: 16px 20px;
         border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
     }
+
     .custom-table td {
         padding: 16px 20px;
         border-bottom: 1px solid #f1f5f9;
@@ -130,15 +199,243 @@
         vertical-align: middle;
         transition: background-color 0.15s ease;
     }
+
     .custom-table tr:hover td {
-        background-color: #f8fafc;
+        background-color: #f0fdfa;
     }
 
+    .custom-table tr:first-child th:first-child { border-top-left-radius: 16px; }
+    .custom-table tr:first-child th:last-child { border-top-right-radius: 16px; }
+    .custom-table tr:last-child td:first-child { border-bottom-left-radius: 16px; border-bottom: none; }
+    .custom-table tr:last-child td:last-child { border-bottom-right-radius: 16px; border-bottom: none; }
+
+    /* Action Buttons */
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        background-color: #ffffff;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .action-btn:hover, .action-btn:focus {
+        background-color: #f0fdfa;
+        color: #0d9488;
+        border-color: #0d9488;
+        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
+    }
+
+    /* Elevated Dropdown Menu */
+    .dropdown-menu {
+        z-index: 1060 !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+        border-radius: 12px !important;
+        padding: 6px !important;
+    }
+
+    .dropdown-menu .dropdown-item {
+        border-radius: 8px !important;
+        padding: 8px 12px !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        color: #334155 !important;
+        transition: all 0.15s ease !important;
+    }
+
+    .dropdown-menu .dropdown-item:hover, .dropdown-menu .dropdown-item:focus {
+        background-color: #f0fdfa !important;
+        color: #0d9488 !important;
+    }
+
+    .dropdown-menu .dropdown-item.text-danger:hover, .dropdown-menu .dropdown-item.text-danger:focus {
+        background-color: #fef2f2 !important;
+        color: #dc2626 !important;
+    }
+
+    /* ULTRA-MODERN GRID CARD DESIGN */
+    .character-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+        transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        padding: 1.25rem;
+    }
+
+    .character-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #0d9488 0%, #3b82f6 50%, #8b5cf6 100%);
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+
+    .character-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 14px 28px -4px rgba(13, 148, 136, 0.12);
+        border-color: #cbd5e1;
+    }
+
+    .character-card:hover::before {
+        opacity: 1;
+    }
+
+    .card-character-name {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a !important;
+        text-decoration: none;
+        transition: color 0.2s ease;
+        line-height: 1.3;
+    }
+
+    .card-character-name:hover {
+        color: #0d9488 !important;
+    }
+
+    .card-hook-box {
+        background-color: #f8fafc;
+        border-left: 4px solid #0d9488;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 0.84rem;
+        font-style: italic;
+        color: #334155;
+        line-height: 1.45;
+    }
+
+    .card-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        transition: transform 0.15s ease;
+    }
+
+    .chip-status-alive { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .chip-status-active { background-color: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4; }
+    .chip-status-deceased { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .chip-status-draft { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+
+    .chip-age { background-color: #f0fdfa; color: #0f766e; border: 1px solid #ccfbf1; }
+    .chip-gender { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+    .chip-occupation { background-color: #faf5ff; color: #6b21a8; border: 1px solid #f3e8ff; }
+    .chip-alignment { background-color: #fffbeb; color: #b45309; border: 1px solid #fef3c7; }
+
+    .badge-role-pill {
+        background-color: #e0e7ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+        font-weight: 600;
+        font-size: 0.74rem;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        display: inline-block;
+    }
+
+    .trait-tag-pill {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        background-color: #f1f5f9;
+        color: #1e293b;
+        border: 1px solid #cbd5e1;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+    .trait-tag-pill:hover {
+        background-color: #e2e8f0;
+        color: #0f172a;
+        transform: translateY(-1px);
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+        flex-shrink: 0;
+    }
+    .status-active { background-color: #16a34a; }
+    .status-draft { background-color: #2563eb; }
+    .status-archived { background-color: #dc2626; }
+
+    .btn-card-details {
+        background-color: #f0fdfa;
+        color: #0d9488;
+        font-weight: 600;
+        font-size: 0.825rem;
+        border-radius: 8px;
+        padding: 6px 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        border: 1px solid #ccfbf1;
+    }
+
+    .btn-card-details:hover {
+        background-color: #0d9488;
+        color: #ffffff;
+        gap: 9px;
+        border-color: #0d9488;
+        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+    }
+
+    /* Filter Chips Bar */
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background-color: #f0fdfa;
+        border: 1px solid #ccfbf1;
+        color: #0f766e;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .filter-chip-remove {
+        cursor: pointer;
+        color: #0d9488;
+        border: none;
+        background: transparent;
+        padding: 0;
+        line-height: 1;
+        font-size: 1.1rem;
+    }
+    .filter-chip-remove:hover { color: #0f766e; }
+
+    /* Avatar Stack */
     .avatar-stack {
         display: flex;
         align-items: center;
     }
-    .avatar-stack img, .avatar-stack .avatar-placeholder {
+    .avatar-stack img {
         width: 32px;
         height: 32px;
         border-radius: 50%;
@@ -147,7 +444,7 @@
         object-fit: cover;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .avatar-stack img:first-child, .avatar-stack .avatar-placeholder:first-child {
+    .avatar-stack img:first-child {
         margin-left: 0;
     }
     .avatar-more-badge {
@@ -164,50 +461,6 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 6px;
-    }
-    .status-active { background-color: #16a34a; }
-    .status-draft { background-color: #2563eb; }
-    .status-archived { background-color: #dc2626; }
-
-    .action-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        background-color: #ffffff;
-        color: #64748b;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-    .action-btn:hover {
-        background-color: #f1f5f9;
-        color: #0f172a;
-        border-color: #cbd5e1;
-    }
-
-    .form-control-custom, .form-select-custom {
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        color: #334155;
-        padding: 8px 14px;
-        transition: all 0.2s ease;
-    }
-    .form-control-custom:focus, .form-select-custom:focus {
-        border-color: #0d9488;
-        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
-        outline: none;
     }
 </style>
 
@@ -226,7 +479,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <h1 class="fw-bold mb-0 text-slate-900" style="font-size: 1.85rem; font-family: Georgia, serif;">Characters</h1>
+                <h1 class="fw-bold mb-0 text-slate-900" style="font-size: 1.85rem; font-family: 'Playfair Display', Georgia, serif;">Characters</h1>
                 <div class="d-flex align-items-center justify-content-center bg-teal-50 rounded-circle p-1.5 ms-1" style="background-color: rgba(13, 148, 136, 0.1); color: #0d9488;">
                     <i data-lucide="users" style="width: 22px; height: 22px;"></i>
                 </div>
@@ -240,16 +493,16 @@
                 <span>New Character</span>
             </a>
 
-            <button class="btn btn-white bg-white border rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm text-slate-700" style="font-size: 0.875rem; border-color: #e2e8f0;" onclick="alert('Import functionality ready for character data files (JSON, CSV).');">
+            <button class="btn btn-white bg-white border rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm text-slate-700" style="font-size: 0.875rem; border-color: #e2e8f0;">
                 <i data-lucide="upload" style="width: 16px; height: 16px; color: #64748b;"></i>
                 <span>Import</span>
             </button>
 
-            <button class="action-btn shadow-sm" title="Notifications" onclick="alert('No new character notifications.');">
+            <button class="action-btn shadow-sm" title="Notifications">
                 <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
             </button>
 
-            <button class="action-btn shadow-sm" title="Toggle Theme" onclick="alert('Theme setting updated.');">
+            <button class="action-btn shadow-sm" title="Toggle Theme">
                 <i data-lucide="sun" style="width: 18px; height: 18px;"></i>
             </button>
         </div>
@@ -257,7 +510,6 @@
 
     <!-- 5 Key Metric Cards Row -->
     <div class="row g-3 mb-4">
-        <!-- 1. Total Characters -->
         <div class="col-12 col-sm-6 col-lg">
             <div class="stat-card d-flex align-items-center gap-3">
                 <div class="icon-box" style="background-color: rgba(13, 148, 136, 0.1); color: #0d9488;">
@@ -271,7 +523,6 @@
             </div>
         </div>
 
-        <!-- 2. Main Characters -->
         <div class="col-12 col-sm-6 col-lg">
             <div class="stat-card d-flex align-items-center gap-3">
                 <div class="icon-box" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
@@ -285,7 +536,6 @@
             </div>
         </div>
 
-        <!-- 3. Supporting Characters -->
         <div class="col-12 col-sm-6 col-lg">
             <div class="stat-card d-flex align-items-center gap-3">
                 <div class="icon-box" style="background-color: rgba(147, 51, 234, 0.1); color: #9333ea;">
@@ -299,7 +549,6 @@
             </div>
         </div>
 
-        <!-- 4. Minor Characters -->
         <div class="col-12 col-sm-6 col-lg">
             <div class="stat-card d-flex align-items-center gap-3">
                 <div class="icon-box" style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6;">
@@ -308,12 +557,11 @@
                 <div>
                     <span class="text-secondary d-block fw-medium" style="font-size: 0.8rem;">Minor Characters</span>
                     <h3 class="fw-bold mb-0 text-slate-900" style="font-size: 1.5rem;">@minorCount</h3>
-                    <span class="text-muted" style="font-size: 0.75rem;">Minor / Background</span>
+                    <span class="text-muted" style="font-size: 0.75rem;">Minor / Cameos</span>
                 </div>
             </div>
         </div>
 
-        <!-- 5. Recently Added -->
         <div class="col-12 col-sm-6 col-lg">
             <div class="stat-card d-flex align-items-center gap-3">
                 <div class="icon-box" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
@@ -322,293 +570,190 @@
                 <div>
                     <span class="text-secondary d-block fw-medium" style="font-size: 0.8rem;">Recently Added</span>
                     <h3 class="fw-bold mb-0 text-slate-900" style="font-size: 1.5rem;">@recentlyAddedCount</h3>
-                    <span class="text-muted" style="font-size: 0.75rem;">In the last 30 days</span>
+                    <span class="text-muted" style="font-size: 0.75rem;">In last 30 days</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Search, Filter & Toolbar Bar -->
-    <form id="filterForm" method="get" action="@Url.Action("Index", "Characters")" class="mb-4">
-        <input type="hidden" name="page" id="pageInput" value="@currentPage" />
-        <input type="hidden" name="pageSize" id="pageSizeInput" value="@pageSize" />
-        <input type="hidden" name="storyId" id="storyIdInput" value="@(selectedStory?.Id)" />
+    <!-- MAIN FILTER FORM -->
+    <form method="get" action="@Url.Action("Index", "Characters")" id="filterForm">
+        <input type="hidden" name="storyId" id="storyIdInput" value="@(selectedStory?.Id ?? Guid.Empty)" />
         <input type="hidden" name="role" id="roleInput" value="@currentRole" />
         <input type="hidden" name="status" id="statusInput" value="@currentStatus" />
+        <input type="hidden" name="arcType" id="arcTypeInput" value="@currentArcType" />
         <input type="hidden" name="sortBy" id="sortByInput" value="@currentSortBy" />
+        <input type="hidden" name="page" id="pageInput" value="@currentPage" />
+        <input type="hidden" name="pageSize" id="pageSizeInput" value="@pageSize" />
 
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white p-3 rounded-3 border shadow-sm" style="border-color: #e2e8f0;">
-            
+        <!-- Filter Bar -->
+        <div class="bg-white rounded-4 border shadow-sm p-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3" style="border-color: #e2e8f0; border-radius: 16px;">
+            <!-- Left Filter Controls -->
             <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1">
-                <!-- Search input -->
-                <div class="position-relative" style="min-width: 220px; flex-grow: 1; max-width: 320px;">
-                    <i data-lucide="search" class="position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px;"></i>
-                    <input type="text" name="search" value="@currentSearch" class="form-control form-control-custom ps-5" placeholder="Search characters..." onchange="document.getElementById('pageInput').value=1; document.getElementById('filterForm').submit();" />
+                <!-- Search Input -->
+                <div class="position-relative flex-grow-1" style="max-width: 320px; min-width: 200px;">
+                    <i data-lucide="search" class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" style="width: 16px; height: 16px;"></i>
+                    <input type="text" name="search" id="searchInput" class="form-control form-control-custom ps-5 pe-4" placeholder="Search characters..." value="@currentSearch" />
+                    @if (!string.IsNullOrEmpty(currentSearch))
+                    {
+                        <button type="button" class="btn btn-sm position-absolute top-50 end-0 translate-middle-y me-2 p-0 text-muted" onclick="clearSearch();">
+                            <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    }
                 </div>
 
                 <!-- Story Filter Dropdown -->
-                <div class="dropdown custom-dropdown-container">
-                    <button type="button" class="custom-dropdown-btn @(selectedStory != null ? "active-filter" : "")" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="d-flex align-items-center gap-2">
-                            <i data-lucide="book-open" class="dropdown-icon"></i>
-                            <span class="dropdown-label text-truncate" style="max-width: 130px;">@(selectedStory?.Title ?? "All Stories")</span>
-                        </span>
-                        <i data-lucide="chevron-down" class="dropdown-arrow ms-1"></i>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-light bg-white border text-slate-700 rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 dropdown-toggle no-arrow" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.875rem; border-color: #e2e8f0; border-radius: 10px;">
+                        <i data-lucide="book-open" style="width: 16px; height: 16px; color: #0d9488;"></i>
+                        <span class="text-truncate" style="max-width: 150px;">@(selectedStory?.Title ?? "All Stories")</span>
+                        <i data-lucide="chevron-down" style="width: 14px; height: 14px;" class="ms-1 text-muted"></i>
                     </button>
-                    <ul class="dropdown-menu custom-dropdown-menu shadow-lg border-0">
+                    <ul class="dropdown-menu shadow-lg border-0">
                         <li>
-                            <a class="dropdown-item custom-dropdown-item @(selectedStory == null ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('storyIdInput', '')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <i data-lucide="layers" class="item-icon"></i>
-                                    <span>All Stories</span>
-                                </span>
-                                @if (selectedStory == null) { <i data-lucide="check" class="check-icon"></i> }
+                            <a class="dropdown-item @(selectedStory == null ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStoryFilter('');">
+                                All Stories
                             </a>
                         </li>
-                        @if (userStories.Any())
+                        <li><hr class="dropdown-divider my-1"></li>
+                        @foreach (var st in userStories)
                         {
-                            <li><hr class="dropdown-divider my-1 opacity-50"></li>
-                            @foreach (var s in userStories)
-                            {
-                                var isSelected = selectedStory?.Id == s.Id;
-                                <li>
-                                    <a class="dropdown-item custom-dropdown-item @(isSelected ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('storyIdInput', '@s.Id')">
-                                        <span class="d-flex align-items-center gap-2">
-                                            <i data-lucide="book" class="item-icon"></i>
-                                            <span class="text-truncate" style="max-width: 160px;">@s.Title</span>
-                                        </span>
-                                        @if (isSelected) { <i data-lucide="check" class="check-icon"></i> }
-                                    </a>
-                                </li>
-                            }
+                            <li>
+                                <a class="dropdown-item @(selectedStory?.Id == st.Id ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStoryFilter('@st.Id');">
+                                    @st.Title
+                                </a>
+                            </li>
                         }
                     </ul>
                 </div>
 
                 <!-- Role Filter Dropdown -->
-                <div class="dropdown custom-dropdown-container">
-                    <button type="button" class="custom-dropdown-btn @(!string.IsNullOrEmpty(currentRole) ? "active-filter" : "")" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="d-flex align-items-center gap-2">
-                            <i data-lucide="user-check" class="dropdown-icon"></i>
-                            <span class="dropdown-label">@(string.IsNullOrEmpty(currentRole) ? "All Roles" : currentRole)</span>
-                        </span>
-                        <i data-lucide="chevron-down" class="dropdown-arrow ms-1"></i>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-light bg-white border text-slate-700 rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 dropdown-toggle no-arrow" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.875rem; border-color: #e2e8f0; border-radius: 10px;">
+                        <i data-lucide="user-check" style="width: 16px; height: 16px; color: #64748b;"></i>
+                        <span>@(string.IsNullOrEmpty(currentRole) ? "All Roles" : currentRole)</span>
+                        <i data-lucide="chevron-down" style="width: 14px; height: 14px;" class="ms-1 text-muted"></i>
                     </button>
-                    <ul class="dropdown-menu custom-dropdown-menu shadow-lg border-0">
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(string.IsNullOrEmpty(currentRole) ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', '')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <i data-lucide="users" class="item-icon"></i>
-                                    <span>All Roles</span>
-                                </span>
-                                @if (string.IsNullOrEmpty(currentRole)) { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-1 opacity-50"></li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Protagonist" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Protagonist')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="badge-role-icon role-amber"><i data-lucide="star" style="width: 13px; height: 13px;"></i></span>
-                                    <span>Protagonist</span>
-                                </span>
-                                @if (currentRole == "Protagonist") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Antagonist" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Antagonist')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="badge-role-icon role-red"><i data-lucide="swords" style="width: 13px; height: 13px;"></i></span>
-                                    <span>Antagonist</span>
-                                </span>
-                                @if (currentRole == "Antagonist") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Mentor" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Mentor')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="badge-role-icon role-purple"><i data-lucide="sparkles" style="width: 13px; height: 13px;"></i></span>
-                                    <span>Mentor</span>
-                                </span>
-                                @if (currentRole == "Mentor") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Supporting" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Supporting')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="badge-role-icon role-indigo"><i data-lucide="user-check" style="width: 13px; height: 13px;"></i></span>
-                                    <span>Supporting</span>
-                                </span>
-                                @if (currentRole == "Supporting") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Supporter" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Supporter')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="badge-role-icon role-cyan"><i data-lucide="heart" style="width: 13px; height: 13px;"></i></span>
-                                    <span>Supporter</span>
-                                </span>
-                                @if (currentRole == "Supporter") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Authority" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Authority')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="badge-role-icon role-slate"><i data-lucide="shield" style="width: 13px; height: 13px;"></i></span>
-                                    <span>Authority</span>
-                                </span>
-                                @if (currentRole == "Authority") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentRole == "Minor" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('roleInput', 'Minor')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="badge-role-icon role-gray"><i data-lucide="user" style="width: 13px; height: 13px;"></i></span>
-                                    <span>Minor</span>
-                                </span>
-                                @if (currentRole == "Minor") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
+                    <ul class="dropdown-menu shadow-lg border-0" style="min-width: 180px;">
+                        <li><a class="dropdown-item @(string.IsNullOrEmpty(currentRole) ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setRoleFilter('');">All Roles</a></li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li><a class="dropdown-item @(currentRole == "Protagonist" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setRoleFilter('Protagonist');">Protagonist</a></li>
+                        <li><a class="dropdown-item @(currentRole == "Antagonist" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setRoleFilter('Antagonist');">Antagonist</a></li>
+                        <li><a class="dropdown-item @(currentRole == "Deuteragonist" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setRoleFilter('Deuteragonist');">Deuteragonist</a></li>
+                        <li><a class="dropdown-item @(currentRole == "Mentor" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setRoleFilter('Mentor');">Mentor</a></li>
+                        <li><a class="dropdown-item @(currentRole == "Supporting" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setRoleFilter('Supporting');">Supporting</a></li>
+                        <li><a class="dropdown-item @(currentRole == "Minor" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setRoleFilter('Minor');">Minor</a></li>
                     </ul>
                 </div>
 
                 <!-- Status Filter Dropdown -->
-                <div class="dropdown custom-dropdown-container">
-                    <button type="button" class="custom-dropdown-btn @(!string.IsNullOrEmpty(currentStatus) ? "active-filter" : "")" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="d-flex align-items-center gap-2">
-                            <i data-lucide="activity" class="dropdown-icon"></i>
-                            <span class="dropdown-label">@(string.IsNullOrEmpty(currentStatus) ? "All Status" : currentStatus)</span>
-                        </span>
-                        <i data-lucide="chevron-down" class="dropdown-arrow ms-1"></i>
+                <div class="dropdown">
+                    <button type="button" class="btn btn-light bg-white border text-slate-700 rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 dropdown-toggle no-arrow" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.875rem; border-color: #e2e8f0; border-radius: 10px;">
+                        <i data-lucide="activity" style="width: 16px; height: 16px; color: #64748b;"></i>
+                        <span>@(string.IsNullOrEmpty(currentStatus) ? "All Status" : currentStatus)</span>
+                        <i data-lucide="chevron-down" style="width: 14px; height: 14px;" class="ms-1 text-muted"></i>
                     </button>
-                    <ul class="dropdown-menu custom-dropdown-menu shadow-lg border-0">
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(string.IsNullOrEmpty(currentStatus) ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('statusInput', '')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <i data-lucide="layers" class="item-icon"></i>
-                                    <span>All Status</span>
-                                </span>
-                                @if (string.IsNullOrEmpty(currentStatus)) { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-1 opacity-50"></li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentStatus == "Active" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('statusInput', 'Active')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="status-dot status-active"></span>
-                                    <span>Active</span>
-                                </span>
-                                @if (currentStatus == "Active") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentStatus == "Draft" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('statusInput', 'Draft')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="status-dot status-draft"></span>
-                                    <span>Draft</span>
-                                </span>
-                                @if (currentStatus == "Draft") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(currentStatus == "Archived" ? "active" : "")" href="javascript:void(0);" onclick="setDropdownValue('statusInput', 'Archived')">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span class="status-dot status-archived"></span>
-                                    <span>Archived</span>
-                                </span>
-                                @if (currentStatus == "Archived") { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
+                    <ul class="dropdown-menu shadow-lg border-0" style="min-width: 160px;">
+                        <li><a class="dropdown-item @(string.IsNullOrEmpty(currentStatus) ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStatusFilter('');">All Status</a></li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li><a class="dropdown-item @(currentStatus == "Active" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStatusFilter('Active');">Active</a></li>
+                        <li><a class="dropdown-item @(currentStatus == "Alive" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStatusFilter('Alive');">Alive</a></li>
+                        <li><a class="dropdown-item @(currentStatus == "Deceased" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStatusFilter('Deceased');">Deceased</a></li>
+                        <li><a class="dropdown-item @(currentStatus == "Missing" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStatusFilter('Missing');">Missing</a></li>
+                        <li><a class="dropdown-item @(currentStatus == "Draft" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStatusFilter('Draft');">Draft</a></li>
+                        <li><a class="dropdown-item @(currentStatus == "Archived" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStatusFilter('Archived');">Archived</a></li>
                     </ul>
                 </div>
-
-                <!-- More Filters Button -->
-                <button type="button" class="btn btn-light bg-white border text-slate-700 rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2" style="font-size: 0.875rem; border-color: #e2e8f0; border-radius: 10px;" onclick="toggleMoreFilters();">
-                    <i data-lucide="sliders-horizontal" style="width: 16px; height: 16px; color: #64748b;"></i>
-                    <span>More Filters</span>
-                </button>
             </div>
 
+            <!-- Right Controls: Sort & View Toggle -->
             <div class="d-flex align-items-center gap-3">
-                <!-- Sort Dropdown -->
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small text-nowrap">Sort by:</span>
-                    <div class="dropdown custom-dropdown-container">
+                    <div class="dropdown">
                         @{
                             string sortDisplay = currentSortBy switch
                             {
                                 "recently_added" => "Recently Added",
                                 "name" => "Name",
                                 "role" => "Role",
+                                "status" => "Status",
                                 _ => "Recently Updated"
                             };
                         }
-                        <button type="button" class="custom-dropdown-btn" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span class="d-flex align-items-center gap-2">
-                                <i data-lucide="arrow-up-down" class="dropdown-icon"></i>
-                                <span class="dropdown-label">@sortDisplay</span>
-                            </span>
-                            <i data-lucide="chevron-down" class="dropdown-arrow ms-1"></i>
+                        <button type="button" class="btn btn-light bg-white border text-slate-700 rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 dropdown-toggle no-arrow" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.875rem; border-color: #e2e8f0; border-radius: 10px;">
+                            <i data-lucide="arrow-up-down" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span>@sortDisplay</span>
+                            <i data-lucide="chevron-down" style="width: 14px; height: 14px;" class="ms-1 text-muted"></i>
                         </button>
-                        <ul class="dropdown-menu custom-dropdown-menu dropdown-menu-end shadow-lg border-0">
-                            <li>
-                                <a class="dropdown-item custom-dropdown-item @(currentSortBy == "recently_updated" ? "active" : "")" href="javascript:void(0);" onclick="setSortValue('recently_updated')">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <i data-lucide="clock" class="item-icon"></i>
-                                        <span>Recently Updated</span>
-                                    </span>
-                                    @if (currentSortBy == "recently_updated") { <i data-lucide="check" class="check-icon"></i> }
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item custom-dropdown-item @(currentSortBy == "recently_added" ? "active" : "")" href="javascript:void(0);" onclick="setSortValue('recently_added')">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <i data-lucide="calendar" class="item-icon"></i>
-                                        <span>Recently Added</span>
-                                    </span>
-                                    @if (currentSortBy == "recently_added") { <i data-lucide="check" class="check-icon"></i> }
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item custom-dropdown-item @(currentSortBy == "name" ? "active" : "")" href="javascript:void(0);" onclick="setSortValue('name')">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <i data-lucide="arrow-down-a-z" class="item-icon"></i>
-                                        <span>Name</span>
-                                    </span>
-                                    @if (currentSortBy == "name") { <i data-lucide="check" class="check-icon"></i> }
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item custom-dropdown-item @(currentSortBy == "role" ? "active" : "")" href="javascript:void(0);" onclick="setSortValue('role')">
-                                    <span class="d-flex align-items-center gap-2">
-                                        <i data-lucide="user" class="item-icon"></i>
-                                        <span>Role</span>
-                                    </span>
-                                    @if (currentSortBy == "role") { <i data-lucide="check" class="check-icon"></i> }
-                                </a>
-                            </li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="min-width: 170px;">
+                            <li><a class="dropdown-item @(currentSortBy == "recently_updated" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setSortValue('recently_updated');">Recently Updated</a></li>
+                            <li><a class="dropdown-item @(currentSortBy == "recently_added" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setSortValue('recently_added');">Recently Added</a></li>
+                            <li><a class="dropdown-item @(currentSortBy == "name" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setSortValue('name');">Name</a></li>
+                            <li><a class="dropdown-item @(currentSortBy == "role" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setSortValue('role');">Role</a></li>
+                            <li><a class="dropdown-item @(currentSortBy == "status" ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setSortValue('status');">Status</a></li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- View Switcher -->
-                <div class="bg-slate-100 p-1 rounded-3 d-flex align-items-center border" style="border-color: #e2e8f0; border-radius: 10px;">
-                    <button type="button" id="btnTableView" class="btn btn-sm bg-white shadow-sm border-0 rounded text-teal" style="color: #0d9488;" title="Table View">
-                        <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                <!-- View Toggle Buttons -->
+                <div class="btn-group bg-slate-100 p-1 rounded-3" style="background-color: #f1f5f9; border-radius: 10px;">
+                    <button type="button" class="btn btn-sm px-2.5 py-1.5 rounded-2 text-slate-500" id="btnTableView" title="Table / List View">
+                        <i data-lucide="list" style="width: 16px; height: 16px;"></i>
                     </button>
-                    <button type="button" id="btnGridView" class="btn btn-sm border-0 rounded text-muted" title="Grid View">
-                        <i data-lucide="grid" style="width: 18px; height: 18px;"></i>
+                    <button type="button" class="btn btn-sm px-2.5 py-1.5 rounded-2 text-teal fw-semibold bg-white shadow-sm" id="btnGridView" title="Grid / Card View">
+                        <i data-lucide="grid" style="width: 16px; height: 16px;"></i>
                     </button>
                 </div>
             </div>
         </div>
+
+        <!-- Active Filter Badges Bar -->
+        @if (hasActiveFilters)
+        {
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+                <span class="small text-muted me-1 fw-medium">Active Filters:</span>
+                @if (!string.IsNullOrEmpty(currentSearch))
+                {
+                    <span class="filter-chip">
+                        Search: "@currentSearch"
+                        <button type="button" class="filter-chip-remove" onclick="clearSearch();">&times;</button>
+                    </span>
+                }
+                @if (selectedStory != null)
+                {
+                    <span class="filter-chip">
+                        Story: @selectedStory.Title
+                        <button type="button" class="filter-chip-remove" onclick="setStoryFilter('');">&times;</button>
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(currentRole))
+                {
+                    <span class="filter-chip">
+                        Role: @currentRole
+                        <button type="button" class="filter-chip-remove" onclick="setRoleFilter('');">&times;</button>
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(currentStatus))
+                {
+                    <span class="filter-chip">
+                        Status: @currentStatus
+                        <button type="button" class="filter-chip-remove" onclick="setStatusFilter('');">&times;</button>
+                    </span>
+                }
+                <button type="button" class="btn btn-sm btn-link text-secondary text-decoration-none small p-0 ms-2" onclick="clearAllFilters();">
+                    Clear All
+                </button>
+            </div>
+        }
     </form>
 
     <!-- Main Data Container (Table / Grid View) -->
     @if (!Model.Any())
     {
         <!-- Empty State Container -->
-        <div class="bg-white rounded-4 border shadow-sm p-5 text-center d-flex flex-column align-items-center justify-content-center position-relative overflow-hidden" style="min-height: 400px; border-color: #e2e8f0;">
-            <div class="rounded-circle bg-teal-50 p-4 mb-3" style="background-color: rgba(13, 148, 136, 0.08); color: #0d9488;">
+        <div class="bg-white rounded-4 border shadow-sm p-5 text-center d-flex flex-column align-items-center justify-content-center position-relative overflow-hidden" style="min-height: 380px; border-color: #e2e8f0; border-radius: 16px;">
+            <div class="rounded-circle p-4 mb-3" style="background-color: rgba(13, 148, 136, 0.08); color: #0d9488;">
                 <i data-lucide="user-x" style="width: 48px; height: 48px;"></i>
             </div>
             <h4 class="fw-bold text-slate-900 mb-2">No characters found</h4>
@@ -622,15 +767,24 @@
     }
     else
     {
-        <!-- Table View -->
-        <div id="tableViewContainer" class="bg-white rounded-4 border shadow-sm overflow-hidden mb-4" style="border-color: #e2e8f0;">
+        <!-- 1. Modern Beautified Table / List View -->
+        <div id="tableViewContainer" class="custom-table-container mb-4 d-none">
             <div class="table-responsive">
                 <table class="custom-table">
+                    <colgroup>
+                        <col style="width: 28%;" />
+                        <col style="width: 22%;" />
+                        <col style="width: 15%;" />
+                        <col style="width: 12%;" />
+                        <col style="width: 10%;" />
+                        <col style="width: 13%;" />
+                        <col style="width: 100px;" />
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>CHARACTER</th>
-                            <th>STORY</th>
-                            <th>ROLE</th>
+                            <th>STORY ASSIGNMENT</th>
+                            <th>ROLE / ARCHETYPE</th>
                             <th>STATUS</th>
                             <th>RELATIONSHIPS</th>
                             <th>UPDATED <i data-lucide="chevrons-up-down" class="inline-block" style="width: 12px; height: 12px;"></i></th>
@@ -651,23 +805,39 @@
                             string badgeClass = arcType.Equals("Main", StringComparison.OrdinalIgnoreCase) ? "badge-arc-main" :
                                                 arcType.Equals("Supporting", StringComparison.OrdinalIgnoreCase) ? "badge-arc-supporting" : "badge-arc-minor";
 
-                            string statusDotClass = (c.Status ?? "Active").Equals("Active", StringComparison.OrdinalIgnoreCase) ? "status-active" :
+                            string statusDotClass = (c.Status ?? "Active").Equals("Active", StringComparison.OrdinalIgnoreCase) || (c.Status ?? "").Equals("Alive", StringComparison.OrdinalIgnoreCase) ? "status-active" :
                                                     (c.Status ?? "Draft").Equals("Draft", StringComparison.OrdinalIgnoreCase) ? "status-draft" : "status-archived";
 
                             var storyObj = c.Story;
+                            string cleanHook = CleanHookText(c.OneLineDescription);
 
                             <!-- Relationship Avatars parsing dynamically from DB -->
                             List<string> relAvatars = new List<string>();
-                            if (!string.IsNullOrWhiteSpace(c.RelationshipsJson) && c.RelationshipsJson.Contains("avatarUrl"))
+                            if (!string.IsNullOrWhiteSpace(c.RelationshipsJson))
                             {
                                 try
                                 {
                                     using var doc = System.Text.Json.JsonDocument.Parse(c.RelationshipsJson);
-                                    foreach (var elem in doc.RootElement.EnumerateArray())
+                                    if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Array)
                                     {
-                                        if (elem.TryGetProperty("avatarUrl", out var avProp) && !string.IsNullOrEmpty(avProp.GetString()))
+                                        foreach (var elem in doc.RootElement.EnumerateArray())
                                         {
-                                            relAvatars.Add(avProp.GetString()!);
+                                            string? av = null;
+                                            if (elem.TryGetProperty("avatar", out var pAv) && !string.IsNullOrWhiteSpace(pAv.GetString())) av = pAv.GetString();
+                                            else if (elem.TryGetProperty("avatarUrl", out var pAvUrl) && !string.IsNullOrWhiteSpace(pAvUrl.GetString())) av = pAvUrl.GetString();
+
+                                            string? rName = null;
+                                            if (elem.TryGetProperty("name", out var pN) && !string.IsNullOrWhiteSpace(pN.GetString())) rName = pN.GetString();
+                                            else if (elem.TryGetProperty("targetName", out var pTN) && !string.IsNullOrWhiteSpace(pTN.GetString())) rName = pTN.GetString();
+
+                                            if (!string.IsNullOrWhiteSpace(av))
+                                            {
+                                                relAvatars.Add(av);
+                                            }
+                                            else if (!string.IsNullOrWhiteSpace(rName))
+                                            {
+                                                relAvatars.Add($"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(rName)}");
+                                            }
                                         }
                                     }
                                 }
@@ -675,7 +845,6 @@
                             }
                             if (!relAvatars.Any())
                             {
-                                // Dynamic character avatars from existing DB characters in story
                                 relAvatars = allCharacters
                                     .Where(other => other.Id != c.Id && (other.StoryId == c.StoryId || (other.Story != null && c.Story != null && other.Story.UserId == c.Story.UserId)))
                                     .Take(5)
@@ -690,14 +859,7 @@
                                 <td>
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="position-relative flex-shrink-0">
-                                            @if (!string.IsNullOrWhiteSpace(c.AvatarUrl))
-                                            {
-                                                <img src="@c.AvatarUrl" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 44px; height: 44px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
-                                            }
-                                            else
-                                            {
-                                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 44px; height: 44px; object-fit: cover; border: 2px solid #ffffff;" />
-                                            }
+                                            <img src="@(string.IsNullOrWhiteSpace(c.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(c.Name)}" : c.AvatarUrl)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 48px; height: 48px; object-fit: cover; border: 2.5px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
                                             @if (arcType.Equals("Main", StringComparison.OrdinalIgnoreCase))
                                             {
                                                 <div class="position-absolute bottom-0 end-0 bg-warning text-white rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 16px; height: 16px; border: 1.5px solid #ffffff; font-size: 8px;">
@@ -706,14 +868,14 @@
                                             }
                                         </div>
                                         <div>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <a href="@Url.Action("Details", "Characters", new { id = c.Id })" class="fw-bold text-slate-900 text-decoration-none hover-teal" style="font-size: 0.925rem;">
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <a href="@Url.Action("Details", "Characters", new { id = c.Id })" class="fw-bold text-slate-900 text-decoration-none hover-teal me-1" style="font-size: 0.95rem; font-family: 'Playfair Display', Georgia, serif;">
                                                     @c.Name
                                                 </a>
                                                 <span class="@badgeClass">@arcType</span>
                                             </div>
-                                            <p class="text-secondary mb-0 text-truncate" style="font-size: 0.8rem; max-width: 280px; color: #64748b;">
-                                                @(string.IsNullOrWhiteSpace(c.OneLineDescription) ? "No description provided." : c.OneLineDescription)
+                                            <p class="text-secondary mb-0 text-truncate mt-0.5" style="font-size: 0.8rem; max-width: 260px; color: #64748b;">
+                                                @(string.IsNullOrWhiteSpace(cleanHook) ? "No description provided." : cleanHook)
                                             </p>
                                         </div>
                                     </div>
@@ -721,22 +883,22 @@
 
                                 <!-- STORY -->
                                 <td>
-                                    <div class="d-flex align-items-center gap-2.5">
+                                    <div class="d-flex align-items-center gap-3">
                                         @if (storyObj != null && !string.IsNullOrWhiteSpace(storyObj.CoverImageUrl))
                                         {
-                                            <img src="@storyObj.CoverImageUrl" alt="@storyObj.Title" class="rounded-2 shadow-xs flex-shrink-0" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&auto=format&fit=crop&q=80';" />
+                                            <img src="@storyObj.CoverImageUrl" alt="@storyObj.Title" class="rounded-2 shadow-xs flex-shrink-0 me-1" style="width: 38px; height: 38px; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100&auto=format&fit=crop&q=80';" />
                                         }
                                         else
                                         {
-                                            <div class="rounded-2 bg-slate-100 d-flex align-items-center justify-content-center flex-shrink-0 text-teal" style="width: 36px; height: 36px; color: #0d9488;">
+                                            <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 text-teal me-1" style="width: 38px; height: 38px; color: #0d9488; background-color: #f0fdfa; border: 1px solid #ccfbf1;">
                                                 <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
                                             </div>
                                         }
-                                        <div>
-                                            <span class="fw-bold d-block text-slate-900" style="font-size: 0.85rem;">
+                                        <div class="text-truncate" style="max-width: 180px;">
+                                            <span class="fw-bold d-block text-slate-900 text-truncate" style="font-size: 0.85rem;">
                                                 @(storyObj?.Title ?? "Unassigned Story")
                                             </span>
-                                            <span class="text-muted d-block" style="font-size: 0.75rem;">
+                                            <span class="text-muted d-block text-truncate" style="font-size: 0.75rem;">
                                                 @(storyObj?.Genre ?? "Fiction")
                                             </span>
                                         </div>
@@ -745,16 +907,16 @@
 
                                 <!-- ROLE -->
                                 <td>
-                                    <span class="fw-semibold text-slate-800" style="font-size: 0.85rem;">
+                                    <span class="badge-role-pill">
                                         @(string.IsNullOrWhiteSpace(c.Role) ? "Character" : c.Role)
                                     </span>
                                 </td>
 
                                 <!-- STATUS -->
                                 <td>
-                                    <div class="d-flex align-items-center">
+                                    <div class="d-flex align-items-center gap-1.5">
                                         <span class="status-dot @statusDotClass"></span>
-                                        <span class="fw-medium text-slate-700" style="font-size: 0.85rem;">
+                                        <span class="fw-semibold text-slate-700" style="font-size: 0.85rem;">
                                             @(c.Status ?? "Active")
                                         </span>
                                     </div>
@@ -780,30 +942,30 @@
 
                                 <!-- UPDATED -->
                                 <td>
-                                    <span class="text-secondary" style="font-size: 0.85rem;">
+                                    <span class="text-secondary fw-medium" style="font-size: 0.85rem;">
                                         @GetRelativeTime(c.UpdatedAt)
                                     </span>
                                 </td>
 
                                 <!-- ACTIONS -->
-                                <td class="text-end">
-                                    <div class="d-inline-flex align-items-center gap-1">
+                                <td class="text-end" style="position: relative;">
+                                    <div class="d-inline-flex align-items-center gap-1.5">
                                         <a href="@Url.Action("Edit", "Characters", new { id = c.Id })" class="action-btn" title="Edit Character">
-                                            <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
+                                            <i data-lucide="pencil" style="width: 15px; height: 15px;"></i>
                                         </a>
 
                                         <div class="dropdown">
-                                            <button class="action-btn dropdown-toggle no-arrow" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i data-lucide="more-vertical" style="width: 16px; height: 16px;"></i>
+                                            <button class="action-btn dropdown-toggle no-arrow" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
+                                                <i data-lucide="more-vertical" style="width: 15px; height: 15px;"></i>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2" style="min-width: 160px; font-size: 0.85rem;">
+                                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2" style="min-width: 165px; font-size: 0.85rem;">
                                                 <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="@Url.Action("Details", "Characters", new { id = c.Id })">
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="@Url.Action("Details", "Characters", new { id = c.Id })">
                                                         <i data-lucide="eye" style="width: 15px; height: 15px; color: #64748b;"></i> View Details
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="@Url.Action("Edit", "Characters", new { id = c.Id })">
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="@Url.Action("Edit", "Characters", new { id = c.Id })">
                                                         <i data-lucide="edit-3" style="width: 15px; height: 15px; color: #64748b;"></i> Edit Character
                                                     </a>
                                                 </li>
@@ -811,7 +973,7 @@
                                                 <li>
                                                     <form method="post" action="@Url.Action("Delete", "Characters", new { id = c.Id })" onsubmit="return confirm('Are you sure you want to delete character @c.Name?');">
                                                         @Html.AntiForgeryToken()
-                                                        <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 py-1.5 border-0 bg-transparent">
+                                                        <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 py-2 border-0 bg-transparent">
                                                             <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i> Delete
                                                         </button>
                                                     </form>
@@ -827,8 +989,8 @@
             </div>
         </div>
 
-        <!-- Grid View (Hidden by default, toggled via JS) -->
-        <div id="gridViewContainer" class="row g-3 mb-4 d-none">
+        <!-- 2. Modern Beautified Grid / Card View -->
+        <div id="gridViewContainer" class="row g-4 mb-4">
             @foreach (var c in Model)
             {
                 string arcType = c.ArcType ?? "Supporting";
@@ -842,48 +1004,137 @@
                 string badgeClass = arcType.Equals("Main", StringComparison.OrdinalIgnoreCase) ? "badge-arc-main" :
                                     arcType.Equals("Supporting", StringComparison.OrdinalIgnoreCase) ? "badge-arc-supporting" : "badge-arc-minor";
 
+                string statusDotClass = (c.Status ?? "Active").Equals("Active", StringComparison.OrdinalIgnoreCase) || (c.Status ?? "").Equals("Alive", StringComparison.OrdinalIgnoreCase) ? "status-active" :
+                                        (c.Status ?? "Draft").Equals("Draft", StringComparison.OrdinalIgnoreCase) ? "status-draft" : "status-archived";
+
+                string statusChipClass = (c.Status ?? "").Equals("Alive", StringComparison.OrdinalIgnoreCase) ? "chip-status-alive" :
+                                         (c.Status ?? "").Equals("Active", StringComparison.OrdinalIgnoreCase) ? "chip-status-active" :
+                                         (c.Status ?? "").Equals("Deceased", StringComparison.OrdinalIgnoreCase) ? "chip-status-deceased" : "chip-status-draft";
+
                 var storyObj = c.Story;
+                string cleanHook = CleanHookText(c.OneLineDescription);
+
+                var traits = string.IsNullOrWhiteSpace(c.PersonalityTraits) 
+                    ? new List<string>() 
+                    : c.PersonalityTraits.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).Take(4).ToList();
 
                 <div class="col-12 col-md-6 col-lg-4">
-                    <div class="bg-white rounded-4 border shadow-sm p-4 h-100 d-flex flex-column justify-content-between" style="border-color: #e2e8f0;">
+                    <div class="character-card">
                         <div>
+                            <!-- Card Header: Avatar, Name, Archetype & Dropdown -->
                             <div class="d-flex align-items-start justify-content-between mb-3">
                                 <div class="d-flex align-items-center gap-3">
-                                    <img src="@(string.IsNullOrWhiteSpace(c.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(c.Name)}" : c.AvatarUrl)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 52px; height: 52px; object-fit: cover; border: 2px solid #ffffff;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
+                                    <div class="position-relative flex-shrink-0">
+                                        <img src="@(string.IsNullOrWhiteSpace(c.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(c.Name)}" : c.AvatarUrl)" alt="@c.Name" class="rounded-circle shadow-sm" style="width: 58px; height: 58px; object-fit: cover; border: 2.5px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.08);" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=@Uri.EscapeDataString(c.Name)';" />
+                                        @if (arcType.Equals("Main", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <div class="position-absolute bottom-0 end-0 bg-warning text-white rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 18px; height: 18px; border: 2px solid #ffffff; font-size: 9px;">
+                                                <i data-lucide="star" style="width: 11px; height: 11px; fill: white;"></i>
+                                            </div>
+                                        }
+                                    </div>
                                     <div>
-                                        <h5 class="fw-bold text-slate-900 mb-1" style="font-size: 1.05rem;">@c.Name</h5>
-                                        <span class="@badgeClass">@arcType</span>
+                                        <a href="@Url.Action("Details", "Characters", new { id = c.Id })" class="card-character-name d-block mb-1">
+                                            @c.Name
+                                        </a>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <span class="@badgeClass">@arcType</span>
+                                            @if (!string.IsNullOrWhiteSpace(c.Role))
+                                            {
+                                                <span class="badge-role-pill">
+                                                    @c.Role
+                                                </span>
+                                            }
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="dropdown">
-                                    <button class="action-btn border-0 shadow-none dropdown-toggle no-arrow" type="button" data-bs-toggle="dropdown">
-                                        <i data-lucide="more-vertical" style="width: 16px; height: 16px;"></i>
+
+                                <div class="dropdown ms-2">
+                                    <button class="action-btn dropdown-toggle no-arrow border-0 bg-transparent shadow-none p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i data-lucide="more-vertical" style="width: 18px; height: 18px; color: #64748b;"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2">
-                                        <li><a class="dropdown-item" href="@Url.Action("Details", "Characters", new { id = c.Id })">View Details</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Characters", new { id = c.Id })">Edit</a></li>
+                                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2" style="min-width: 165px;">
+                                        <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="@Url.Action("Details", "Characters", new { id = c.Id })"><i data-lucide="eye" style="width: 15px; height: 15px; color: #64748b;"></i> View Details</a></li>
+                                        <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="@Url.Action("Edit", "Characters", new { id = c.Id })"><i data-lucide="edit-3" style="width: 15px; height: 15px; color: #64748b;"></i> Edit Character</a></li>
                                         <li><hr class="dropdown-divider my-1"></li>
                                         <li>
                                             <form method="post" action="@Url.Action("Delete", "Characters", new { id = c.Id })" onsubmit="return confirm('Are you sure you want to delete @c.Name?');">
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="dropdown-item text-danger border-0 bg-transparent">Delete</button>
+                                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 py-2 border-0 bg-transparent"><i data-lucide="trash-2" style="width: 15px; height: 15px;"></i> Delete</button>
                                             </form>
                                         </li>
                                     </ul>
                                 </div>
                             </div>
 
-                            <p class="text-secondary small mb-3 line-clamp-2" style="line-height: 1.5;">
-                                @(string.IsNullOrWhiteSpace(c.OneLineDescription) ? "No description available." : c.OneLineDescription)
-                            </p>
+                            <!-- Card Hook / Description -->
+                            @if (!string.IsNullOrWhiteSpace(cleanHook))
+                            {
+                                <div class="card-hook-box mb-3">
+                                    "@cleanHook"
+                                </div>
+                            }
+
+                            <!-- Quick Meta Chips (Status, Age, Gender, Occupation, Alignment) -->
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                @if (!string.IsNullOrWhiteSpace(c.Status))
+                                {
+                                    <span class="card-meta-chip @statusChipClass">
+                                        <span class="status-dot @statusDotClass"></span>
+                                        <span>@c.Status</span>
+                                    </span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(c.Age))
+                                {
+                                    <span class="card-meta-chip chip-age">
+                                        <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
+                                        <span>@c.Age yrs</span>
+                                    </span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(c.Gender))
+                                {
+                                    <span class="card-meta-chip chip-gender">
+                                        <i data-lucide="user" style="width: 12px; height: 12px;"></i>
+                                        <span>@c.Gender</span>
+                                    </span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(c.Occupation))
+                                {
+                                    <span class="card-meta-chip chip-occupation text-truncate" style="max-width: 140px;">
+                                        <i data-lucide="briefcase" style="width: 12px; height: 12px;"></i>
+                                        <span>@c.Occupation</span>
+                                    </span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(c.Alignment))
+                                {
+                                    <span class="card-meta-chip chip-alignment">
+                                        <i data-lucide="shield" style="width: 12px; height: 12px;"></i>
+                                        <span>@c.Alignment</span>
+                                    </span>
+                                }
+                            </div>
+
+                            <!-- Trait Pills -->
+                            @if (traits.Any())
+                            {
+                                <div class="d-flex flex-wrap gap-1.5 mb-3">
+                                    @foreach (var tr in traits)
+                                    {
+                                        <span class="trait-tag-pill">@tr</span>
+                                    }
+                                </div>
+                            }
                         </div>
 
-                        <div class="pt-3 border-top d-flex align-items-center justify-content-between text-muted small" style="border-color: #f1f5f9;">
-                            <span class="d-flex align-items-center gap-1.5 fw-medium text-slate-700">
-                                <i data-lucide="book-open" style="width: 14px; height: 14px; color: #0d9488;"></i>
-                                @(storyObj?.Title ?? "Unassigned")
+                        <!-- Card Footer: Story & Details Link -->
+                        <div class="pt-3 mt-auto border-top d-flex align-items-center justify-content-between text-muted small" style="border-color: #f1f5f9;">
+                            <span class="d-flex align-items-center gap-2 fw-semibold text-slate-800 text-truncate" style="max-width: 190px;">
+                                <i data-lucide="book-open" style="width: 15px; height: 15px; color: #0d9488; flex-shrink: 0;"></i>
+                                <span class="text-truncate">@(storyObj?.Title ?? "Unassigned Story")</span>
                             </span>
-                            <span>@GetRelativeTime(c.UpdatedAt)</span>
+                            <a href="@Url.Action("Details", "Characters", new { id = c.Id })" class="btn-card-details ms-2">
+                                Details <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -891,7 +1142,7 @@
         </div>
 
         <!-- Table Footer / Pagination -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white p-3 rounded-3 border shadow-sm mb-4" style="border-color: #e2e8f0;">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 bg-white p-3 rounded-3 border shadow-sm mb-4" style="border-color: #e2e8f0; border-radius: 14px;">
             <div class="text-secondary small">
                 Showing <strong>@startItem</strong> to <strong>@endItem</strong> of <strong>@totalFilteredCount</strong> characters
             </div>
@@ -925,30 +1176,15 @@
                     </ul>
                 </nav>
 
-                <div class="dropdown custom-dropdown-container">
-                    <button type="button" class="btn btn-sm bg-slate-100 text-slate-700 rounded-2 border-0 d-inline-flex align-items-center gap-1.5 px-2.5 py-1" style="font-size: 0.8rem; font-weight: 500;" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="dropdown">
+                    <button type="button" class="btn btn-sm bg-slate-100 text-slate-700 rounded-2 border-0 d-inline-flex align-items-center gap-1.5 px-2.5 py-1 dropdown-toggle no-arrow" style="font-size: 0.8rem; font-weight: 500;" data-bs-toggle="dropdown" aria-expanded="false">
                         <span>@pageSize / page</span>
                         <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #64748b;"></i>
                     </button>
-                    <ul class="dropdown-menu custom-dropdown-menu dropdown-menu-end shadow-lg border-0 p-1" style="min-width: 120px;">
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(pageSize == 10 ? "active" : "")" href="javascript:changePageSize(10);">
-                                <span>10 / page</span>
-                                @if (pageSize == 10) { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(pageSize == 25 ? "active" : "")" href="javascript:changePageSize(25);">
-                                <span>25 / page</span>
-                                @if (pageSize == 25) { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item custom-dropdown-item @(pageSize == 50 ? "active" : "")" href="javascript:changePageSize(50);">
-                                <span>50 / page</span>
-                                @if (pageSize == 50) { <i data-lucide="check" class="check-icon"></i> }
-                            </a>
-                        </li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-1" style="min-width: 120px;">
+                        <li><a class="dropdown-item @(pageSize == 10 ? "active fw-bold" : "")" href="javascript:changePageSize(10);">10 / page</a></li>
+                        <li><a class="dropdown-item @(pageSize == 25 ? "active fw-bold" : "")" href="javascript:changePageSize(25);">25 / page</a></li>
+                        <li><a class="dropdown-item @(pageSize == 50 ? "active fw-bold" : "")" href="javascript:changePageSize(50);">50 / page</a></li>
                     </ul>
                 </div>
             </div>
@@ -959,14 +1195,49 @@
 
 @section Scripts {
     <script>
-        function setDropdownValue(inputId, value) {
-            document.getElementById(inputId).value = value;
+        function setStoryFilter(id) {
+            document.getElementById('storyIdInput').value = id;
+            document.getElementById('pageInput').value = 1;
+            document.getElementById('filterForm').submit();
+        }
+
+        function setRoleFilter(role) {
+            document.getElementById('roleInput').value = role;
+            document.getElementById('pageInput').value = 1;
+            document.getElementById('filterForm').submit();
+        }
+
+        function setStatusFilter(status) {
+            document.getElementById('statusInput').value = status;
+            document.getElementById('pageInput').value = 1;
+            document.getElementById('filterForm').submit();
+        }
+
+        function setArcTypeFilter(arc) {
+            document.getElementById('arcTypeInput').value = arc;
             document.getElementById('pageInput').value = 1;
             document.getElementById('filterForm').submit();
         }
 
         function setSortValue(value) {
             document.getElementById('sortByInput').value = value;
+            document.getElementById('filterForm').submit();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('pageInput').value = 1;
+            document.getElementById('filterForm').submit();
+        }
+
+        function clearAllFilters() {
+            document.getElementById('storyIdInput').value = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('roleInput').value = '';
+            document.getElementById('statusInput').value = '';
+            document.getElementById('arcTypeInput').value = '';
+            document.getElementById('sortByInput').value = 'recently_updated';
+            document.getElementById('pageInput').value = 1;
             document.getElementById('filterForm').submit();
         }
 
@@ -981,15 +1252,12 @@
             document.getElementById('filterForm').submit();
         }
 
-        function toggleMoreFilters() {
-            alert('Filters active: Search, Story, Role, Status, Sort by.');
-        }
-
         document.addEventListener("DOMContentLoaded", function () {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
 
+            // View toggle setup
             const btnTable = document.getElementById("btnTableView");
             const btnGrid = document.getElementById("btnGridView");
             const tableContainer = document.getElementById("tableViewContainer");
@@ -1000,22 +1268,22 @@
                     tableContainer.classList.remove("d-none");
                     gridContainer.classList.add("d-none");
 
-                    btnTable.classList.add("bg-white", "shadow-sm");
-                    btnTable.style.color = "#0d9488";
+                    btnTable.classList.add("bg-white", "shadow-sm", "text-teal");
+                    btnTable.classList.remove("text-slate-500");
 
-                    btnGrid.classList.remove("bg-white", "shadow-sm");
-                    btnGrid.style.color = "#64748b";
+                    btnGrid.classList.remove("bg-white", "shadow-sm", "text-teal");
+                    btnGrid.classList.add("text-slate-500");
                 });
 
                 btnGrid.addEventListener("click", function () {
                     gridContainer.classList.remove("d-none");
                     tableContainer.classList.add("d-none");
 
-                    btnGrid.classList.add("bg-white", "shadow-sm");
-                    btnGrid.style.color = "#0d9488";
+                    btnGrid.classList.add("bg-white", "shadow-sm", "text-teal");
+                    btnGrid.classList.remove("text-slate-500");
 
-                    btnTable.classList.remove("bg-white", "shadow-sm");
-                    btnTable.style.color = "#64748b";
+                    btnTable.classList.remove("bg-white", "shadow-sm", "text-teal");
+                    btnTable.classList.add("text-slate-500");
                 });
             }
         });

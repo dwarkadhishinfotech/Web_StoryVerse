@@ -1,0 +1,3031 @@
+@model StoryVerse.Web.Models.CreateWorldEntityViewModel
+@{
+    ViewData["Title"] = "Create Entity - World Building";
+}
+
+@section Styles {
+    <style>
+        .create-entity-page {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #0f172a;
+        }
+
+        .page-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+            font-size: 2rem;
+            color: #0f172a;
+        }
+
+        .page-subtitle {
+            color: #64748b;
+            font-size: 0.925rem;
+        }
+
+        /* Stepper Navigation Bar */
+        .stepper-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.25rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .stepper-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            text-decoration: none;
+            user-select: none;
+            background: transparent;
+            border: none;
+            padding: 4px 8px;
+        }
+
+        .stepper-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #f1f5f9;
+            color: #64748b;
+            border: 2px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .stepper-step.active .stepper-number {
+            background-color: #13A8A6;
+            color: #ffffff;
+            border-color: #13A8A6;
+            box-shadow: 0 0 0 4px rgba(19, 168, 166, 0.2);
+        }
+
+        .stepper-step.completed .stepper-number {
+            background-color: #13A8A6;
+            color: #ffffff;
+            border-color: #13A8A6;
+        }
+
+        .stepper-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1px;
+            white-space: nowrap;
+        }
+
+        .stepper-desc {
+            font-size: 0.75rem;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .stepper-step.active .stepper-title {
+            color: #13A8A6;
+        }
+
+        .stepper-arrow {
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+
+        /* Glass Form Card */
+        .glass-form-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+            padding: 2.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .form-section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .form-label-custom {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .form-label-custom span.required {
+            color: #ef4444;
+        }
+
+        .form-control-custom {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.875rem;
+            color: #0f172a;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .form-control-custom:focus {
+            border-color: #13A8A6;
+            box-shadow: 0 0 0 3px rgba(19, 168, 166, 0.15);
+            outline: none;
+        }
+
+        .helper-text {
+            font-size: 0.775rem;
+            color: #64748b;
+            margin-top: 6px;
+        }
+
+        /* Visual Identity Pickers */
+        .icon-picker-box {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #f0fdfa;
+            border: 2px dashed #99f6e4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .icon-picker-box:hover {
+            border-color: #13A8A6;
+            background: #ccfbf1;
+        }
+
+        .picker-pencil-btn {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            color: #334155;
+            transition: all 0.2s ease;
+        }
+
+        .picker-pencil-btn:hover {
+            background: #13A8A6;
+            color: #ffffff;
+            border-color: #13A8A6;
+        }
+
+        .cover-picker-box {
+            width: 100%;
+            height: 140px;
+            border-radius: 14px;
+            background-size: cover;
+            background-position: center;
+            background-color: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .cover-picker-box:hover {
+            border-color: #13A8A6;
+        }
+
+        .cover-overlay-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(248, 250, 252, 0.85);
+            color: #64748b;
+        }
+
+        /* Sidebar Cards */
+        .preview-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+            padding: 1.5rem;
+            position: sticky;
+            top: 20px;
+        }
+
+        .live-preview-box {
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        .live-banner {
+            height: 140px;
+            background-size: cover;
+            background-position: center;
+            background-color: #cbd5e1;
+            position: relative;
+        }
+
+        .live-icon-circle {
+            position: absolute;
+            bottom: -20px;
+            left: 20px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #13A8A6;
+        }
+
+        .live-content {
+            padding: 1.75rem 1.25rem 1.25rem 1.25rem;
+        }
+
+        .badge-importance {
+            background-color: #f3e8ff;
+            color: #7e22ce;
+            font-size: 0.725rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 12px;
+        }
+
+        .live-meta-pills {
+            font-size: 0.775rem;
+            color: #0d9488;
+            font-weight: 600;
+        }
+
+        .live-summary-grid {
+            background-color: #f8fafc;
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid #f1f5f9;
+        }
+
+        .tip-card {
+            background: #fffdfa;
+            border: 1px solid #fef3c7;
+            border-radius: 16px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tip-watermark {
+            position: absolute;
+            right: -10px;
+            bottom: -10px;
+            opacity: 0.08;
+            pointer-events: none;
+            transform: rotate(-15deg);
+        }
+
+        /* Buttons */
+        .btn-teal {
+            background-color: #13A8A6;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 22px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(19, 168, 166, 0.25);
+        }
+
+        .btn-teal:hover {
+            background-color: #0f766e;
+            color: #ffffff;
+            box-shadow: 0 6px 16px rgba(19, 168, 166, 0.35);
+        }
+
+        .btn-outline-teal {
+            border: 1px solid #e2e8f0;
+            background-color: #ffffff;
+            color: #334155;
+            border-radius: 10px;
+            padding: 9px 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline-teal:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        /* Select2 StoryVerse Theme Overrides */
+        .select2-container--default .select2-selection--single {
+            height: auto !important;
+            padding: 8px 12px !important;
+            border-radius: 10px !important;
+            border: 1px solid #e2e8f0 !important;
+            background-color: #ffffff !important;
+            transition: all 0.2s ease;
+        }
+
+        .select2-container--default .select2-selection--single:focus,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #13A8A6 !important;
+            box-shadow: 0 0 0 3px rgba(19, 168, 166, 0.15) !important;
+            outline: none !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #0f172a !important;
+            font-weight: 500 !important;
+            padding-left: 0 !important;
+            line-height: 1.4 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100% !important;
+            top: 0 !important;
+            right: 10px !important;
+        }
+
+        .select2-dropdown {
+            border-radius: 12px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12) !important;
+            padding: 6px !important;
+            background: #ffffff !important;
+            z-index: 1060 !important;
+        }
+
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: #f0fdfa !important;
+            color: #0f766e !important;
+            border-radius: 8px !important;
+        }
+
+        .select2-container--default .select2-results__option--selected {
+            background-color: #13A8A6 !important;
+            color: #ffffff !important;
+            border-radius: 8px !important;
+        }
+
+        .select2-container--default .select2-results__option--selected .text-slate-800,
+        .select2-container--default .select2-results__option--selected .text-muted,
+        .select2-container--default .select2-results__option--selected i {
+            color: #ffffff !important;
+        }
+
+        .icon-grid-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .icon-grid-btn:hover, .icon-grid-btn.active {
+            border-color: #13A8A6;
+            background-color: #f0fdfa;
+            color: #13A8A6;
+        }
+
+        /* Input Icon Wrapper */
+        .input-icon-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 14px;
+            color: #94a3b8;
+            pointer-events: none;
+            width: 18px;
+            height: 18px;
+        }
+
+        .input-icon-wrapper .form-control-custom {
+            padding-left: 42px;
+        }
+
+        /* Rich Editor Toolbar Styles */
+        .editor-toolbar {
+            background-color: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 6px 10px;
+        }
+
+        .editor-btn {
+            border: 1px solid transparent;
+            background: transparent;
+            color: #475569;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.825rem;
+            transition: all 0.15s ease;
+        }
+
+        .editor-btn:hover, .editor-btn.active {
+            background-color: #e2e8f0;
+            color: #0f172a;
+        }
+
+        /* Select2 Multiple Choice Tags Styling */
+        .select2-container--default .select2-selection--multiple {
+            border-radius: 10px !important;
+            border: 1px solid #e2e8f0 !important;
+            background-color: #ffffff !important;
+            padding: 4px 8px !important;
+            min-height: 42px !important;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--multiple,
+        .select2-container--default.select2-container--open .select2-selection--multiple {
+            border-color: #13A8A6 !important;
+            box-shadow: 0 0 0 3px rgba(19, 168, 166, 0.15) !important;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #f0fdfa !important;
+            border: 1px solid #ccfbf1 !important;
+            color: #0d9488 !important;
+            border-radius: 12px !important;
+            padding: 2px 10px !important;
+            font-size: 0.8rem !important;
+            font-weight: 600 !important;
+            margin-top: 4px !important;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #0f766e !important;
+            margin-right: 6px !important;
+            border: none !important;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #13A8A6 !important;
+            background: transparent !important;
+        }
+
+        /* Suggested Details Item */
+        .suggested-item {
+            transition: all 0.2s ease;
+            background-color: #f8fafc;
+            border: 1px solid #f1f5f9;
+        }
+
+        .suggested-item:hover {
+            background-color: #f0fdfa;
+            border-color: #ccfbf1;
+        }
+
+        /* Assets Tab Sub-nav */
+        .asset-sub-tabs {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .asset-sub-tabs .nav-link {
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: none;
+            border-bottom: 2px solid transparent;
+            padding: 0.75rem 1.25rem;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .asset-sub-tabs .nav-link:hover {
+            color: #13A8A6;
+        }
+
+        .asset-sub-tabs .nav-link.active {
+            color: #13A8A6;
+            border-bottom-color: #13A8A6 !important;
+            background: transparent;
+        }
+
+        /* Asset Dropzone */
+        .asset-dropzone-box {
+            border: 2px dashed #99f6e4;
+            background-color: #f0fdfa;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .asset-dropzone-box:hover, .asset-dropzone-box.dragover {
+            border-color: #13A8A6;
+            background-color: #ccfbf1;
+            box-shadow: 0 4px 14px rgba(19, 168, 166, 0.08);
+        }
+
+        /* Uploaded Asset Cards */
+        .asset-item-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .asset-item-card:hover {
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+            border-color: #cbd5e1;
+        }
+
+        .asset-thumb-container {
+            height: 140px;
+            position: relative;
+            background-color: #f1f5f9;
+            overflow: hidden;
+        }
+
+        .asset-thumb-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .asset-fav-btn {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.6);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .asset-fav-btn.active, .asset-fav-btn:hover {
+            background: #13A8A6;
+        }
+
+        .asset-delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background: #fef2f2;
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #fee2e2;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .asset-delete-btn:hover {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .asset-footer {
+            padding: 10px 12px;
+            background: #ffffff;
+        }
+
+        .asset-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .asset-meta {
+            font-size: 0.725rem;
+            color: #64748b;
+        }
+
+        /* Document Item Card */
+        .doc-item-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 14px 16px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .doc-item-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+
+        .doc-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .doc-icon-box.pdf { background-color: #fef2f2; color: #ef4444; }
+        .doc-icon-box.word { background-color: #eff6ff; color: #3b82f6; }
+        .doc-icon-box.txt { background-color: #f8fafc; color: #64748b; }
+        .doc-icon-box.other { background-color: #f0fdfa; color: #13A8A6; }
+
+        /* Donut Chart SVG styling */
+        .chart-donut {
+            transform: rotate(-90deg);
+        }
+    </style>
+}
+
+<div class="create-entity-page py-3">
+    <!-- Breadcrumbs & Header -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-2" style="font-size: 0.85rem; color: #64748b;">
+            <a href="@Url.Action("Index", "WorldBuilding")" class="text-decoration-none d-flex align-items-center gap-1" style="color: #13A8A6; text-decoration: none;">
+                <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i> World Building
+            </a>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <a href="@Url.Action("Index", "WorldBuilding", new { category = "All Entities" })" class="text-decoration-none" style="color: #13A8A6; text-decoration: none;">Entities</a>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <span class="fw-semibold text-slate-800" id="breadcrumbCurrent">Create Location</span>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <h1 class="page-title mb-1 d-flex align-items-center gap-2" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1.85rem; color: #0f172a;">
+                    <span id="pageHeaderTitle">Create Location</span>
+                    <i data-lucide="map-pin" id="pageHeaderIcon" class="text-teal" style="width: 26px; height: 26px; color: #13A8A6;"></i>
+                    <span style="color: #D4AF37; font-size: 1.4rem;">✦</span>
+                </h1>
+                <p class="page-subtitle mb-0" style="color: #64748b; font-size: 0.9rem;">Build a place where your story lives and breathes.</p>
+            </div>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <button type="button" class="btn btn-outline-teal rounded-pill px-4 py-2 d-flex align-items-center gap-2 fw-semibold" id="saveDraftBtn" style="border: 1px solid #cbd5e1; font-size: 0.85rem; color: #334155; background: #ffffff;">
+                    <i data-lucide="bookmark" style="width: 16px; height: 16px;"></i> Save as Draft
+                </button>
+                <button type="button" class="btn btn-teal rounded-pill px-4 py-2 d-flex align-items-center gap-2 btn-next-top fw-bold shadow-sm" style="background: linear-gradient(135deg, #13A8A6, #0D9488); border: none; font-size: 0.85rem; color: #ffffff;">
+                    Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                </button>
+
+                <button type="button" class="btn btn-white rounded-circle bg-white p-0 d-inline-flex align-items-center justify-content-center shadow-xs" style="width: 40px; height: 40px; border: 1px solid #E2E8F0;">
+                    <i data-lucide="sun" style="width: 18px; height: 18px; color: #64748B;"></i>
+                </button>
+                <button type="button" class="btn btn-white rounded-circle bg-white p-0 d-inline-flex align-items-center justify-content-center shadow-xs position-relative" style="width: 40px; height: 40px; border: 1px solid #E2E8F0;">
+                    <i data-lucide="bell" style="width: 18px; height: 18px; color: #64748B;"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="font-size: 8px;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stepper Navigation Bar (5 Steps) -->
+    <div class="stepper-nav">
+        <button type="button" class="stepper-step active" data-step="1">
+            <div class="stepper-number">1</div>
+            <div>
+                <div class="stepper-title">Basic Info</div>
+                <div class="stepper-desc">Tell us the basics</div>
+            </div>
+        </button>
+        <i data-lucide="chevron-right" class="stepper-arrow"></i>
+
+        <button type="button" class="stepper-step" data-step="2">
+            <div class="stepper-number">2</div>
+            <div>
+                <div class="stepper-title">Details</div>
+                <div class="stepper-desc">Add more details</div>
+            </div>
+        </button>
+        <i data-lucide="chevron-right" class="stepper-arrow"></i>
+
+        <button type="button" class="stepper-step" data-step="3">
+            <div class="stepper-number">3</div>
+            <div>
+                <div class="stepper-title">Relationships</div>
+                <div class="stepper-desc">Connect to other entities</div>
+            </div>
+        </button>
+        <i data-lucide="chevron-right" class="stepper-arrow"></i>
+
+        <button type="button" class="stepper-step" data-step="4">
+            <div class="stepper-number">4</div>
+            <div>
+                <div class="stepper-title">Assets</div>
+                <div class="stepper-desc">Upload images & files</div>
+            </div>
+        </button>
+        <i data-lucide="chevron-right" class="stepper-arrow"></i>
+
+        <button type="button" class="stepper-step" data-step="5">
+            <div class="stepper-number">5</div>
+            <div>
+                <div class="stepper-title">Review</div>
+                <div class="stepper-desc">Review & create</div>
+            </div>
+        </button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <form id="createEntityForm" method="post" action="@Url.Action("Create", "WorldBuilding")" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Icon" id="entityIconInput" value="castle" />
+
+        <div class="row g-4">
+            <!-- Left Main Form Column -->
+            <div class="col-lg-8">
+                <!-- STEP 1: Basic Info -->
+                <div class="step-pane" id="step-pane-1">
+                    <div class="glass-form-card">
+                        <!-- Basic Information Section -->
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <i data-lucide="building-2" style="width: 20px; height: 20px; color: #13A8A6;"></i>
+                                Basic Information
+                            </div>
+                            <div class="form-section-subtitle">Add the essential details about this location.</div>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label-custom" for="StoryId">
+                                    Story <span class="required">*</span>
+                                </label>
+                                <select class="form-select select2-themed" name="StoryId" id="StoryId" required data-placeholder="Select story...">
+                                    @foreach (var story in Model.UserStories)
+                                    {
+                                        var storyDesc = $"{story.Genre} • {story.Status}";
+                                        if (story.Id == Model.SelectedStoryId)
+                                        {
+                                            <option value="@story.Id" data-description="@storyDesc" selected="selected">@story.Title</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@story.Id" data-description="@storyDesc">@story.Title</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom" for="EntityTypeId">
+                                    Location Type <span class="required">*</span>
+                                </label>
+                                <select class="form-select select2-themed" name="EntityTypeId" id="EntityTypeId" required data-placeholder="Select type...">
+                                    @foreach (var type in Model.EntityTypes)
+                                    {
+                                        var typeDesc = string.IsNullOrEmpty(type.Description) ? $"Category: {type.Category}" : type.Description;
+                                        if (type.Id == Model.SelectedTypeId)
+                                        {
+                                            <option value="@type.Id" data-icon="@type.Icon" data-description="@typeDesc" selected="selected">@type.Name</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@type.Id" data-icon="@type.Icon" data-description="@typeDesc">@type.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label-custom" for="Name">
+                                Name <span class="required">*</span>
+                            </label>
+                            <input type="text" name="Name" id="Name" class="form-control form-control-custom" required placeholder="e.g. Silverbrook City" />
+                            <div class="helper-text">The official name of this location in your story.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label-custom" for="Summary">
+                                Short Description
+                            </label>
+                            <textarea name="Summary" id="Summary" class="form-control form-control-custom" rows="2" placeholder="e.g. A thriving trade city known for its silver mines and bustling markets."></textarea>
+                            <div class="helper-text">A brief one-line or two-line description.</div>
+                        </div>
+
+                        <div class="row g-4 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label-custom" for="Importance">
+                                    Importance
+                                </label>
+                                <select class="form-select select2-themed" name="Importance" id="Importance">
+                                    <option value="Major" data-icon="star" data-description="Primary focal point of the story, deeply tied to main plot" selected>Major</option>
+                                    <option value="Minor" data-icon="sparkles" data-description="Secondary location or supporting entity providing context">Minor</option>
+                                    <option value="Background" data-icon="layers" data-description="Mentioned in passing to enrich world atmosphere and lore">Background</option>
+                                    <option value="Critical" data-icon="zap" data-description="Central nexus or key artifact/location crucial to plot climax">Critical</option>
+                                </select>
+                                <div class="helper-text">How important is this location to your story?</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom" for="Status">
+                                    Status
+                                </label>
+                                <select class="form-select select2-themed" name="Status" id="Status">
+                                    <option value="Active" data-icon="check-circle" data-description="Currently existing and operational in active story timeline" selected>Active</option>
+                                    <option value="Destroyed" data-icon="x-circle" data-description="Ruined, fallen, or destroyed during past or current events">Destroyed</option>
+                                    <option value="Forgotten" data-icon="eye-off" data-description="Lost to time, hidden from history, or known only through legends">Forgotten</option>
+                                    <option value="Hidden" data-icon="shield-off" data-description="Concealed from the world, protected by secret barriers">Hidden</option>
+                                    <option value="Historical" data-icon="book-open" data-description="Existed in ancient lore; forms backdrop of historical events">Historical</option>
+                                    <option value="In Development" data-icon="hammer" data-description="Currently being built, expanded, or established">In Development</option>
+                                </select>
+                                <div class="helper-text">Set the current status of this location.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Identity Section -->
+                    <div class="glass-form-card">
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <i data-lucide="image" style="width: 20px; height: 20px; color: #13A8A6;"></i>
+                                Visual Identity
+                            </div>
+                            <div class="form-section-subtitle">Add a visual identity to help you recognize this location.</div>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-md-4 text-center">
+                                <label class="form-label-custom justify-content-center mb-3">Icon</label>
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="icon-picker-box" id="iconPickerBox" data-bs-toggle="modal" data-bs-target="#iconSelectModal">
+                                        <i data-lucide="castle" id="iconPickerDisplay" style="width: 40px; height: 40px; color: #13A8A6;"></i>
+                                        <div class="picker-pencil-btn">
+                                            <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="helper-text text-center mt-2">Choose an icon to represent this location.</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label-custom mb-3">Cover Image</label>
+                                <input type="file" name="CoverFile" id="CoverFileInput" accept="image/*" class="d-none" />
+                                <div class="cover-picker-box" id="coverPickerBox">
+                                    <div class="cover-overlay-placeholder" id="coverPlaceholder">
+                                        <i data-lucide="upload-cloud" style="width: 28px; height: 28px; color: #13A8A6;" class="mb-1"></i>
+                                        <span class="fw-semibold text-slate-800" style="font-size: 0.85rem;">Click to upload cover image</span>
+                                        <span style="font-size: 0.75rem; color: #94a3b8;">PNG, JPG or WEBP up to 5MB</span>
+                                    </div>
+                                    <img id="coverPreviewImg" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Cover Preview" />
+                                    <div class="picker-pencil-btn" style="top: 10px; right: 10px; bottom: auto;">
+                                        <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                                    </div>
+                                </div>
+                                <div class="helper-text mt-2">Upload a cover image for this location. Recommended size: 1280x720px (16:9)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Actions -->
+                    <div class="d-flex justify-content-between align-items-center pt-2">
+                        <a href="@Url.Action("Index", "WorldBuilding")" class="btn btn-outline-teal d-flex align-items-center gap-2">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i> Cancel
+                        </a>
+                        <button type="button" class="btn btn-teal d-flex align-items-center gap-2 btn-next-pane" data-next="2">
+                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Details -->
+                <div class="step-pane d-none" id="step-pane-2">
+                    <div class="glass-form-card" id="detailsSectionCard">
+                        <div class="form-section-header d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="form-section-title">
+                                    <i data-lucide="building-2" style="width: 20px; height: 20px; color: #13A8A6;"></i>
+                                    Detailed Information
+                                </div>
+                                <div class="form-section-subtitle">Add more details to bring your world entity to life.</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none d-flex align-items-center gap-1.5" id="btnCollapseDetails" style="font-size: 0.825rem; color: #13A8A6; font-weight: 600;">
+                                <i data-lucide="chevron-up" id="collapseDetailsIcon" style="width: 16px; height: 16px;"></i> <span id="collapseDetailsText">Collapse Section</span>
+                            </button>
+                        </div>
+
+                        <div id="detailsSectionBody">
+                            <!-- Full Description Rich Editor -->
+                            <div class="mb-4">
+                                <label class="form-label-custom" for="fullDescriptionEditor">
+                                    Full Description <span class="required">*</span>
+                                </label>
+
+                                <div class="editor-wrapper border rounded-3 overflow-hidden bg-white">
+                                    <!-- Toolbar -->
+                                    <div class="editor-toolbar d-flex flex-wrap align-items-center gap-1 p-2 bg-light border-bottom">
+                                        <select class="form-select form-select-sm border-0 bg-transparent fw-semibold" id="editorFormatBlock" style="width: auto; cursor: pointer; font-size: 0.825rem;">
+                                            <option value="p" selected>Paragraph</option>
+                                            <option value="h1">Heading 1</option>
+                                            <option value="h2">Heading 2</option>
+                                            <option value="h3">Heading 3</option>
+                                        </select>
+                                        <div class="vr mx-1" style="height: 20px;"></div>
+                                        <button type="button" class="btn btn-sm editor-btn fw-bold px-2" data-cmd="bold" title="Bold">B</button>
+                                        <button type="button" class="btn btn-sm editor-btn fst-italic px-2" data-cmd="italic" title="Italic">I</button>
+                                        <button type="button" class="btn btn-sm editor-btn text-decoration-underline px-2" data-cmd="underline" title="Underline">U</button>
+                                        <div class="vr mx-1" style="height: 20px;"></div>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="insertUnorderedList" title="Bulleted List">
+                                            <i data-lucide="list" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="insertOrderedList" title="Numbered List">
+                                            <i data-lucide="list-ordered" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <div class="vr mx-1" style="height: 20px;"></div>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="justifyLeft" title="Align Left">
+                                            <i data-lucide="align-left" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="justifyCenter" title="Align Center">
+                                            <i data-lucide="align-center" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="outdent" title="Outdent">
+                                            <i data-lucide="indent-decrease" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="indent" title="Indent">
+                                            <i data-lucide="indent-increase" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <div class="vr mx-1" style="height: 20px;"></div>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" id="editorLinkBtn" title="Insert Link">
+                                            <i data-lucide="link" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="formatBlock" data-val="blockquote" title="Quote">
+                                            <i data-lucide="quote" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <div class="vr mx-1" style="height: 20px;"></div>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="undo" title="Undo">
+                                            <i data-lucide="undo" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm editor-btn p-1 px-2" data-cmd="redo" title="Redo">
+                                            <i data-lucide="redo" style="width: 15px; height: 15px;"></i>
+                                        </button>
+                                    </div>
+                                    <!-- Editable area -->
+                                    <div id="fullDescriptionEditor" contenteditable="true" class="p-3" style="min-height: 120px; outline: none; font-size: 0.9rem; line-height: 1.6; color: #1e293b;"></div>
+                                    <textarea name="Description" id="Description" class="d-none"></textarea>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mt-2" style="font-size: 0.775rem; color: #64748b;">
+                                    <span>Describe this location in detail. You can always edit this later.</span>
+                                    <span>Character count: <strong id="descCharCount" class="text-slate-800">0</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- 2-Column Details Grid -->
+                            <div class="row g-4 mb-4">
+                                <!-- Population -->
+                                <div class="col-md-6">
+                                    <label class="form-label-custom" for="Population">Population</label>
+                                    <div class="input-icon-wrapper">
+                                        <i data-lucide="users" class="input-icon"></i>
+                                        <input type="text" name="Population" id="Population" class="form-control form-control-custom" placeholder="~ 85,000" />
+                                    </div>
+                                    <div class="helper-text">Approximate population of the location.</div>
+                                </div>
+
+                                <!-- Founded / Established -->
+                                <div class="col-md-6">
+                                    <label class="form-label-custom" for="Founded">Founded / Established</label>
+                                    <div class="input-icon-wrapper">
+                                        <i data-lucide="calendar" class="input-icon"></i>
+                                        <input type="text" name="Founded" id="Founded" class="form-control form-control-custom" placeholder="1023 AE" />
+                                    </div>
+                                    <div class="helper-text">When was this location founded?</div>
+                                </div>
+
+                                <!-- Government / Authority -->
+                                <div class="col-md-6">
+                                    <label class="form-label-custom" for="Government">Government / Authority</label>
+                                    <select class="form-select select2-themed" name="Government" id="Government" data-placeholder="Select governing power...">
+                                        <option value="">Select governing power...</option>
+                                        <option value="Monarchy" data-icon="crown" data-description="Hereditary rule by a monarch or royal family">Monarchy</option>
+                                        <option value="Democracy" data-icon="vote" data-description="Governed by elected representatives of the people">Democracy</option>
+                                        <option value="Republic" data-icon="landmark" data-description="Supreme power held by the people and elected representatives">Republic</option>
+                                        <option value="Oligarchy" data-icon="users" data-description="Power held by a small group of influential individuals">Oligarchy</option>
+                                        <option value="Tribal Council" data-icon="shield" data-description="Governed by tribal elders or a council of leaders">Tribal Council</option>
+                                        <option value="Empire" data-icon="swords" data-description="Extensive group of territories under a supreme authority">Empire</option>
+                                        <option value="Feudalism" data-icon="castle" data-description="Structured around relationships derived from land holding">Feudalism</option>
+                                        <option value="Magocracy" data-icon="sparkles" data-description="Governed by mages, sorcerers, or magic practitioners">Magocracy</option>
+                                        <option value="Theocracy" data-icon="sun" data-description="Governed by divine guidance or religious officials">Theocracy</option>
+                                    </select>
+                                    <div class="helper-text">Type of governing power.</div>
+                                </div>
+
+                                <!-- Ruler / Leader -->
+                                <div class="col-md-6">
+                                    <label class="form-label-custom" for="Ruler">Ruler / Leader</label>
+                                    <div class="input-icon-wrapper">
+                                        <i data-lucide="user" class="input-icon"></i>
+                                        <input type="text" name="Ruler" id="Ruler" class="form-control form-control-custom" placeholder="Lord Aeric Silverhand" />
+                                    </div>
+                                    <div class="helper-text">Current ruler or governing authority.</div>
+                                </div>
+
+                                <!-- Currency -->
+                                <div class="col-md-6">
+                                    <label class="form-label-custom" for="Currency">Currency</label>
+                                    <div class="input-icon-wrapper">
+                                        <i data-lucide="coins" class="input-icon"></i>
+                                        <input type="text" name="Currency" id="Currency" class="form-control form-control-custom" placeholder="Silver Coin" />
+                                    </div>
+                                    <div class="helper-text">Primary currency used in this location.</div>
+                                </div>
+
+                                <!-- Primary Language(s) -->
+                                <div class="col-md-6">
+                                    <label class="form-label-custom" for="Languages">Primary Language(s)</label>
+                                    <select class="form-select select2-themed" name="Languages" id="Languages" multiple="multiple" data-placeholder="Select languages...">
+                                        <option value="Common Tongue" data-icon="globe" data-description="Universal language spoken across trade hubs">Common Tongue</option>
+                                        <option value="Eldorian" data-icon="book" data-description="Ancient language of the Eldorian kingdom">Eldorian</option>
+                                        <option value="Elven" data-icon="sparkles" data-description="Melodic language spoken by forest dwelling elven clans">Elven</option>
+                                        <option value="Dwarvish" data-icon="hammer" data-description="Rugged dialect spoken in mountain holds">Dwarvish</option>
+                                        <option value="High Valyrian" data-icon="flame" data-description="Linguistic tongue of noble lineages">High Valyrian</option>
+                                        <option value="Sylvan" data-icon="trees" data-description="Enchanted dialect of the ancient woods">Sylvan</option>
+                                    </select>
+                                    <div class="helper-text">Languages commonly spoken.</div>
+                                </div>
+
+                                <!-- Climate -->
+                                <div class="col-md-6">
+                                    <label class="form-label-custom" for="Climate">Climate</label>
+                                    <select class="form-select select2-themed" name="Climate" id="Climate" data-placeholder="Select climate...">
+                                        <option value="">Select climate...</option>
+                                        <option value="Temperate" data-icon="sun" data-description="Moderate temperatures with balanced four seasons">Temperate</option>
+                                        <option value="Tropical" data-icon="palmtree" data-description="Hot and humid year-round with rainy periods">Tropical</option>
+                                        <option value="Arid" data-icon="sun-medium" data-description="Dry desert conditions with scarce precipitation">Arid</option>
+                                        <option value="Arctic" data-icon="snowflake" data-description="Freezing temperatures with permafrost and snow">Arctic</option>
+                                        <option value="Mediterranean" data-icon="cloud-sun" data-description="Warm dry summers and mild wet winters">Mediterranean</option>
+                                        <option value="Continental" data-icon="wind" data-description="Severe winters and warm or hot summers">Continental</option>
+                                    </select>
+                                    <div class="helper-text">Typical climate of this location.</div>
+                                </div>
+
+                                <!-- Time Zone (Optional) -->
+                                <div class="col-md-6">
+                                    <label class="form-label-custom" for="TimeZone">Time Zone (Optional)</label>
+                                    <div class="input-icon-wrapper">
+                                        <i data-lucide="clock" class="input-icon"></i>
+                                        <input type="text" name="TimeZone" id="TimeZone" class="form-control form-control-custom" placeholder="Eldorian Standard Time (EST)" />
+                                    </div>
+                                    <div class="helper-text">Local time system.</div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Custom Added Fields Container -->
+                            <div class="row g-4" id="customAddedFieldsContainer"></div>
+
+                            <hr class="my-4" style="border-top-style: dashed;" />
+
+                            <!-- Parent Entity / Region -->
+                            <div class="mb-4">
+                                <label class="form-label-custom" for="ParentEntityId">Parent Entity / Region</label>
+                                <select class="form-select select2-themed" name="ParentEntityId" id="ParentEntityId" data-placeholder="Select parent entity...">
+                                    <option value="">None (Top-Level Entity)</option>
+                                    @foreach (var parent in Model.ParentEntities)
+                                    {
+                                        <option value="@parent.Id" data-icon="@parent.EntityType?.Icon" data-description="Type: @parent.EntityType?.Name">
+                                            @parent.Name
+                                        </option>
+                                    }
+                                </select>
+                                <div class="helper-text">Select if this location belongs inside another entity (e.g. Silverbrook in Eldoria Realm).</div>
+                            </div>
+
+                            @if (Model.DynamicFields != null && Model.DynamicFields.Any())
+                            {
+                                <div class="row g-4 mb-4">
+                                    @for (int i = 0; i < Model.DynamicFields.Count; i++)
+                                    {
+                                        var f = Model.DynamicFields[i];
+                                        <div class="col-md-6">
+                                            <label class="form-label-custom">@f.FieldName</label>
+                                            <input type="hidden" name="Fields[@i].FieldId" value="@f.Id" />
+                                            <input type="text" name="Fields[@i].Value" class="form-control form-control-custom" placeholder="e.g. Enter @f.FieldName..." />
+                                        </div>
+                                    }
+                                </div>
+                            }
+
+                            <div class="mb-2">
+                                <label class="form-label-custom" for="Tags">Tags</label>
+                                <input type="text" name="Tags" id="Tags" class="form-control form-control-custom" placeholder="e.g. Capital, Mining, Trading Hub, Mountain Pass" />
+                                <div class="helper-text">Comma-separated tags for filtering.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2">
+                        <button type="button" class="btn btn-outline-teal d-flex align-items-center gap-2 btn-prev-pane" data-prev="1">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back
+                        </button>
+                        <button type="button" class="btn btn-teal d-flex align-items-center gap-2 btn-next-pane" data-next="3">
+                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Relationships -->
+                <div class="step-pane d-none" id="step-pane-3">
+                    <div class="glass-form-card p-4">
+                        <!-- Section Header -->
+                        <div class="form-section-header border-0 pb-2 mb-3">
+                            <div class="form-section-title d-flex align-items-center gap-2">
+                                <i data-lucide="git-fork" style="width: 22px; height: 22px; color: #13A8A6;"></i>
+                                <span>Relationships</span>
+                            </div>
+                            <div class="form-section-subtitle">Connect this entity to other entities in your world.</div>
+                        </div>
+
+                        <!-- Sub-tabs Nav -->
+                        <ul class="nav nav-tabs nav-tabs-custom mb-4" id="relSubTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="tab-existing-btn" data-bs-toggle="tab" data-bs-target="#tab-existing" type="button" role="tab" aria-selected="true">
+                                    Existing Entities
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-custom-btn" data-bs-toggle="tab" data-bs-target="#tab-custom" type="button" role="tab" aria-selected="false">
+                                    Custom Relationship
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="relSubTabsContent">
+                            <!-- TAB 1: Existing Entities -->
+                            <div class="tab-pane fade show active" id="tab-existing" role="tabpanel">
+                                <div class="p-4 rounded-4 mb-4" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                                    <h6 class="fw-bold text-slate-900 mb-1" style="font-size: 0.95rem;">Add Relationships</h6>
+                                    <p class="text-muted small mb-3">Select one or more entities and define how they relate. You can add multiple at once.</p>
+
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-lg-5 col-md-12">
+                                            <label class="form-label-custom mb-1.5" for="relTargetSelect">
+                                                Related Entities <span class="required">*</span>
+                                                <span class="badge ms-1" style="background: #e0f7f6; color: #0d9488; font-size: 0.7rem; font-weight: 500; padding: 2px 8px; border-radius: 8px;">Multi-select</span>
+                                            </label>
+                                            <select class="form-select" id="relTargetSelect" multiple data-placeholder="Search and select entities..." style="width: 100%;">
+                                                @if (Model.ParentEntities != null && Model.ParentEntities.Any())
+                                                {
+                                                    <optgroup label="World Entities">
+                                                        @foreach (var pe in Model.ParentEntities)
+                                                        {
+                                                            var desc = $"{pe.EntityType?.Name ?? "Entity"} • {(string.IsNullOrEmpty(pe.Summary) ? "World entity" : pe.Summary)}";
+                                                            <option value="@pe.Id" 
+                                                                    data-kind="Entity"
+                                                                    data-name="@pe.Name"
+                                                                    data-type-name="@(pe.EntityType?.Name ?? "Entity")"
+                                                                    data-icon="@(pe.EntityType?.Icon ?? "building-2")"
+                                                                    data-cover="@pe.CoverImage"
+                                                                    data-description="@desc">
+                                                                @pe.Name
+                                                            </option>
+                                                        }
+                                                    </optgroup>
+                                                }
+                                                @if (Model.Characters != null && Model.Characters.Any())
+                                                {
+                                                    <optgroup label="Characters">
+                                                        @foreach (var c in Model.Characters)
+                                                        {
+                                                            var desc = $"Character • {c.Role} • {(string.IsNullOrEmpty(c.OneLineDescription) ? "Story character" : c.OneLineDescription)}";
+                                                            <option value="@c.Id" 
+                                                                    data-kind="Character"
+                                                                    data-name="@c.Name"
+                                                                    data-type-name="Character"
+                                                                    data-icon="user"
+                                                                    data-cover="@c.AvatarUrl"
+                                                                    data-description="@desc">
+                                                                @c.Name
+                                                            </option>
+                                                        }
+                                                    </optgroup>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <div class="col-lg-3 col-md-6">
+                                            <label class="form-label-custom mb-1.5" for="relTypeSelect">
+                                                Relationship Type <span class="required">*</span>
+                                            </label>
+                                            <select class="form-select select2-themed" id="relTypeSelect" data-placeholder="Select relationship type">
+                                                <option value="">Select relationship type...</option>
+                                                <option value="Located In" data-icon="map-pin" data-description="Geographically situated inside target entity">Located In</option>
+                                                <option value="Member Of" data-icon="users" data-description="Part of an organization, faction, guild, or council">Member Of</option>
+                                                <option value="Connected To" data-icon="link" data-description="Regular trade routes, alliance, or cultural exchange">Connected To</option>
+                                                <option value="Allied With" data-icon="shield-check" data-description="Political, military, or trade alliance">Allied With</option>
+                                                <option value="Enemy Of" data-icon="swords" data-description="Hostile relation, rivalry, or open conflict">Enemy Of</option>
+                                                <option value="Ruled By" data-icon="crown" data-description="Governed or ruled by target entity or sovereign authority">Ruled By</option>
+                                                <option value="Controls" data-icon="key" data-description="Dominates, controls, or holds authority over target">Controls</option>
+                                                <option value="Trading Partner" data-icon="coins" data-description="Commercial trade route or economic agreement">Trading Partner</option>
+                                                <option value="Protects" data-icon="shield" data-description="Defends or guards target entity">Protects</option>
+                                                <option value="Subordinate To" data-icon="git-merge" data-description="Vassal state, sub-faction, or lower division">Subordinate To</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-6">
+                                            <label class="form-label-custom mb-1.5" for="relImportanceSelect">Importance</label>
+                                            <select class="form-select select2-themed" id="relImportanceSelect" data-placeholder="Importance">
+                                                <option value="Medium" data-dot="#f59e0b" data-description="Standard relationship impacting local events" selected>Medium</option>
+                                                <option value="Major" data-dot="#8b5cf6" data-description="Core relationship central to entity identity and lore">Major</option>
+                                                <option value="High" data-dot="#3b82f6" data-description="Significant bond affecting major plot developments">High</option>
+                                                <option value="Minor" data-dot="#94a3b8" data-description="Secondary link with minimal narrative impact">Minor</option>
+                                                <option value="Critical" data-dot="#ef4444" data-description="Vital connection crucial to climax and main story line">Critical</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-12">
+                                            <button type="button" class="btn btn-teal w-100 d-flex align-items-center justify-content-center gap-1.5" id="btnAddRelCardBtn" style="height: 42px;">
+                                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: Custom Relationship -->
+                            <div class="tab-pane fade" id="tab-custom" role="tabpanel">
+                                <div class="p-4 rounded-4 mb-4" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                                    <h6 class="fw-bold text-slate-900 mb-1" style="font-size: 0.95rem;">Add Custom Relationship</h6>
+                                    <p class="text-muted small mb-3">Define a custom relation for an unlisted target.</p>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label-custom" for="customTargetName">Related Entity / Faction Name *</label>
+                                            <input type="text" class="form-control form-control-custom" id="customTargetName" placeholder="e.g. Secret Order of Mages" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label-custom" for="customRelType">Relationship Type *</label>
+                                            <input type="text" class="form-control form-control-custom" id="customRelType" placeholder="e.g. Secret Treaty, Hidden Patron" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label-custom" for="customRelImportance">Importance</label>
+                                            <select class="form-select select2-themed" id="customRelImportance">
+                                                <option value="Medium" data-dot="#f59e0b" data-description="Standard relationship impacting local events" selected>Medium</option>
+                                                <option value="Major" data-dot="#8b5cf6" data-description="Core relationship central to entity identity and lore">Major</option>
+                                                <option value="High" data-dot="#3b82f6" data-description="Significant bond affecting major plot developments">High</option>
+                                                <option value="Minor" data-dot="#94a3b8" data-description="Secondary link with minimal narrative impact">Minor</option>
+                                                <option value="Critical" data-dot="#ef4444" data-description="Vital connection crucial to climax and main story line">Critical</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label-custom" for="customRelDesc">Description / Context</label>
+                                            <input type="text" class="form-control form-control-custom" id="customRelDesc" placeholder="e.g. Provides secret funding and diplomatic protection" />
+                                        </div>
+                                        <div class="col-12 text-end mt-3">
+                                            <button type="button" class="btn btn-teal d-inline-flex align-items-center gap-1.5" id="btnAddCustomRelBtn">
+                                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Custom Relationship
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Relationships Section Header -->
+                        <div class="d-flex align-items-center justify-content-between mb-3 mt-4">
+                            <h6 class="fw-bold text-slate-900 mb-0" style="font-size: 1rem;">
+                                Current Relationships (<span id="relCountDisplay">0</span>)
+                            </h6>
+                        </div>
+
+                        <!-- Container for Dynamic Relationship Cards -->
+                        <div id="relCardsContainer">
+                            <!-- Empty state when 0 relationships -->
+                            <div id="relEmptyState" class="text-center py-5 border rounded-4 bg-light-subtle">
+                                <div class="mb-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center bg-teal-subtle text-teal rounded-circle" style="width: 52px; height: 52px; background-color: #f0fdfa; color: #13A8A6;">
+                                        <i data-lucide="git-fork" style="width: 26px; height: 26px;"></i>
+                                    </div>
+                                </div>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.95rem;">No relationships added yet</h6>
+                                <p class="text-muted mb-0" style="font-size: 0.825rem; max-width: 380px; margin: 0 auto;">Select an entity above or choose from suggested relationships to build your world network.</p>
+                            </div>
+                        </div>
+
+                        <!-- Pagination & Counter Footer -->
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-4" id="relFooterBar" style="font-size: 0.825rem; color: #64748b;">
+                            <div>
+                                Showing <span id="relStartNum">0</span> to <span id="relEndNum">0</span> of <span id="relTotalNum">0</span> relationships
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1 disabled" id="relPrevBtn">
+                                    <i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i>
+                                </button>
+                                <span class="btn btn-sm btn-teal px-3 py-1 fw-bold" style="cursor: default;">1</span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1 disabled" id="relNextBtn">
+                                    <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step Navigation Buttons -->
+                    <div class="d-flex justify-content-between align-items-center pt-2 mt-4">
+                        <button type="button" class="btn btn-outline-teal d-flex align-items-center gap-2 btn-prev-pane" data-prev="2">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back
+                        </button>
+                        <button type="button" class="btn btn-teal d-flex align-items-center gap-2 btn-next-pane" data-next="4">
+                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Assets -->
+                <div class="step-pane d-none" id="step-pane-4">
+                    <div class="glass-form-card">
+                        <!-- Header -->
+                        <div class="form-section-header">
+                            <div class="form-section-title">
+                                <i data-lucide="folder-archive" style="width: 22px; height: 22px; color: #13A8A6;"></i>
+                                Assets & Media
+                            </div>
+                            <div class="form-section-subtitle">Add images, documents, maps, audio, videos, and links that help bring this entity to life.</div>
+                        </div>
+
+                        <!-- Asset Category Sub-Tabs -->
+                        <ul class="nav nav-tabs asset-sub-tabs mb-4" id="assetTypeTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="tab-images" data-asset-type="images" type="button">Images</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-documents" data-asset-type="documents" type="button">Documents</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-maps" data-asset-type="maps" type="button">Maps</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-audiovideo" data-asset-type="audiovideo" type="button">Audio / Video</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-links" data-asset-type="links" type="button">External Links</button>
+                            </li>
+                        </ul>
+
+                        <!-- Drag & Drop Upload Zone Container -->
+                        <div id="fileUploadZoneSection">
+                            <input type="file" id="assetFileInput" name="UploadedAssets" multiple class="d-none" accept="image/*" />
+                            
+                            <div class="asset-dropzone-box text-center p-4 p-md-5 mb-4" id="assetDropZone">
+                                <div class="d-inline-flex align-items-center justify-content-center bg-teal-subtle rounded-circle p-3 mb-3" style="width: 56px; height: 56px; background-color: #f0fdfa;">
+                                    <i data-lucide="upload-cloud" id="dropzoneIcon" style="width: 28px; height: 28px; color: #13A8A6;"></i>
+                                </div>
+                                <h6 class="fw-bold text-slate-800 mb-1" id="dropzoneTitle">Drag & drop images here</h6>
+                                <p class="text-muted small mb-3">or</p>
+                                <button type="button" class="btn btn-outline-teal btn-sm px-3.5 py-2 rounded-3 mb-3 d-inline-flex align-items-center gap-2" id="browseAssetsBtn">
+                                    <i data-lucide="folder-open" style="width: 15px; height: 15px;"></i> Browse Files
+                                </button>
+                                <div class="helper-text text-muted" id="dropzoneHelper">
+                                    Supports JPG, PNG, WEBP up to 10MB each. You can upload up to 20 files.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- External Links Form Section (Hidden by default, shown when External Links tab selected) -->
+                        <div id="externalLinksSection" class="p-4 border rounded-4 bg-light-subtle mb-4 d-none">
+                            <h6 class="fw-bold text-slate-800 mb-3 d-flex align-items-center gap-2">
+                                <i data-lucide="link-2" style="width: 18px; height: 18px; color: #13A8A6;"></i> Add External Asset Link
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label class="form-label-custom" for="extLinkTitle">Link Title</label>
+                                    <input type="text" id="extLinkTitle" class="form-control form-control-custom" placeholder="e.g. World Interactive Map / Wiki Entry" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-custom" for="extLinkType">Link Type</label>
+                                    <select class="form-select select2-themed" id="extLinkType" data-placeholder="Select link type...">
+                                        <option value="Map" data-icon="map" data-description="Interactive map or geographical reference" selected>Map / Geography</option>
+                                        <option value="Wiki" data-icon="book-open" data-description="External wiki, lore article, or documentation">Lore & Wiki</option>
+                                        <option value="Audio" data-icon="music" data-description="Ambient music, soundtrack, or voice recording">Audio Stream</option>
+                                        <option value="Video" data-icon="video" data-description="Cinematic trailer, lore video, or scene reference">Video Clip</option>
+                                        <option value="External" data-icon="globe" data-description="General web page or external resource link">External Web Link</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button type="button" class="btn btn-teal w-100 py-2 d-flex align-items-center justify-content-center gap-2" id="btnAddExtLink">
+                                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Link
+                                    </button>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label-custom" for="extLinkUrl">URL</label>
+                                    <input type="url" id="extLinkUrl" class="form-control form-control-custom" placeholder="https://example.com/map/silverbrook" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Uploaded Assets Section -->
+                        <div class="mt-4">
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-3">
+                                <h6 class="fw-bold text-slate-800 mb-0 d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+                                    <span id="uploadedAssetsTitle">Uploaded Images</span>
+                                    <span class="badge rounded-pill bg-light text-slate-700 border fw-semibold" id="uploadedAssetsCount">0</span>
+                                </h6>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="min-width: 175px;">
+                                        <select class="form-select select2-themed" id="assetSortDropdown">
+                                            <option value="newest" data-icon="clock" data-description="Sort items by newest upload date first" selected>Sort by Newest</option>
+                                            <option value="oldest" data-icon="history" data-description="Sort items by oldest upload date first">Sort by Oldest</option>
+                                            <option value="name" data-icon="arrow-down-a-z" data-description="Sort alphabetically by title/name">Sort by Name</option>
+                                            <option value="size" data-icon="hard-drive" data-description="Sort by largest file size first">Sort by Size</option>
+                                        </select>
+                                    </div>
+                                    <div class="btn-group border rounded-3 p-1 bg-white" role="group">
+                                        <button type="button" class="btn btn-sm p-1 px-2 border-0 active" id="btnGridView" title="Grid View" style="border-radius: 6px; background-color: #f0fdfa; color: #13A8A6;">
+                                            <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm p-1 px-2 border-0" id="btnListView" title="List View" style="border-radius: 6px; color: #64748b;">
+                                            <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Assets Container & Empty State -->
+                            <div id="uploadedAssetsContainer" class="row g-3">
+                                <!-- Empty State when no assets uploaded -->
+                                <div class="col-12 text-center py-5 px-3 border border-dashed rounded-4 bg-light-subtle" id="emptyAssetsState">
+                                    <i data-lucide="image-plus" style="width: 42px; height: 42px; color: #cbd5e1;" class="mb-2"></i>
+                                    <h6 class="fw-semibold text-slate-700 mb-1">No assets uploaded yet</h6>
+                                    <p class="text-muted small mb-0">Drag and drop files or select Browse Files above to add media to this entity.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2">
+                        <button type="button" class="btn btn-outline-teal d-flex align-items-center gap-2 btn-prev-pane" data-prev="3">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back
+                        </button>
+                        <button type="button" class="btn btn-teal d-flex align-items-center gap-2 btn-next-pane" data-next="5">
+                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 5: Review & Submit -->
+                <div class="step-pane d-none" id="step-pane-5">
+                    <!-- Banner Header -->
+                    <div class="glass-form-card mb-4 p-4 rounded-4" style="background: linear-gradient(135deg, #fffdfa 0%, #f0fdfa 100%); border: 1px solid #ccfbf1;">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 28px; height: 28px; background-color: #fef3c7; color: #d97706;">
+                                <i data-lucide="star" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <h5 class="fw-bold text-slate-800 mb-0" style="font-size: 1.05rem;">Review Your World Entity</h5>
+                        </div>
+                        <p class="text-muted mb-0 ms-4 ps-1" style="font-size: 0.85rem;">
+                            Review all the information below before creating this entity. You can go back and edit any section if needed.
+                        </p>
+                    </div>
+
+                    <!-- 2 Column Row for Basic Information and Details Cards -->
+                    <div class="row g-4 mb-4">
+                        <!-- Basic Information Card -->
+                        <div class="col-md-6">
+                            <div class="glass-form-card h-100 p-4 rounded-4 bg-white border">
+                                <div class="form-section-header d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                                    <div class="form-section-title d-flex align-items-center gap-2" style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">
+                                        <i data-lucide="building-2" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                                        Basic Information
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 fw-semibold d-flex align-items-center gap-1" data-jump-step="1" style="color: #13A8A6; font-size: 0.8rem;">
+                                        <i data-lucide="pencil" style="width: 13px; height: 13px;"></i> Edit
+                                    </button>
+                                </div>
+
+                                <div class="d-flex gap-3 mb-3">
+                                    <div class="review-cover-thumb rounded-3 overflow-hidden flex-shrink-0 border" style="width: 90px; height: 70px; background-color: #f8fafc;">
+                                        <img id="revCoverImg" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Cover" />
+                                    </div>
+                                    <div class="flex-grow-1" style="font-size: 0.825rem;">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <span class="text-muted">Name</span>
+                                            <span class="fw-bold text-slate-900" id="revBasicName">Silverbrook City</span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <span class="text-muted">Type</span>
+                                            <span class="badge bg-teal-subtle text-teal fw-semibold" id="revBasicType" style="background-color: #e6fffa; color: #0d9488;">City</span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <span class="text-muted">Story</span>
+                                            <span class="fw-semibold text-slate-800" id="revBasicStory">Revenge for Love</span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <span class="text-muted">Status</span>
+                                            <span class="badge bg-success-subtle text-success fw-semibold" id="revBasicStatus">• Active</span>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span class="text-muted">Importance</span>
+                                            <span class="badge bg-purple-subtle text-purple fw-semibold" id="revBasicImportance" style="background-color: #f3e8ff; color: #7e22ce;">Major</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pt-2 border-top">
+                                    <label class="fw-semibold text-muted d-block mb-1" style="font-size: 0.775rem;">Short Description</label>
+                                    <p class="text-slate-700 mb-0" id="revBasicSummary" style="font-size: 0.825rem; line-height: 1.5;">
+                                        A thriving trade city known for its silver mines and bustling markets.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Details Card -->
+                        <div class="col-md-6">
+                            <div class="glass-form-card h-100 p-4 rounded-4 bg-white border">
+                                <div class="form-section-header d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                                    <div class="form-section-title d-flex align-items-center gap-2" style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">
+                                        <i data-lucide="sliders" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                                        Details
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 fw-semibold d-flex align-items-center gap-1" data-jump-step="2" style="color: #13A8A6; font-size: 0.8rem;">
+                                        <i data-lucide="pencil" style="width: 13px; height: 13px;"></i> Edit
+                                    </button>
+                                </div>
+
+                                <div class="d-flex flex-column gap-2" style="font-size: 0.825rem;">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted d-flex align-items-center gap-1.5">
+                                            <i data-lucide="users" style="width: 14px; height: 14px; color: #94a3b8;"></i> Population
+                                        </span>
+                                        <span class="fw-semibold text-slate-800" id="revDetPopulation">~ 85,000</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted d-flex align-items-center gap-1.5">
+                                            <i data-lucide="calendar" style="width: 14px; height: 14px; color: #94a3b8;"></i> Founded / Established
+                                        </span>
+                                        <span class="fw-semibold text-slate-800" id="revDetFounded">1023 AE</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted d-flex align-items-center gap-1.5">
+                                            <i data-lucide="landmark" style="width: 14px; height: 14px; color: #94a3b8;"></i> Government / Authority
+                                        </span>
+                                        <span class="fw-semibold text-slate-800" id="revDetGovernment">Monarchy</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted d-flex align-items-center gap-1.5">
+                                            <i data-lucide="user" style="width: 14px; height: 14px; color: #94a3b8;"></i> Ruler / Leader
+                                        </span>
+                                        <span class="fw-semibold text-slate-800" id="revDetRuler">Lord Aeric Silverhand</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted d-flex align-items-center gap-1.5">
+                                            <i data-lucide="coins" style="width: 14px; height: 14px; color: #94a3b8;"></i> Currency
+                                        </span>
+                                        <span class="fw-semibold text-slate-800" id="revDetCurrency">Silver Coin</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted d-flex align-items-center gap-1.5">
+                                            <i data-lucide="globe" style="width: 14px; height: 14px; color: #94a3b8;"></i> Primary Language(s)
+                                        </span>
+                                        <div id="revDetLanguages" class="d-flex flex-wrap gap-1 justify-content-end">
+                                            <span class="badge bg-light text-teal border fw-normal" style="font-size: 0.725rem;">Common Tongue ×</span>
+                                            <span class="badge bg-light text-slate-700 border fw-normal" style="font-size: 0.725rem;">Eldorian</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted d-flex align-items-center gap-1.5">
+                                            <i data-lucide="sun" style="width: 14px; height: 14px; color: #94a3b8;"></i> Climate
+                                        </span>
+                                        <span class="fw-semibold text-slate-800" id="revDetClimate">Temperate</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted d-flex align-items-center gap-1.5">
+                                            <i data-lucide="clock" style="width: 14px; height: 14px; color: #94a3b8;"></i> Time Zone
+                                        </span>
+                                        <span class="fw-semibold text-slate-800" id="revDetTimeZone">Eldorian Standard Time (EST)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Relationships Card -->
+                    <div class="glass-form-card p-4 rounded-4 bg-white border mb-4">
+                        <div class="form-section-header d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                            <div class="form-section-title d-flex align-items-center gap-2" style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">
+                                <i data-lucide="git-fork" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                                Relationships (<span id="revRelCount">0</span>)
+                            </div>
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 fw-semibold d-flex align-items-center gap-1" data-jump-step="3" style="color: #13A8A6; font-size: 0.8rem;">
+                                <i data-lucide="pencil" style="width: 13px; height: 13px;"></i> Edit
+                            </button>
+                        </div>
+
+                        <div id="revRelationshipsContainer" class="d-flex flex-column gap-2">
+                            <!-- Dynamic list of relationships matching node layout in mockup -->
+                        </div>
+                    </div>
+
+                    <!-- Assets & Media Card -->
+                    <div class="glass-form-card p-4 rounded-4 bg-white border mb-4">
+                        <div class="form-section-header d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                            <div class="form-section-title d-flex align-items-center gap-2" style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">
+                                <i data-lucide="folder-open" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                                Assets & Media
+                            </div>
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 fw-semibold d-flex align-items-center gap-1" data-jump-step="4" style="color: #13A8A6; font-size: 0.8rem;">
+                                <i data-lucide="pencil" style="width: 13px; height: 13px;"></i> Edit
+                            </button>
+                        </div>
+
+                        <!-- Review Assets Sub-Tabs -->
+                        <ul class="nav nav-tabs asset-sub-tabs mb-3" id="revAssetTypeTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" id="rev-tab-images" data-rev-asset="images" type="button">Images (<span id="revImgCount">0</span>)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="rev-tab-documents" data-rev-asset="documents" type="button">Documents (<span id="revDocCount">0</span>)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="rev-tab-maps" data-rev-asset="maps" type="button">Maps (<span id="revMapCount">0</span>)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="rev-tab-audiovideo" data-rev-asset="audiovideo" type="button">Audio / Video (<span id="revAVCount">0</span>)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="rev-tab-links" data-rev-asset="links" type="button">External Links (<span id="revLinkCount">0</span>)</button>
+                            </li>
+                        </ul>
+
+                        <div id="revAssetsContentContainer">
+                            <!-- Dynamic tab content for review assets -->
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="d-flex justify-content-between align-items-center pt-2">
+                        <button type="button" class="btn btn-outline-teal d-flex align-items-center gap-2 btn-prev-pane" data-prev="4">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Previous Step
+                        </button>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-teal px-4 py-2.5 d-inline-flex align-items-center gap-2 shadow-md fw-semibold" style="border-radius: 10px;">
+                                Create Entity <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            <div class="text-muted small mt-1" style="font-size: 0.725rem;">This action cannot be undone.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Details Tips, Suggested Details, Upload Summary, Entity Summary & Live Preview -->
+            <div class="col-lg-4">
+                <!-- Entity Summary Card (Shown on Step 5) -->
+                <div class="entity-summary-card p-3.5 mb-4 rounded-4 bg-white d-none" id="sidebarEntitySummaryCard" style="border: 1px solid #e2e8f0; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03); padding: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i data-lucide="clipboard-list" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                        <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.9rem;">Entity Summary</h6>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2" style="font-size: 0.825rem;">
+                        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                            <span class="text-muted">Entity Type</span>
+                            <span class="fw-semibold text-slate-800" id="sumEntityType">City</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                            <span class="text-muted">Created For Story</span>
+                            <span class="fw-semibold text-slate-800" id="sumStoryTitle">Revenge for Love</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                            <span class="text-muted">Status</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold" id="sumStatusPill">• Active</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                            <span class="text-muted">Importance</span>
+                            <span class="badge bg-purple-subtle text-purple fw-semibold" id="sumImportanceBadge" style="background-color: #f3e8ff; color: #7e22ce;">Major</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                            <span class="text-muted">Total Relationships</span>
+                            <span class="fw-semibold text-slate-800" id="sumTotalRelationships">0</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                            <span class="text-muted">Total Assets</span>
+                            <span class="fw-semibold text-slate-800" id="sumTotalAssets">0 Files</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                            <span class="text-muted">Created By</span>
+                            <span class="fw-semibold text-slate-800">Sachi Patel</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="text-muted">Created On</span>
+                            <span class="fw-semibold text-slate-700" id="sumCreatedOn">@DateTime.Now.ToString("MMM dd, yyyy • hh:mm tt")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset Tips Card (Shown on Step 4) -->
+                <div class="asset-tips-card p-3.5 mb-4 rounded-4 d-none" id="assetTipsCard" style="background: #fffdfa; border: 1px solid #fef3c7; position: relative; overflow: hidden; padding: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-2" style="color: #b45309;">
+                        <i data-lucide="lightbulb" style="width: 18px; height: 18px;"></i>
+                        <h6 class="fw-bold mb-0" style="font-size: 0.875rem;">Asset Tips</h6>
+                    </div>
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-2" style="font-size: 0.8rem; color: #78350f; line-height: 1.4;">
+                        <li class="d-flex align-items-start gap-2">
+                            <i data-lucide="check" style="width: 15px; height: 15px; color: #d97706; flex-shrink: 0;" class="mt-0.5"></i>
+                            <span>Add high quality images (1280px or higher) for the best experience.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i data-lucide="check" style="width: 15px; height: 15px; color: #d97706; flex-shrink: 0;" class="mt-0.5"></i>
+                            <span>Maps help visualize locations and travel routes.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i data-lucide="check" style="width: 15px; height: 15px; color: #d97706; flex-shrink: 0;" class="mt-0.5"></i>
+                            <span>Documents can include history, laws, reports, or any important reference.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i data-lucide="check" style="width: 15px; height: 15px; color: #d97706; flex-shrink: 0;" class="mt-0.5"></i>
+                            <span>You can reorder or replace assets anytime.</span>
+                        </li>
+                    </ul>
+                    <i data-lucide="feather" class="tip-watermark" style="width: 90px; height: 90px; color: #d97706; opacity: 0.08; position: absolute; right: -10px; bottom: -10px; pointer-events: none;"></i>
+                </div>
+
+                <!-- Upload Summary Card (Shown on Step 4) -->
+                <div class="upload-summary-card p-3.5 mb-4 rounded-4 bg-white d-none" id="uploadSummaryCard" style="border: 1px solid #e2e8f0; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03); padding: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i data-lucide="pie-chart" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                        <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.9rem;">Upload Summary</h6>
+                    </div>
+
+                    <div class="row align-items-center g-3 mb-3">
+                        <div class="col-5 text-center position-relative">
+                            <!-- Circular Donut SVG -->
+                            <svg width="90" height="90" viewBox="0 0 36 36" class="chart-donut">
+                                <path class="circle-bg" stroke="#f1f5f9" stroke-width="3.8" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="donutSegmentImages" stroke="#13A8A6" stroke-width="3.8" stroke-dasharray="0, 100" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="donutSegmentDocs" stroke="#f59e0b" stroke-width="3.8" stroke-dasharray="0, 100" stroke-dashoffset="0" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="donutSegmentOthers" stroke="#94a3b8" stroke-width="3.8" stroke-dasharray="0, 100" stroke-dashoffset="0" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                <div class="fw-bold text-slate-800" style="font-size: 0.8rem;" id="summaryTotalStorageText">0 MB</div>
+                                <div class="text-muted" style="font-size: 0.65rem;">Used</div>
+                            </div>
+                        </div>
+                        <div class="col-7">
+                            <div class="d-flex flex-column gap-1.5" style="font-size: 0.775rem;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="d-flex align-items-center gap-1.5 text-slate-700">
+                                        <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #13A8A6; display: inline-block;"></span> Images
+                                    </span>
+                                    <span class="fw-semibold text-slate-800" id="summaryImagesSizeText">0 MB</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="d-flex align-items-center gap-1.5 text-slate-700">
+                                        <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #f59e0b; display: inline-block;"></span> Documents
+                                    </span>
+                                    <span class="fw-semibold text-slate-800" id="summaryDocsSizeText">0 MB</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="d-flex align-items-center gap-1.5 text-slate-700">
+                                        <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #94a3b8; display: inline-block;"></span> Others
+                                    </span>
+                                    <span class="fw-semibold text-slate-800" id="summaryOthersSizeText">0 MB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-1.5" style="font-size: 0.75rem;">
+                        <span class="text-muted" id="summaryProgressText">0 MB of 100 MB used</span>
+                        <span class="badge bg-teal-subtle text-teal fw-bold" id="summaryPercentBadge" style="background-color: #f0fdfa; color: #13A8A6;">0%</span>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 4px; background-color: #f1f5f9;">
+                        <div class="progress-bar" id="summaryProgressBar" role="progressbar" style="width: 0%; background-color: #13A8A6;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                <!-- Details Tips Card -->
+                <div class="details-tips-card p-3.5 mb-4 rounded-4" style="background: #fffdfa; border: 1px solid #fef3c7; position: relative; overflow: hidden; padding: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-1.5" style="color: #b45309;">
+                        <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                        <h6 class="fw-bold mb-0" style="font-size: 0.875rem;">Details Tips</h6>
+                    </div>
+                    <p class="mb-0" style="font-size: 0.825rem; color: #78350f; line-height: 1.5;">
+                        The more details you add, the richer your world becomes.
+                    </p>
+                    <i data-lucide="feather" class="tip-watermark" style="width: 90px; height: 90px; color: #d97706; opacity: 0.08; position: absolute; right: -10px; bottom: -10px; pointer-events: none;"></i>
+                </div>
+
+                <!-- Suggested Details to Add Card -->
+                <div class="suggested-details-card p-3.5 mb-4 rounded-4 bg-white" style="border: 1px solid #e2e8f0; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03); padding: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i data-lucide="compass" style="width: 18px; height: 18px; color: #d97706;"></i>
+                        <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.9rem;">Suggested Details to Add</h6>
+                    </div>
+                    <div class="d-flex flex-column gap-2" id="suggestedDetailsList">
+                        <div class="suggested-item d-flex align-items-center justify-content-between p-2 px-3 rounded-3" style="font-size: 0.825rem; color: #334155;">
+                            <span>Districts / Areas</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary p-0 px-1.5 border-0 text-teal btn-add-suggested" data-name="Districts / Areas">+</button>
+                        </div>
+                        <div class="suggested-item d-flex align-items-center justify-content-between p-2 px-3 rounded-3" style="font-size: 0.825rem; color: #334155;">
+                            <span>Important Landmarks</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary p-0 px-1.5 border-0 text-teal btn-add-suggested" data-name="Important Landmarks">+</button>
+                        </div>
+                        <div class="suggested-item d-flex align-items-center justify-content-between p-2 px-3 rounded-3" style="font-size: 0.825rem; color: #334155;">
+                            <span>Key Industries</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary p-0 px-1.5 border-0 text-teal btn-add-suggested" data-name="Key Industries">+</button>
+                        </div>
+                        <div class="suggested-item d-flex align-items-center justify-content-between p-2 px-3 rounded-3" style="font-size: 0.825rem; color: #334155;">
+                            <span>Natural Resources</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary p-0 px-1.5 border-0 text-teal btn-add-suggested" data-name="Natural Resources">+</button>
+                        </div>
+                        <div class="suggested-item d-flex align-items-center justify-content-between p-2 px-3 rounded-3" style="font-size: 0.825rem; color: #334155;">
+                            <span>Famous Places</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary p-0 px-1.5 border-0 text-teal btn-add-suggested" data-name="Famous Places">+</button>
+                        </div>
+                        <div class="suggested-item d-flex align-items-center justify-content-between p-2 px-3 rounded-3" style="font-size: 0.825rem; color: #334155;">
+                            <span>Notable People</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary p-0 px-1.5 border-0 text-teal btn-add-suggested" data-name="Notable People">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Relationship Tips Card (Step 3) -->
+                <div class="tip-card p-3.5 mb-4 rounded-4 d-none" id="relationshipTipsCard" style="background: #fffdfa; border: 1px solid #fef3c7; position: relative; overflow: hidden; padding: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-2.5" style="color: #b45309;">
+                        <i data-lucide="sparkles" style="width: 18px; height: 18px; color: #d97706;"></i>
+                        <h6 class="fw-bold mb-0" style="font-size: 0.9rem; color: #78350f;">Relationship Tips</h6>
+                    </div>
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-2" style="font-size: 0.8rem; color: #78350f; line-height: 1.45;">
+                        <li class="d-flex align-items-start gap-2">
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-circle p-1 d-flex align-items-center justify-content-center" style="width:18px;height:18px;font-size:0.7rem;flex-shrink:0;">1</span>
+                            <span>Build meaningful connections between entities to enrich your world.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-circle p-1 d-flex align-items-center justify-content-center" style="width:18px;height:18px;font-size:0.7rem;flex-shrink:0;">2</span>
+                            <span>Strong relationships help maintain consistency across your story.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-circle p-1 d-flex align-items-center justify-content-center" style="width:18px;height:18px;font-size:0.7rem;flex-shrink:0;">3</span>
+                            <span>You can always edit or add more relationships later.</span>
+                        </li>
+                    </ul>
+                    <i data-lucide="feather" class="tip-watermark" style="width: 90px; height: 90px; color: #d97706; opacity: 0.08; position: absolute; right: -10px; bottom: -10px; pointer-events: none;"></i>
+                </div>
+
+                <!-- Suggested Relationships Card (Step 3) -->
+                <div class="preview-card mb-4 bg-white rounded-4 d-none" id="suggestedRelCard" style="border: 1px solid #e2e8f0; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03); padding: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i data-lucide="git-fork" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                        <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.95rem;">Suggested Relationships</h6>
+                    </div>
+                    <p class="text-muted mb-3" style="font-size: 0.775rem;">Quickly connect to existing entities in your story.</p>
+
+                    <div class="d-flex flex-column gap-2.5" id="suggestedRelList">
+                        @if (Model.ParentEntities != null && Model.ParentEntities.Any())
+                        {
+                            @foreach (var pe in Model.ParentEntities.Take(4))
+                            {
+                                var typeName = pe.EntityType?.Name ?? "Entity";
+                                var iconName = pe.EntityType?.Icon ?? "building-2";
+                                var descText = string.IsNullOrEmpty(pe.Summary) ? $"World {typeName}" : pe.Summary;
+                                <div class="p-2.5 rounded-3 border bg-light-subtle d-flex align-items-center justify-content-between gap-2">
+                                    <div class="d-flex align-items-center gap-2 overflow-hidden" style="font-size: 0.8rem;">
+                                        <span class="fw-semibold text-slate-800 text-truncate sidebar-this-entity-name">This Entity</span>
+                                        <i data-lucide="arrow-right" style="width: 13px; height: 13px; color: #94a3b8;" class="flex-shrink-0"></i>
+                                        <div class="overflow-hidden">
+                                            <div class="fw-semibold text-slate-900 text-truncate">@pe.Name</div>
+                                            <div class="text-muted text-truncate" style="font-size: 0.7rem;">@typeName</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-teal rounded-circle p-1.5 flex-shrink-0 btn-quick-add-suggestion"
+                                            data-id="@pe.Id"
+                                            data-name="@pe.Name"
+                                            data-kind="Entity"
+                                            data-type-name="@typeName"
+                                            data-icon="@iconName"
+                                            data-description="@descText">
+                                        <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted small text-center py-2">No other entities found in active story.</div>
+                        }
+                    </div>
+                    <div class="mt-3 text-end">
+                        <a href="javascript:void(0)" class="text-decoration-none text-teal fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.775rem;">
+                            View More Suggestions <i data-lucide="arrow-right" style="width: 13px; height: 13px;"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Live Preview Card -->
+                <div class="preview-card mb-4 bg-white rounded-4" style="border: 1px solid #e2e8f0; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03); padding: 1.25rem;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i data-lucide="eye" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                        <h6 class="fw-bold mb-0 text-slate-800" style="font-size: 0.95rem;">Preview</h6>
+                    </div>
+                    <p class="text-muted mb-3" style="font-size: 0.775rem;">This is how your entity will look with current details.</p>
+
+                    <div class="live-preview-box rounded-4 overflow-hidden border">
+                        <div class="live-banner" id="liveCoverBanner" style="height: 130px; background-size: cover; background-position: center; background-image: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80'); position: relative;">
+                            <div class="live-icon-circle" id="liveIconCircle" style="position: absolute; bottom: -18px; left: 16px; width: 48px; height: 48px; border-radius: 50%; background: #ffffff; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; color: #13A8A6;">
+                                <i data-lucide="building-2" id="liveLucideIcon" style="width: 22px; height: 22px;"></i>
+                            </div>
+                        </div>
+
+                        <div class="live-content p-3 pt-4">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <h5 class="fw-bold text-slate-900 mb-0" id="liveTitle" style="font-family: 'Playfair Display', serif; font-size: 1.15rem;">Silverbrook City</h5>
+                                <span class="badge-importance" id="liveImportanceBadge" style="background: #f3e8ff; color: #7e22ce; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 10px;">Major</span>
+                            </div>
+
+                            <div class="live-meta-pills mb-2 text-teal fw-semibold" id="liveMetaLine" style="font-size: 0.75rem; color: #0d9488;">
+                                City · Eldoria · Active
+                            </div>
+
+                            <div class="live-quote-box p-2.5 px-3 rounded-3 bg-light border-start border-3 border-teal mb-3" style="border-left-color: #13A8A6 !important;">
+                                <p class="text-secondary italic mb-0" id="liveSummaryText" style="font-size: 0.8rem; font-style: italic; line-height: 1.4;">
+                                    “ A thriving trade city known for its silver mines and bustling markets. ”
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Icon Select Modal -->
+<div class="modal fade" id="iconSelectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-slate-800" style="font-size: 1.1rem;">Choose Entity Icon</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex flex-wrap gap-3 justify-content-center" id="iconSelectionGrid">
+                    @{
+                        var availableIcons = new[] { "castle", "building-2", "building", "landmark", "map-pin", "globe", "crown", "star", "shield", "fortress", "mountain", "trees", "tent", "ship", "anchor", "flame", "sparkles", "sun", "moon", "book-open", "skull", "heart", "users" };
+                        foreach (var iconName in availableIcons)
+                        {
+                            <button type="button" class="icon-grid-btn @(iconName == "castle" ? "active" : "")" data-icon="@iconName">
+                                <i data-lucide="@iconName" style="width: 22px; height: 22px;"></i>
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document) .ready(function() {
+            // Select2 Custom Theme Formatter
+            function formatSelect2Option(opt) {
+                if (!opt.id) return opt.text;
+                var $el = $(opt.element);
+                var desc = $el.data('description') || '';
+                var icon = $el.data('icon') || '';
+
+                var html = '<div class="select2-option-wrapper">';
+                if (icon) {
+                    html += '<i data-lucide="' + icon + '" class="select2-option-icon"></i>';
+                }
+                html += '<div>';
+                html += '<div class="select2-option-title">' + opt.text + '</div>';
+                if (desc) {
+                    html += '<div class="select2-option-desc">' + desc + '</div>';
+                }
+                html += '</div></div>';
+
+                var $res = $(html);
+                return $res;
+            }
+
+            function formatSelect2Selection(opt) {
+                if (!opt.id) return opt.text;
+                var $el = $(opt.element);
+                var desc = $el.data('description') || '';
+                if (desc) {
+                    return $('<span><span class="select2-selection-title">' + opt.text + '</span> <span class="select2-selection-desc">(' + desc + ')</span></span>');
+                }
+                return $('<span class="select2-selection-title">' + opt.text + '</span>');
+            }
+
+            $('.select2-themed').select2({
+                templateResult: formatSelect2Option,
+                templateSelection: formatSelect2Selection,
+                width: '100%'
+            });
+
+            // Multi-Select for Related Entities
+            $('#relTargetSelect').select2({
+                placeholder: 'Search and select entities...',
+                allowClear: true,
+                width: '100%',
+                templateResult: function(opt) {
+                    if (!opt.id) return opt.text;
+                    var $el = $(opt.element);
+                    var icon = $el.data('icon') || 'building-2';
+                    var typeName = $el.data('type-name') || 'Entity';
+                    var desc = $el.data('description') || '';
+                    var html = '<div class="d-flex align-items-center gap-2 py-1">';
+                    html += '<div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width:32px;height:32px;background:#f0fdfa;color:#13A8A6;">';
+                    html += '<i data-lucide="' + icon + '" style="width:15px;height:15px;"></i>';
+                    html += '</div>';
+                    html += '<div><div class="fw-semibold" style="font-size:0.825rem;color:#1e293b;">' + opt.text + '</div>';
+                    if (desc) html += '<div style="font-size:0.725rem;color:#64748b;">' + desc + '</div>';
+                    html += '</div></div>';
+                    var $res = $(html);
+                    setTimeout(function() { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+                    return $res;
+                },
+                templateSelection: function(opt) {
+                    if (!opt.id) return opt.text;
+                    var $el = $(opt.element);
+                    var icon = $el.data('icon') || 'building-2';
+                    return $('<span class="d-flex align-items-center gap-1"><i data-lucide="' + icon + '" style="width:12px;height:12px;"></i>' + opt.text + '</span>');
+                }
+            }).on('select2:open', function() {
+                setTimeout(function() { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 30);
+            });
+
+            // Relationship Cards State
+            var relCards = []; // [{id, targetId, targetName, targetIcon, targetKind, relType, importance}]
+
+            function updateRelCountDisplay() {
+                var count = relCards.length;
+                $('#relCountDisplay').text(count);
+                $('#relStartNum').text(count > 0 ? 1 : 0);
+                $('#relEndNum').text(count);
+                $('#relTotalNum').text(count);
+                if (count > 0) {
+                    $('#relEmptyState').hide();
+                } else {
+                    $('#relEmptyState').show();
+                }
+            }
+
+            function renderRelCards() {
+                var $container = $('#relCardsContainer');
+                $container.find('.rel-card-item').remove();
+
+                // Update hidden form inputs
+                $container.find('input[name^="Relationships["]').remove();
+
+                relCards.forEach(function(card, idx) {
+                    var importanceColor = {
+                        'Critical': '#ef4444', 'High': '#3b82f6', 'Major': '#8b5cf6',
+                        'Medium': '#f59e0b', 'Minor': '#94a3b8'
+                    }[card.importance] || '#f59e0b';
+
+                    var kindIcon = card.targetKind === 'Character' ? 'user' : card.targetIcon;
+                    var kindColor = card.targetKind === 'Character' ? '#4338ca' : '#0d9488';
+                    var kindBg = card.targetKind === 'Character' ? '#e0e7ff' : '#e6fffa';
+
+                    var html = `
+                        <div class="rel-card-item d-flex align-items-center justify-content-between p-3 px-3 rounded-3 mb-2" 
+                             style="background: #ffffff; border: 1px solid #e2e8f0; transition: box-shadow 0.15s;">
+                            <div class="d-flex align-items-center gap-3 flex-grow-1 overflow-hidden">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" 
+                                     style="width: 38px; height: 38px; background: ${kindBg}; color: ${kindColor};">
+                                    <i data-lucide="${kindIcon}" style="width: 18px; height: 18px;"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <div class="fw-semibold text-slate-800 text-truncate" style="font-size: 0.875rem;">${card.targetName}</div>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap mt-0.5">
+                                        <span class="badge" style="background: #f0fdfa; color: #0d9488; font-size: 0.7rem; font-weight: 500; padding: 2px 8px; border-radius: 8px;">${card.relType}</span>
+                                        <span class="badge" style="background: ${importanceColor}22; color: ${importanceColor}; font-size: 0.7rem; font-weight: 500; padding: 2px 8px; border-radius: 8px;">${card.importance}</span>
+                                        <span class="badge" style="background: #f1f5f9; color: #64748b; font-size: 0.7rem; font-weight: 500; padding: 2px 8px; border-radius: 8px;">${card.targetKind}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-light border text-danger ms-2 flex-shrink-0 btn-remove-rel" data-rel-id="${card.id}" title="Remove" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                            </button>
+                            <input type="hidden" name="Relationships[${idx}].TargetId" value="${card.targetId}" />
+                            <input type="hidden" name="Relationships[${idx}].TargetKind" value="${card.targetKind}" />
+                            <input type="hidden" name="Relationships[${idx}].RelationshipType" value="${card.relType}" />
+                            <input type="hidden" name="Relationships[${idx}].Importance" value="${card.importance}" />
+                        </div>
+                    `;
+                    $container.append(html);
+                });
+
+                updateRelCountDisplay();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // Add Relationship Button Handler
+            $('#btnAddRelCardBtn').on('click', function() {
+                var selectedVals = $('#relTargetSelect').val();
+                var relType = $('#relTypeSelect').val();
+                var importance = $('#relImportanceSelect').val() || 'Medium';
+
+                if (!selectedVals || selectedVals.length === 0) {
+                    $('#relTargetSelect').next('.select2-container').find('.select2-selection').css('border-color', '#ef4444');
+                    setTimeout(function() {
+                        $('#relTargetSelect').next('.select2-container').find('.select2-selection').css('border-color', '');
+                    }, 1500);
+                    return;
+                }
+                if (!relType) {
+                    $('#relTypeSelect').next('.select2-container').find('.select2-selection').css('border-color', '#ef4444');
+                    setTimeout(function() {
+                        $('#relTypeSelect').next('.select2-container').find('.select2-selection').css('border-color', '');
+                    }, 1500);
+                    return;
+                }
+
+                var addedCount = 0;
+                selectedVals.forEach(function(val) {
+                    // Prevent duplicates with the same rel type
+                    var exists = relCards.some(function(c) { return c.targetId === val && c.relType === relType; });
+                    if (exists) return;
+
+                    var $opt = $('#relTargetSelect option[value="' + val + '"]');
+                    var targetName = $opt.text().trim();
+                    var targetIcon = $opt.data('icon') || 'building-2';
+                    var targetKind = $opt.data('kind') || 'Entity';
+
+                    relCards.push({
+                        id: 'rel_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        targetId: val,
+                        targetName: targetName,
+                        targetIcon: targetIcon,
+                        targetKind: targetKind,
+                        relType: relType,
+                        importance: importance
+                    });
+                    addedCount++;
+                });
+
+                if (addedCount > 0) {
+                    renderRelCards();
+                    // Reset selects
+                    $('#relTargetSelect').val(null).trigger('change');
+                    $('#relTypeSelect').val('').trigger('change');
+                }
+            });
+
+            // Remove relationship card
+            $(document).on('click', '.btn-remove-rel', function() {
+                var relId = $(this).data('rel-id');
+                relCards = relCards.filter(function(c) { return c.id !== relId; });
+                renderRelCards();
+            });
+
+            // Init display
+            updateRelCountDisplay();
+
+            // Live Preview Update Function
+            function updateLivePreview() {
+                var nameVal = $('#Name').val().trim();
+                var storyVal = $('#StoryId option:selected').text().trim() || 'Revenge for Love';
+                var typeVal = $('#EntityTypeId option:selected').text().trim() || 'Location';
+                var importanceVal = $('#Importance').val() || 'Major';
+                var statusVal = $('#Status').val() || 'Active';
+                var summaryVal = $('#Summary').val().trim() || 'A brief one-line or two-line description.';
+                var iconName = $('#entityIconInput').val() || 'map-pin';
+
+                $('#pageHeaderTitle').text(nameVal ? 'Create ' + nameVal : 'Create ' + typeVal);
+                $('#breadcrumbCurrent').text(nameVal ? 'Create ' + nameVal : 'Create ' + typeVal);
+
+                $('#liveTitle').text(nameVal || 'Silverbrook City');
+                $('#liveSummaryText').text(summaryVal);
+                $('#liveImportanceBadge').text(importanceVal);
+                $('#liveMetaLine').text(typeVal + ' · ' + storyVal + ' · ' + statusVal);
+
+                $('#gridTypeVal').text(typeVal);
+                $('#gridStoryVal').text(storyVal);
+                $('#gridImportanceVal').text(importanceVal);
+                $('#gridStatusVal').text(statusVal);
+
+                // Review Pane values
+                $('#revStory').text(storyVal);
+                $('#revType').text(typeVal);
+                $('#revName').text(nameVal || '—');
+                $('#revImportance').text(importanceVal);
+                $('#revStatus').text(statusVal);
+                $('#revSummary').text(summaryVal);
+
+                // Update Icon in preview
+                var newIconHtml = '<i data-lucide="' + iconName + '" style="width: 24px; height: 24px; color: #13A8A6;"></i>';
+                $('#liveIconCircle').html(newIconHtml);
+                $('#iconPickerDisplay').replaceWith('<i data-lucide="' + iconName + '" id="iconPickerDisplay" style="width: 40px; height: 40px; color: #13A8A6;"></i>');
+
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            // Event Listeners for Live Updates
+            $('#Name, #Summary').on('input keyup change', updateLivePreview);
+            $('#StoryId, #EntityTypeId, #Importance, #Status').on('change', updateLivePreview);
+
+            // Icon Picker Modal selection
+            $('#iconSelectionGrid .icon-grid-btn').on('click', function() {
+                $('#iconSelectionGrid .icon-grid-btn').removeClass('active');
+                $(this).addClass('active');
+
+                var chosenIcon = $(this).data('icon');
+                $('#entityIconInput').val(chosenIcon);
+
+                var modalEl = document.getElementById('iconSelectModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+
+                updateLivePreview();
+            });
+
+            // Cover Image File Trigger & Preview
+            $('#coverPickerBox').on('click', function() {
+                $('#CoverFileInput').click();
+            });
+
+            $('#CoverFileInput').on('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function(evt) {
+                        $('#coverPreviewImg').attr('src', evt.target.result).show();
+                        $('#liveCoverBanner').css('background-image', 'url("' + evt.target.result + '")');
+                        $('#coverPlaceholder').hide();
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            // Stepper Navigation Logic
+            var currentStep = 1;
+
+            function showPane(stepNum) {
+                currentStep = parseInt(stepNum);
+                $('.step-pane').addClass('d-none');
+                $('#step-pane-' + currentStep).removeClass('d-none');
+
+                $('.stepper-step').removeClass('active completed');
+                $('.stepper-step').each(function() {
+                    var s = parseInt($(this).data('step'));
+                    if (s < currentStep) {
+                        $(this).addClass('completed');
+                        $(this).find('.stepper-number').html('<i data-lucide="check" style="width:16px;height:16px;"></i>');
+                    } else if (s === currentStep) {
+                        $(this).addClass('active');
+                        $(this).find('.stepper-number').text(s);
+                    } else {
+                        $(this).find('.stepper-number').text(s);
+                    }
+                });
+
+                if (currentStep === 5) {
+                    $('.btn-next-top').addClass('d-none');
+                } else {
+                    $('.btn-next-top').removeClass('d-none');
+                }
+
+                // Toggle Sidebar Cards per Step
+                if (currentStep === 3) {
+                    $('#relationshipTipsCard, #suggestedRelCard').removeClass('d-none');
+                    $('.details-tips-card, .suggested-details-card, #assetTipsCard, #uploadSummaryCard, #sidebarEntitySummaryCard').addClass('d-none');
+                } else if (currentStep === 4) {
+                    $('#assetTipsCard, #uploadSummaryCard').removeClass('d-none');
+                    $('.details-tips-card, .suggested-details-card, #relationshipTipsCard, #suggestedRelCard, #sidebarEntitySummaryCard').addClass('d-none');
+                } else if (currentStep === 5) {
+                    $('#sidebarEntitySummaryCard').removeClass('d-none');
+                    $('.details-tips-card, .suggested-details-card, #relationshipTipsCard, #suggestedRelCard, #assetTipsCard, #uploadSummaryCard').addClass('d-none');
+                    updateReviewTab();
+                } else {
+                    $('.details-tips-card, .suggested-details-card').removeClass('d-none');
+                    $('#relationshipTipsCard, #suggestedRelCard, #assetTipsCard, #uploadSummaryCard, #sidebarEntitySummaryCard').addClass('d-none');
+                }
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            // Click Handlers for Stepper Navigation
+            $(document).on('click', '.stepper-step', function(e) {
+                e.preventDefault();
+                var step = $(this).data('step');
+                if (step) {
+                    showPane(step);
+                }
+            });
+
+            $(document).on('click', '.btn-next-top', function(e) {
+                e.preventDefault();
+                if (currentStep < 5) {
+                    showPane(currentStep + 1);
+                }
+            });
+
+            $(document).on('click', '.btn-next-pane', function(e) {
+                e.preventDefault();
+                var nextStep = $(this).data('next');
+                if (nextStep) {
+                    showPane(nextStep);
+                }
+            });
+
+            $(document).on('click', '.btn-prev-pane', function(e) {
+                e.preventDefault();
+                var prevStep = $(this).data('prev');
+                if (prevStep) {
+                    showPane(prevStep);
+                }
+            });
+
+            $('#saveDraftBtn').on('click', function(e) {
+                e.preventDefault();
+                $('#Status').val('Draft');
+                updateLivePreview();
+                $('#createEntityForm').submit();
+            });
+
+            // Assets Tab State & Management
+            var uploadedAssets = [];
+            var currentAssetFilter = 'images';
+            var currentAssetView = 'grid';
+
+            // Tab switching for asset types
+            $('#assetTypeTabs .nav-link').on('click', function() {
+                $('#assetTypeTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                currentAssetFilter = $(this).data('asset-type');
+                updateDropzoneUI(currentAssetFilter);
+                renderUploadedAssets();
+            });
+
+            function updateDropzoneUI(type) {
+                var $icon = $('#dropzoneIcon');
+                var $title = $('#dropzoneTitle');
+                var $helper = $('#dropzoneHelper');
+                var $input = $('#assetFileInput');
+                var $fileZone = $('#fileUploadZoneSection');
+                var $extZone = $('#externalLinksSection');
+
+                if (type === 'links') {
+                    $fileZone.addClass('d-none');
+                    $extZone.removeClass('d-none');
+                    $('#uploadedAssetsTitle').text('Uploaded Links');
+                    return;
+                } else {
+                    $fileZone.removeClass('d-none');
+                    $extZone.addClass('d-none');
+                }
+
+                if (type === 'images') {
+                    $icon.attr('data-lucide', 'upload-cloud');
+                    $title.text('Drag & drop images here');
+                    $helper.text('Supports JPG, PNG, WEBP up to 10MB each. You can upload up to 20 files.');
+                    $input.attr('accept', 'image/*');
+                    $('#uploadedAssetsTitle').text('Uploaded Images');
+                } else if (type === 'documents') {
+                    $icon.attr('data-lucide', 'file-text');
+                    $title.text('Drag & drop documents here');
+                    $helper.text('Supports PDF, DOCX, TXT up to 25MB each. You can upload up to 10 files.');
+                    $input.attr('accept', '.pdf,.doc,.docx,.txt,.md');
+                    $('#uploadedAssetsTitle').text('Uploaded Documents');
+                } else if (type === 'maps') {
+                    $icon.attr('data-lucide', 'map');
+                    $title.text('Drag & drop map files & overlays here');
+                    $helper.text('Supports JPG, PNG, SVG, GeoJSON up to 20MB.');
+                    $input.attr('accept', 'image/*,.json,.geojson,.svg');
+                    $('#uploadedAssetsTitle').text('Uploaded Maps');
+                } else if (type === 'audiovideo') {
+                    $icon.attr('data-lucide', 'video');
+                    $title.text('Drag & drop audio and video clips here');
+                    $helper.text('Supports MP3, WAV, MP4, WEBM up to 50MB.');
+                    $input.attr('accept', 'audio/*,video/*');
+                    $('#uploadedAssetsTitle').text('Uploaded Media Clips');
+                }
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // Browse button click
+            $('#browseAssetsBtn, #assetDropZone').on('click', function(e) {
+                if (e.target.id === 'browseAssetsBtn' || $(e.target).closest('#browseAssetsBtn').length || e.target.id === 'assetDropZone' || $(e.target).closest('#assetDropZone').length) {
+                    $('#assetFileInput').click();
+                }
+            });
+
+            // Prevent dropzone file input click propagation loop
+            $('#assetFileInput').on('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Drag and drop handlers
+            var $dropZone = $('#assetDropZone');
+            $dropZone.on('dragover dragenter', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragover');
+            });
+
+            $dropZone.on('dragleave drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+            });
+
+            $dropZone.on('drop', function(e) {
+                var files = e.originalEvent.dataTransfer.files;
+                if (files && files.length) {
+                    handleFileSelection(files);
+                }
+            });
+
+            $('#assetFileInput').on('change', function(e) {
+                if (e.target.files && e.target.files.length) {
+                    handleFileSelection(e.target.files);
+                }
+            });
+
+            function handleFileSelection(files) {
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    
+                    var assetObj = {
+                        id: 'asset_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        name: file.name,
+                        sizeBytes: file.size,
+                        sizeFormatted: formatBytes(file.size),
+                        category: currentAssetFilter,
+                        file: file,
+                        timestamp: new Date(),
+                        isFav: false,
+                        previewUrl: null
+                    };
+
+                    if (file.type.startsWith('image/')) {
+                        assetObj.previewUrl = URL.createObjectURL(file);
+                    }
+
+                    uploadedAssets.push(assetObj);
+                }
+
+                renderUploadedAssets();
+                updateUploadSummary();
+            }
+
+            function formatBytes(bytes, decimals) {
+                if (typeof decimals === 'undefined') decimals = 1;
+                if (bytes === 0) return '0 B';
+                var k = 1024;
+                var dm = decimals < 0 ? 0 : decimals;
+                var sizes = ['B', 'KB', 'MB', 'GB'];
+                var i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            // Add External Link
+            $('#btnAddExtLink').on('click', function() {
+                var title = $('#extLinkTitle').val().trim();
+                var url = $('#extLinkUrl').val().trim();
+                var type = $('#extLinkType').val();
+
+                if (!title || !url) {
+                    alert('Please enter both link title and URL.');
+                    return;
+                }
+
+                var linkObj = {
+                    id: 'link_' + Date.now(),
+                    name: title,
+                    url: url,
+                    linkType: type,
+                    sizeBytes: 0,
+                    sizeFormatted: 'External Link',
+                    category: 'links',
+                    timestamp: new Date(),
+                    isFav: false
+                };
+
+                uploadedAssets.push(linkObj);
+                $('#extLinkTitle').val('');
+                $('#extLinkUrl').val('');
+
+                renderUploadedAssets();
+                updateUploadSummary();
+            });
+
+            // View toggle (Grid / List)
+            $('#btnGridView').on('click', function() {
+                currentAssetView = 'grid';
+                $(this).addClass('active').css({'background-color': '#f0fdfa', 'color': '#13A8A6'});
+                $('#btnListView').removeClass('active').css({'background-color': 'transparent', 'color': '#64748b'});
+                renderUploadedAssets();
+            });
+
+            $('#btnListView').on('click', function() {
+                currentAssetView = 'list';
+                $(this).addClass('active').css({'background-color': '#f0fdfa', 'color': '#13A8A6'});
+                $('#btnGridView').removeClass('active').css({'background-color': 'transparent', 'color': '#64748b'});
+                renderUploadedAssets();
+            });
+
+            // Sort dropdown listener
+            $('#assetSortDropdown').on('change', function() {
+                renderUploadedAssets();
+            });
+
+            // Delete asset handler
+            $(document).on('click', '.btn-delete-asset', function(e) {
+                e.stopPropagation();
+                var id = $(this).data('asset-id');
+                uploadedAssets = uploadedAssets.filter(function(a) { return a.id !== id; });
+                renderUploadedAssets();
+                updateUploadSummary();
+            });
+
+            // Fav toggle handler
+            $(document).on('click', '.btn-fav-asset', function(e) {
+                e.stopPropagation();
+                var id = $(this).data('asset-id');
+                var asset = uploadedAssets.find(function(a) { return a.id === id; });
+                if (asset) {
+                    asset.isFav = !asset.isFav;
+                    renderUploadedAssets();
+                }
+            });
+
+            function renderUploadedAssets() {
+                var filtered = uploadedAssets.filter(function(a) { return a.category === currentAssetFilter; });
+                var sortVal = $('#assetSortDropdown').val();
+
+                if (sortVal === 'newest') {
+                    filtered.sort(function(a, b) { return b.timestamp - a.timestamp; });
+                } else if (sortVal === 'oldest') {
+                    filtered.sort(function(a, b) { return a.timestamp - b.timestamp; });
+                } else if (sortVal === 'name') {
+                    filtered.sort(function(a, b) { return a.name.localeCompare(b.name); });
+                } else if (sortVal === 'size') {
+                    filtered.sort(function(a, b) { return b.sizeBytes - a.sizeBytes; });
+                }
+
+                $('#uploadedAssetsCount').text(filtered.length);
+
+                var $container = $('#uploadedAssetsContainer');
+                $container.empty();
+
+                if (filtered.length === 0) {
+                    $container.html(`
+                        <div class="col-12 text-center py-5 px-3 border border-dashed rounded-4 bg-light-subtle" id="emptyAssetsState">
+                            <i data-lucide="image-plus" style="width: 42px; height: 42px; color: #cbd5e1;" class="mb-2"></i>
+                            <h6 class="fw-semibold text-slate-700 mb-1">No assets uploaded yet</h6>
+                            <p class="text-muted small mb-0">Drag and drop files or select Browse Files above to add media to this entity.</p>
+                        </div>
+                    `);
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                filtered.forEach(function(item) {
+                    var html = '';
+                    if (currentAssetView === 'grid') {
+                        if (item.category === 'images' || item.category === 'maps') {
+                            var imgSrc = item.previewUrl || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80';
+                            html = `
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="asset-item-card">
+                                        <div class="asset-thumb-container">
+                                            <img src="${imgSrc}" alt="${item.name}" />
+                                            <button type="button" class="asset-fav-btn ${item.isFav ? 'active' : ''} btn-fav-asset" data-asset-id="${item.id}">
+                                                <i data-lucide="star" style="width: 13px; height: 13px;"></i>
+                                            </button>
+                                            <button type="button" class="asset-delete-btn btn-delete-asset" data-asset-id="${item.id}" title="Remove Asset">
+                                                <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                                            </button>
+                                        </div>
+                                        <div class="asset-footer">
+                                            <div class="asset-name">${item.name}</div>
+                                            <div class="asset-meta">${item.sizeFormatted}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (item.category === 'links') {
+                            html = `
+                                <div class="col-md-6">
+                                    <div class="doc-item-card">
+                                        <div class="doc-icon-box other">
+                                            <i data-lucide="link" style="width: 20px; height: 20px;"></i>
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <div class="fw-semibold text-slate-800 text-truncate" style="font-size: 0.85rem;">${item.name}</div>
+                                            <a href="${item.url}" target="_blank" class="text-teal text-truncate d-block small" style="color: #13A8A6;">${item.url}</a>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-light border p-1 text-danger btn-delete-asset" data-asset-id="${item.id}">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            var iconClass = item.name.endsWith('.pdf') ? 'pdf' : (item.name.endsWith('.doc') || item.name.endsWith('.docx') ? 'word' : 'txt');
+                            var iconName = item.name.endsWith('.pdf') ? 'file-text' : 'file';
+                            html = `
+                                <div class="col-md-6">
+                                    <div class="doc-item-card">
+                                        <div class="doc-icon-box ${iconClass}">
+                                            <i data-lucide="${iconName}" style="width: 20px; height: 20px;"></i>
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <div class="fw-semibold text-slate-800 text-truncate" style="font-size: 0.85rem;">${item.name}</div>
+                                            <div class="text-muted small">${item.sizeFormatted} · Uploaded just now</div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-light border p-1 text-danger btn-delete-asset" data-asset-id="${item.id}">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        // List View
+                        html = `
+                            <div class="col-12">
+                                <div class="doc-item-card p-2 px-3">
+                                    <div class="doc-icon-box other" style="width: 36px; height: 36px;">
+                                        <i data-lucide="${item.category === 'images' ? 'image' : (item.category === 'links' ? 'link' : 'file-text')}" style="width: 18px; height: 18px;"></i>
+                                    </div>
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="fw-semibold text-slate-800 text-truncate" style="font-size: 0.85rem;">${item.name}</div>
+                                        <div class="text-muted small">${item.sizeFormatted}</div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-light border p-1 text-danger btn-delete-asset" data-asset-id="${item.id}">
+                                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    $container.append(html);
+                });
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            function updateUploadSummary() {
+                var imgSize = 0;
+                var docSize = 0;
+                var otherSize = 0;
+
+                uploadedAssets.forEach(function(a) {
+                    if (a.category === 'images' || a.category === 'maps') imgSize += a.sizeBytes;
+                    else if (a.category === 'documents') docSize += a.sizeBytes;
+                    else otherSize += a.sizeBytes;
+                });
+
+                var totalBytes = imgSize + docSize + otherSize;
+                var totalMB = totalBytes / (1024 * 1024);
+                var imgMB = imgSize / (1024 * 1024);
+                var docMB = docSize / (1024 * 1024);
+                var otherMB = otherSize / (1024 * 1024);
+
+                var maxMB = 100;
+                var percent = Math.min(100, Math.round((totalMB / maxMB) * 100));
+
+                $('#summaryTotalStorageText').text(totalMB.toFixed(1) + ' MB');
+                $('#summaryImagesSizeText').text(imgMB.toFixed(1) + ' MB');
+                $('#summaryDocsSizeText').text(docMB.toFixed(1) + ' MB');
+                $('#summaryOthersSizeText').text(otherMB.toFixed(1) + ' MB');
+
+                $('#summaryProgressText').text(totalMB.toFixed(1) + ' MB of 100 MB used');
+                $('#summaryPercentBadge').text(percent + '%');
+                $('#summaryProgressBar').css('width', percent + '%');
+
+                // Donut SVG strokes
+                var imgPct = (imgMB / maxMB) * 100;
+                var docPct = (docMB / maxMB) * 100;
+                var otherPct = (otherMB / maxMB) * 100;
+
+                $('#donutSegmentImages').attr('stroke-dasharray', imgPct + ', 100');
+                
+                $('#donutSegmentDocs').attr('stroke-dasharray', docPct + ', 100');
+                $('#donutSegmentDocs').attr('stroke-dashoffset', '-' + imgPct);
+
+                $('#donutSegmentOthers').attr('stroke-dasharray', otherPct + ', 100');
+                $('#donutSegmentOthers').attr('stroke-dashoffset', '-' + (imgPct + docPct));
+            }
+
+            // Quick Edit Step Jump Handler
+            $(document).on('click', '[data-jump-step]', function(e) {
+                e.preventDefault();
+                var targetStep = $(this).data('jump-step');
+                showPane(targetStep);
+            });
+
+            // Review Asset Sub-Tabs Switch Handler
+            $(document).on('click', '#revAssetTypeTabs .nav-link', function(e) {
+                e.preventDefault();
+                $('#revAssetTypeTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+                var cat = $(this).data('rev-asset');
+                renderReviewAssets(cat);
+            });
+
+            // Dynamic Review Tab Update Function
+            function updateReviewTab() {
+                // 1. Basic Info
+                var nameVal = $('#Name').val().trim();
+                var storyVal = $('#StoryId option:selected').val() ? $('#StoryId option:selected').text().trim() : '—';
+                var typeVal = $('#EntityTypeId option:selected').val() ? $('#EntityTypeId option:selected').text().trim() : '—';
+                var importanceVal = $('#Importance').val() || 'Major';
+                var statusVal = $('#Status').val() || 'Active';
+                var summaryVal = $('#Summary').val().trim() || '—';
+
+                $('#revBasicName').text(nameVal || '—');
+                $('#revBasicType').text(typeVal);
+                $('#revBasicStory').text(storyVal);
+                $('#revBasicStatus').html('• ' + statusVal);
+                $('#revBasicImportance').text(importanceVal);
+                $('#revBasicSummary').text(summaryVal);
+
+                var coverSrc = $('#coverPreviewImg').attr('src');
+                if (coverSrc && coverSrc.length > 0 && $('#coverPreviewImg').is(':visible')) {
+                    $('#revCoverImg').attr('src', coverSrc).show();
+                } else {
+                    $('#revCoverImg').attr('src', 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80').show();
+                }
+
+                // 2. Details
+                var popVal = $('#Population').val().trim();
+                var foundVal = $('#Founded').val().trim();
+                var govVal = $('#Government option:selected').val() ? $('#Government option:selected').text().trim() : '';
+                var rulerVal = $('#Ruler').val().trim();
+                var currVal = $('#Currency').val().trim();
+                var climVal = $('#Climate option:selected').val() ? $('#Climate option:selected').text().trim() : '';
+                var tzVal = $('#TimeZone').val().trim();
+
+                $('#revDetPopulation').text(popVal || '—');
+                $('#revDetFounded').text(foundVal || '—');
+                $('#revDetGovernment').text(govVal || '—');
+                $('#revDetRuler').text(rulerVal || '—');
+                $('#revDetCurrency').text(currVal || '—');
+                $('#revDetClimate').text(climVal || '—');
+                $('#revDetTimeZone').text(tzVal || '—');
+
+                // Languages pills
+                var $langPills = $('#revDetLanguages');
+                $langPills.empty();
+                var selectedLangs = $('#Languages').val() || [];
+                if (selectedLangs.length > 0) {
+                    selectedLangs.forEach(function(lang) {
+                        $langPills.append('<span class="badge bg-light text-slate-800 border fw-normal" style="font-size: 0.725rem;">' + lang + ' ×</span>');
+                    });
+                } else {
+                    $langPills.append('<span class="text-muted">—</span>');
+                }
+
+                // 3. Relationships
+                var $relContainer = $('#revRelationshipsContainer');
+                $relContainer.empty();
+                var totalRelsCount = 0;
+
+                var entityName = nameVal || 'This Entity';
+
+                // Character links
+                $('#characterLinksContainer .character-link-row').each(function() {
+                    var charSelect = $(this).find('select[name="LinkedCharacterId"]');
+                    var charId = charSelect.val();
+                    var charName = charSelect.find('option:selected').val() ? charSelect.find('option:selected').text().trim() : '';
+                    var roleVal = $(this).find('select[name="CharacterRole"] option:selected').text().trim() || 'Connected';
+
+                    if (charId && charName && charName !== 'Select character...') {
+                        totalRelsCount++;
+                        var html = `
+                            <div class="d-flex align-items-center justify-content-between p-2.5 px-3 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-teal-subtle text-teal" style="width: 32px; height: 32px; background-color: #e6fffa; color: #0d9488;">
+                                        <i data-lucide="building-2" style="width: 16px; height: 16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-slate-800" style="font-size: 0.825rem;">${entityName}</div>
+                                        <div class="text-muted" style="font-size: 0.725rem;">This Entity</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 text-muted small px-2">
+                                    <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94a3b8;"></i>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 text-end">
+                                    <div>
+                                        <div class="fw-semibold text-slate-800" style="font-size: 0.825rem;">${charName}</div>
+                                        <span class="badge bg-indigo-subtle text-indigo" style="font-size: 0.7rem; background-color: #e0e7ff; color: #4338ca;">Character</span>
+                                        <div class="text-muted" style="font-size: 0.725rem;">${roleVal}</div>
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-indigo-subtle text-indigo" style="width: 32px; height: 32px; background-color: #e0e7ff; color: #4338ca;">
+                                        <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        $relContainer.append(html);
+                    }
+                });
+
+                // Entity relationships
+                $('#entityRelationshipsContainer .relationship-row').each(function() {
+                    var targetSelect = $(this).find('select[name="RelationshipTargetId"]');
+                    var targetId = targetSelect.val();
+                    var targetName = targetSelect.find('option:selected').val() ? targetSelect.find('option:selected').text().trim() : '';
+                    var relTypeVal = $(this).find('select[name="RelationshipType"] option:selected').text().trim() || 'Connected To';
+                    var notesVal = $(this).find('input[name="RelationshipDescription"]').val().trim();
+
+                    if (targetId && targetName && targetName !== 'Select target entity...') {
+                        totalRelsCount++;
+                        var html = `
+                            <div class="d-flex align-items-center justify-content-between p-2.5 px-3 rounded-3" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-teal-subtle text-teal" style="width: 32px; height: 32px; background-color: #e6fffa; color: #0d9488;">
+                                        <i data-lucide="building-2" style="width: 16px; height: 16px;"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-slate-800" style="font-size: 0.825rem;">${entityName}</div>
+                                        <div class="text-muted" style="font-size: 0.725rem;">This Entity</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 text-muted small px-2">
+                                    <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94a3b8;"></i>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 text-end">
+                                    <div>
+                                        <div class="fw-semibold text-slate-800" style="font-size: 0.825rem;">${targetName}</div>
+                                        <span class="badge bg-purple-subtle text-purple" style="font-size: 0.7rem; background-color: #f3e8ff; color: #7e22ce;">${relTypeVal}</span>
+                                        ${notesVal ? `<div class="text-muted" style="font-size: 0.725rem;">${notesVal}</div>` : ''}
+                                    </div>
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-purple-subtle text-purple" style="width: 32px; height: 32px; background-color: #f3e8ff; color: #7e22ce;">
+                                        <i data-lucide="landmark" style="width: 16px; height: 16px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        $relContainer.append(html);
+                    }
+                });
+
+                if (totalRelsCount === 0) {
+                    $relContainer.html('<div class="text-center py-4 text-muted small">No relationships connected yet. Click Edit to add connections.</div>');
+                }
+
+                $('#revRelCount').text(totalRelsCount);
+                $('#sumTotalRelationships').text(totalRelsCount);
+
+                // 4. Assets & Media
+                var activeRevTab = $('#revAssetTypeTabs .nav-link.active').data('rev-asset') || 'images';
+                renderReviewAssets(activeRevTab);
+
+                // 5. Entity Summary Sidebar
+                $('#sumEntityType').text(typeVal);
+                $('#sumStoryTitle').text(storyVal);
+                $('#sumStatusPill').html('• ' + statusVal);
+                $('#sumImportanceBadge').text(importanceVal);
+
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            function renderReviewAssets(category) {
+                var $container = $('#revAssetsContentContainer');
+                $container.empty();
+
+                var imgCount = 0, docCount = 0, mapCount = 0, avCount = 0, linkCount = 0;
+
+                uploadedAssets.forEach(function(item) {
+                    if (item.category === 'images') imgCount++;
+                    else if (item.category === 'documents') docCount++;
+                    else if (item.category === 'maps') mapCount++;
+                    else if (item.category === 'audiovideo') avCount++;
+                    else if (item.category === 'links') linkCount++;
+                });
+
+                $('#revImgCount').text(imgCount);
+                $('#revDocCount').text(docCount);
+                $('#revMapCount').text(mapCount);
+                $('#revAVCount').text(avCount);
+                $('#revLinkCount').text(linkCount);
+
+                var totalAssets = uploadedAssets.length;
+                $('#sumTotalAssets').text(totalAssets + ' Files');
+
+                var filtered = uploadedAssets.filter(function(item) {
+                    return item.category === category;
+                });
+
+                if (filtered.length === 0) {
+                    $container.html('<div class="text-center py-4 text-muted small">No items in this category yet. Click Edit to add assets.</div>');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                if (category === 'images') {
+                    var gridHtml = '<div class="row g-3">';
+                    filtered.forEach(function(item) {
+                        var imgSrc = item.previewUrl || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80';
+                        gridHtml += `
+                            <div class="col-6 col-sm-4 col-md-3">
+                                <div class="rounded-3 overflow-hidden border shadow-sm" style="height: 100px; background-color: #f8fafc;">
+                                    <img src="${imgSrc}" style="width:100%; height:100%; object-fit:cover;" alt="${item.name}" />
+                                </div>
+                            </div>
+                        `;
+                    });
+                    gridHtml += '</div>';
+                    $container.html(gridHtml);
+                } else {
+                    var listHtml = '<div class="d-flex flex-column gap-2">';
+                    filtered.forEach(function(item) {
+                        var iconName = item.category === 'documents' ? 'file-text' : (item.category === 'maps' ? 'map' : (item.category === 'audiovideo' ? 'video' : 'link'));
+                        listHtml += `
+                            <div class="d-flex align-items-center justify-content-between p-2.5 px-3 rounded-3 border bg-light">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <i data-lucide="${iconName}" style="width: 20px; height: 20px; color: #13A8A6;"></i>
+                                    <div>
+                                        <div class="fw-semibold text-slate-800" style="font-size: 0.85rem;">${item.name}</div>
+                                        <div class="text-muted" style="font-size: 0.725rem;">${item.sizeFormatted || 'Link'}</div>
+                                    </div>
+                                </div>
+                                ${item.url ? `<a href="${item.url}" target="_blank" class="btn btn-sm btn-link text-teal p-0"><i data-lucide="external-link" style="width:16px;height:16px;"></i></a>` : ''}
+                            </div>
+                        `;
+                    });
+                    listHtml += '</div>';
+                    $container.html(listHtml);
+                }
+
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            // Initial trigger
+            updateLivePreview();
+        });
+    </script>
+}

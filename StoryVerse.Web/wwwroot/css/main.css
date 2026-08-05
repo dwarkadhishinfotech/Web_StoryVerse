@@ -325,3 +325,206 @@
 .role-slate { background-color: #f1f5f9; color: #475569; }
 .role-gray { background-color: #f3f4f6; color: #6b7280; }
 
+/* Global Dropdown Fixes */
+.no-arrow::after,
+.dropdown-toggle.no-arrow::after {
+    display: none !important;
+}
+
+.table-responsive {
+    overflow: visible !important;
+}
+
+.dropdown-menu {
+    z-index: 1060 !important;
+}
+
+/* ==========================================================================
+   StoryVerse Premium Select2 Theme Overrides
+   ========================================================================== */
+
+.select2-container--default .select2-selection--single {
+    height: 44px !important;
+    padding: 6px 14px !important;
+    border-radius: 10px !important;
+    border: 1px solid #e2e8f0 !important;
+    background-color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+.select2-container--default.select2-container--open .select2-selection--single,
+.select2-container--default .select2-selection--single:focus {
+    border-color: #13A8A6 !important;
+    box-shadow: 0 0 0 3px rgba(19, 168, 166, 0.15) !important;
+    outline: none !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #0f172a !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    padding-left: 0 !important;
+    padding-right: 20px !important;
+    line-height: 1.4 !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100% !important;
+    top: 0 !important;
+    right: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #64748b transparent transparent transparent !important;
+    border-width: 5px 5px 0 5px !important;
+    transition: transform 0.2s ease;
+}
+
+.select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+    border-color: transparent transparent #13A8A6 transparent !important;
+    border-width: 0 5px 5px 5px !important;
+}
+
+/* Dropdown Floating Popover */
+.select2-dropdown {
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.04) !important;
+    padding: 6px !important;
+    background: #ffffff !important;
+    z-index: 1060 !important;
+    overflow: hidden !important;
+}
+
+/* Search Box Inside Dropdown */
+.select2-search--dropdown {
+    padding: 6px !important;
+    position: relative !important;
+}
+
+.select2-search--dropdown .select2-search__field {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 8px 12px 8px 34px !important;
+    font-size: 0.85rem !important;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3ccircle cx='11' cy='11' r='8'/%3e%3cpath d='m21 21-4.3-4.3'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: 10px center !important;
+    background-size: 14px 14px !important;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.select2-search--dropdown .select2-search__field:focus {
+    border-color: #13A8A6 !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(19, 168, 166, 0.15) !important;
+    outline: none !important;
+}
+
+/* Dropdown Results List */
+.select2-results__options {
+    padding: 4px 0 !important;
+    max-height: 240px !important;
+}
+
+.select2-container--default .select2-results__option--selectable {
+    padding: 8px 12px !important;
+    margin: 2px 0 !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+
+/* Option Content Typography & Contrast */
+.select2-option-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 0;
+}
+
+.select2-option-icon {
+    width: 16px;
+    height: 16px;
+    color: #13A8A6;
+    flex-shrink: 0;
+}
+
+.select2-option-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.select2-option-desc {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.3;
+    margin-top: 1px;
+}
+
+/* Hover / Highlighted State */
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    background-color: #e6f4f1 !important;
+}
+
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable .select2-option-title {
+    color: #0d9488 !important;
+}
+
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable .select2-option-desc {
+    color: #0f766e !important;
+}
+
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable .select2-option-icon {
+    color: #0d9488 !important;
+}
+
+/* Active Selected State */
+.select2-container--default .select2-results__option--selected {
+    background-color: #13A8A6 !important;
+}
+
+.select2-container--default .select2-results__option--selected .select2-option-title {
+    color: #ffffff !important;
+}
+
+.select2-container--default .select2-results__option--selected .select2-option-desc {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.select2-container--default .select2-results__option--selected .select2-option-icon {
+    color: #ffffff !important;
+}
+
+/* Control Box Selected Text */
+.select2-selection-title {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.85rem;
+}
+
+.select2-selection-desc {
+    font-weight: 400;
+    color: #64748b;
+    font-size: 0.775rem;
+    margin-left: 6px;
+}
+
+
+

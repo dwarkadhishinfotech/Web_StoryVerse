@@ -1203,8 +1203,8 @@
                 var description = $(opt.element).data('description') || '';
                 if (description) {
                     return $(
-                        '<div><div class="fw-bold text-slate-800" style="font-size: 13px;">' + opt.text + '</div>' +
-                        '<div class="text-muted mt-1" style="font-size: 11px;">' + description + '</div></div>'
+                        '<div class="select2-option-wrapper"><div><div class="select2-option-title">' + opt.text + '</div>' +
+                        '<div class="select2-option-desc">' + description + '</div></div></div>'
                     );
                 }
                 return opt.text;

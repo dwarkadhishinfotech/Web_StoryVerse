@@ -21,6 +21,17 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserGoal> UserGoals { get; set; }
     public DbSet<DropdownOption> DropdownOptions { get; set; }
 
+    public DbSet<WorldEntityType> WorldEntityTypes { get; set; }
+    public DbSet<WorldEntityField> WorldEntityFields { get; set; }
+    public DbSet<WorldEntity> WorldEntities { get; set; }
+    public DbSet<WorldEntityValue> WorldEntityValues { get; set; }
+    public DbSet<WorldEntityRelationship> WorldEntityRelationships { get; set; }
+    public DbSet<WorldEntityCharacter> WorldEntityCharacters { get; set; }
+    public DbSet<WorldEntityTimeline> WorldEntityTimelines { get; set; }
+    public DbSet<WorldTemplate> WorldTemplates { get; set; }
+    public DbSet<WorldMap> WorldMaps { get; set; }
+    public DbSet<WorldMapMarker> WorldMapMarkers { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -115,6 +126,131 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.ToTable("DI_MST_DropdownOptions");
             entity.HasKey(d => d.Id);
             entity.HasIndex(d => d.Category);
+        });
+
+        builder.Entity<WorldEntityType>(entity =>
+        {
+            entity.ToTable("DI_MST_WorldEntityTypes");
+            entity.HasKey(e => e.Id);
+        });
+
+        builder.Entity<WorldEntityField>(entity =>
+        {
+            entity.ToTable("DI_MST_WorldEntityFields");
+            entity.HasKey(f => f.Id);
+            entity.HasOne(f => f.EntityType)
+                .WithMany(t => t.Fields)
+                .HasForeignKey(f => f.EntityTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<WorldEntity>(entity =>
+        {
+            entity.ToTable("DI_TRN_WorldEntities");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Story)
+                .WithMany()
+                .HasForeignKey(e => e.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.EntityType)
+                .WithMany(t => t.Entities)
+                .HasForeignKey(e => e.EntityTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ParentEntity)
+                .WithMany(e => e.SubEntities)
+                .HasForeignKey(e => e.ParentEntityId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<WorldEntityValue>(entity =>
+        {
+            entity.ToTable("DI_TRN_WorldEntityValues");
+            entity.HasKey(v => v.Id);
+            entity.HasOne(v => v.Entity)
+                .WithMany(e => e.FieldValues)
+                .HasForeignKey(v => v.EntityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(v => v.Field)
+                .WithMany(f => f.FieldValues)
+                .HasForeignKey(v => v.FieldId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<WorldEntityRelationship>(entity =>
+        {
+            entity.ToTable("DI_TRN_WorldEntityRelationships");
+            entity.HasKey(r => r.Id);
+
+            entity.HasOne(r => r.SourceEntity)
+                .WithMany(e => e.SourceRelationships)
+                .HasForeignKey(r => r.SourceEntityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.TargetEntity)
+                .WithMany(e => e.TargetRelationships)
+                .HasForeignKey(r => r.TargetEntityId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<WorldEntityCharacter>(entity =>
+        {
+            entity.ToTable("DI_TRN_WorldEntityCharacters");
+            entity.HasKey(c => c.Id);
+
+            entity.HasOne(c => c.Entity)
+                .WithMany(e => e.CharacterLinks)
+                .HasForeignKey(c => c.EntityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(c => c.Character)
+                .WithMany()
+                .HasForeignKey(c => c.CharacterId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<WorldEntityTimeline>(entity =>
+        {
+            entity.ToTable("DI_TRN_WorldEntityTimelines");
+            entity.HasKey(t => t.Id);
+
+            entity.HasOne(t => t.Entity)
+                .WithMany(e => e.TimelineLinks)
+                .HasForeignKey(t => t.EntityId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<WorldTemplate>(entity =>
+        {
+            entity.ToTable("DI_MST_WorldTemplates");
+            entity.HasKey(t => t.Id);
+        });
+
+        builder.Entity<WorldMap>(entity =>
+        {
+            entity.ToTable("DI_TRN_WorldMaps");
+            entity.HasKey(m => m.Id);
+            entity.HasOne(m => m.Story)
+                .WithMany()
+                .HasForeignKey(m => m.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<WorldMapMarker>(entity =>
+        {
+            entity.ToTable("DI_TRN_WorldMapMarkers");
+            entity.HasKey(m => m.Id);
+            entity.HasOne(m => m.Map)
+                .WithMany(map => map.Markers)
+                .HasForeignKey(m => m.MapId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(m => m.Entity)
+                .WithMany()
+                .HasForeignKey(m => m.EntityId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

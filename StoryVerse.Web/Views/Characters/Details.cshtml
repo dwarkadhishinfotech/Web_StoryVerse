@@ -1,174 +1,1621 @@
 @model StoryVerse.Core.Entities.Character
+@using System.Text.Json
 @{
     var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
+    var chapterCount = (int)(ViewBag.ChapterCount ?? 0);
+    var recentChapters = ViewBag.RecentChapters as List<StoryVerse.Core.Entities.Chapter> ?? new List<StoryVerse.Core.Entities.Chapter>();
+    var siblingChars = ViewBag.SiblingCharacters as List<StoryVerse.Core.Entities.Character> ?? new List<StoryVerse.Core.Entities.Character>();
+    var createdByName = ViewBag.CreatedByName as string ?? "Author";
     ViewData["Title"] = $"{Model.Name} - Character Profile";
+
+    // Parse relationships JSON
+    var relationships = new List<dynamic>();
+    if (!string.IsNullOrWhiteSpace(Model.RelationshipsJson))
+    {
+        try
+        {
+            var doc = JsonDocument.Parse(Model.RelationshipsJson);
+            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var elem in doc.RootElement.EnumerateArray())
+                {
+                    string rName = "";
+                    string rType = "";
+                    string rDesc = "";
+                    string rAvatar = "";
+                    string rSentiment = "";
+
+                    if (elem.TryGetProperty("name", out var pN)) rName = pN.GetString() ?? "";
+                    else if (elem.TryGetProperty("targetName", out var pTN)) rName = pTN.GetString() ?? "";
+
+                    if (elem.TryGetProperty("relationship", out var pR)) rType = pR.GetString() ?? "";
+                    else if (elem.TryGetProperty("relationType", out var pRT)) rType = pRT.GetString() ?? "";
+
+                    if (elem.TryGetProperty("description", out var pD)) rDesc = pD.GetString() ?? "";
+                    if (elem.TryGetProperty("avatar", out var pA)) rAvatar = pA.GetString() ?? "";
+                    else if (elem.TryGetProperty("avatarUrl", out var pAU)) rAvatar = pAU.GetString() ?? "";
+
+                    if (elem.TryGetProperty("sentiment", out var pS)) rSentiment = pS.GetString() ?? "";
+
+                    if (!string.IsNullOrWhiteSpace(rName))
+                    {
+                        relationships.Add(new { Name = rName, Type = rType, Description = rDesc, Avatar = rAvatar, Sentiment = rSentiment });
+                    }
+                }
+            }
+        }
+        catch { }
+    }
+
+    // Parse personality traits
+    var traits = string.IsNullOrWhiteSpace(Model.PersonalityTraits)
+        ? new string[0]
+        : Model.PersonalityTraits.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToArray();
+
+    // Parse tags
+    var tags = string.IsNullOrWhiteSpace(Model.Tags)
+        ? new string[0]
+        : Model.Tags.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToArray();
+
+    // Helper: initials
+    string GetInitials(string name) {
+        if (string.IsNullOrEmpty(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[1][0])}"
+            : char.ToUpper(name[0]).ToString();
+    }
+
+    // Sentiment color helper
+    string GetSentimentClass(string sentiment) {
+        return sentiment?.ToLower() switch {
+            "positive" => "cd-rel-positive",
+            "negative" => "cd-rel-negative",
+            "neutral" => "cd-rel-neutral",
+            _ => "cd-rel-neutral"
+        };
+    }
+    string GetSentimentLabel(string sentiment) {
+        return sentiment?.ToLower() switch {
+            "positive" => "Positive",
+            "negative" => "Negative",
+            "neutral" => "Neutral",
+            _ => "Neutral"
+        };
+    }
 }
 
-<div class="w-full pb-5 relative z-10 font-sans text-slate-800">
-    <!-- Back arrow -->
-    <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="text-secondary text-decoration-none d-inline-flex align-items-center mb-4 small fw-semibold hover-lift-subtle" style="color: var(--forest-green-dark);">
-        <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Back to Cast
-    </a>
+<div class="cd-wrapper">
 
-    <div class="row g-4">
-        <!-- Sidebar profile card -->
-        <div class="col-lg-4">
-            <div class="dashboard-glass-panel p-4 text-center d-flex flex-column align-items-center" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <!-- Initial circle -->
-                <div class="rounded-circle d-flex align-items-center justify-content-center font-serif text-white fw-bold mb-3 shadow shadow-teal-500/10" 
-                     style="width: 110px; height: 110px; background: var(--peacock-gradient); font-size: 3rem;">
-                    @(string.IsNullOrEmpty(Model.Name) ? "?" : Model.Name[0].ToString().ToUpper())
-                </div>
+    <!-- ═══════════════════════════════ TOP BREADCRUMB / ACTION BAR ═════════════════════════════ -->
+    <div class="cd-topbar">
+        <div class="cd-breadcrumb">
+            <a href="@Url.Action("Index","Characters", new { storyId = Model.StoryId })">Characters</a>
+            <i data-lucide="chevron-right" class="cd-chevron"></i>
+            <span>@Model.Name</span>
+        </div>
+        <div class="cd-topbar-actions">
+            <button class="cd-btn-ghost"><i data-lucide="share-2"></i> Share</button>
+            <button class="cd-btn-ghost"><i data-lucide="download"></i> Export</button>
+            <a href="@Url.Action("Edit","Characters", new { id = Model.Id })" class="cd-btn-primary">
+                <i data-lucide="edit-3"></i> Edit Profile
+            </a>
+            <button class="cd-btn-icon"><i data-lucide="more-horizontal"></i></button>
+        </div>
+    </div>
 
-                <h3 class="font-serif fw-bold text-slate-800 mb-1">@Model.Name</h3>
-                <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill text-uppercase mb-4" style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">
-                    @(string.IsNullOrEmpty(Model.Role) ? "Character" : Model.Role)
-                </span>
-
-                <div class="w-100 d-flex flex-column gap-3 pt-3 border-top" style="font-size: 13px;">
-                    <div class="d-flex justify-content-between">
-                        <span class="text-secondary">Appears in</span>
-                        <span class="fw-bold">@story?.Title</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-secondary">Added on</span>
-                        <span class="fw-bold">@Model.CreatedAt.ToString("MM/dd/yyyy")</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-secondary">Status</span>
-                        <span class="text-success fw-bold">Active</span>
-                    </div>
-                </div>
-
-                <div class="d-flex gap-2 w-100 mt-4">
-                    <a href="@Url.Action("Edit", "Characters", new { id = Model.Id })" class="btn btn-peacock flex-grow-1 rounded-pill py-2 fw-bold" style="font-size: 0.85rem;">
-                        <i data-lucide="edit-3" class="me-1" style="width: 14px; height: 14px; vertical-align: middle;"></i> Edit Profile
-                    </a>
-                </div>
+    <!-- ═══════════════════════════════════ HERO HEADER ═════════════════════════════════════════ -->
+    <div class="cd-hero">
+        <div class="cd-hero-identity">
+            <h1 class="cd-hero-name">
+                @Model.Name
+                @if (!string.IsNullOrWhiteSpace(Model.Alignment) && (Model.Alignment.Contains("Good", StringComparison.OrdinalIgnoreCase) || Model.Role?.Contains("Protagonist", StringComparison.OrdinalIgnoreCase) == true))
+                {
+                    <i data-lucide="star" class="cd-star-icon"></i>
+                }
+            </h1>
+            <div class="cd-hero-meta">
+                @if (!string.IsNullOrWhiteSpace(Model.Role))
+                {
+                    <span class="cd-role-badge">@Model.Role</span>
+                    <span class="cd-meta-dot">•</span>
+                }
+                @if (story != null)
+                {
+                    <a href="@Url.Action("Details","Stories", new { id = story.Id })" class="cd-story-link">@story.Title</a>
+                }
             </div>
         </div>
+    </div>
 
-        <!-- Detail tabs pane -->
-        <div class="col-lg-8">
-            <div class="dashboard-glass-panel p-4 h-100" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <h4 class="font-serif fw-bold text-peacock-dark mb-4">Character Biography Sheet</h4>
-                
-                <div class="d-flex flex-column gap-4">
-                    <div class="bg-white p-4 rounded-4 border">
-                        <h6 class="fw-bold text-peacock mb-2 small text-uppercase tracking-wider">Role & Summary</h6>
-                        <p class="text-slate-700 mb-0" style="font-size: 14px; line-height: 1.6;">
-                            @Model.Name is mapped as a key character within this narrative. They hold the position of <strong>@Model.Role</strong>, which shapes their connections, goals, and conflicts with other key figures in the story.
-                        </p>
+    <!-- ═══════════════════════════════════ TABS ════════════════════════════════════════════════ -->
+    <div class="cd-tabs-bar">
+        <button class="cd-tab active" data-tab="overview">
+            <i data-lucide="layout-dashboard"></i> Overview
+        </button>
+        <button class="cd-tab" data-tab="biography">
+            <i data-lucide="book-open"></i> Biography
+        </button>
+        <button class="cd-tab" data-tab="personality">
+            <i data-lucide="brain"></i> Personality
+        </button>
+        <button class="cd-tab" data-tab="background">
+            <i data-lucide="map-pin"></i> Background
+        </button>
+        <button class="cd-tab" data-tab="relationships">
+            <i data-lucide="users"></i> Relationships
+        </button>
+        <button class="cd-tab" data-tab="notes">
+            <i data-lucide="sticky-note"></i> Notes
+        </button>
+    </div>
+
+    <!-- ═══════════════════════════════════ MAIN BODY ════════════════════════════════════════════ -->
+    <div class="cd-body">
+
+        <!-- ─────────────── LEFT / MAIN CONTENT ─────────────── -->
+        <div class="cd-main">
+
+            <!-- ══════ OVERVIEW TAB ══════ -->
+            <div class="cd-tab-panel active" id="tab-overview">
+
+                <!-- Role & Summary -->
+                <div class="cd-card">
+                    <div class="cd-card-header">
+                        <i data-lucide="user-circle-2" class="cd-card-icon"></i>
+                        <h3>Role &amp; Summary</h3>
                     </div>
-
-                    <div class="bg-white p-4 rounded-4 border">
-                        <h6 class="fw-bold text-peacock mb-3 small text-uppercase tracking-wider">Visual & Aesthetic Profile</h6>
-                        <div class="row g-3" style="font-size: 13px;">
-                            <div class="col-6">
-                                <div class="p-3 bg-light rounded-3">
-                                    <span class="text-muted d-block mb-1">Aesthetic Archetype</span>
-                                    <span class="fw-bold">Classic Narrative</span>
-                                </div>
+                    <div class="cd-role-summary-body">
+                        <div class="cd-role-summary-text">
+                            <p>
+                                <strong class="cd-name-em">@Model.Name.ToUpper()</strong>
+                                @if (!string.IsNullOrWhiteSpace(Model.BackgroundSummary))
+                                {
+                                    @Model.BackgroundSummary
+                                }
+                                else if (!string.IsNullOrWhiteSpace(Model.OneLineDescription))
+                                {
+                                    @($" is {Model.OneLineDescription}")
+                                }
+                                else
+                                {
+                                    @($" holds the position of {Model.Role ?? "Character"} in {story?.Title ?? "this story"}.")
+                                }
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(Model.OneLineDescription) && !string.IsNullOrWhiteSpace(Model.BackgroundSummary))
+                            {
+                                <blockquote class="cd-quote">
+                                    <i data-lucide="quote" class="cd-quote-icon"></i>
+                                    "@Model.OneLineDescription"
+                                </blockquote>
+                            }
+                        </div>
+                        <div class="cd-role-stats">
+                            <div class="cd-stat-item">
+                                <span class="cd-stat-label">Status</span>
+                                @{
+                                    var statusVal = string.IsNullOrWhiteSpace(Model.Status) ? "Active" : Model.Status;
+                                    var statusLower = statusVal.ToLower();
+                                    var negativeStatuses = new[] { "inactive", "dead", "deceased", "retired", "archived", "dormant", "killed", "eliminated" };
+                                    var statusClass = negativeStatuses.Any(s => statusLower.Contains(s)) ? "cd-status-inactive" : "cd-status-active";
+                                }
+                                <span class="cd-stat-value @statusClass">@statusVal</span>
                             </div>
-                            <div class="col-6">
-                                <div class="p-3 bg-light rounded-3">
-                                    <span class="text-muted d-block mb-1">Conflict Association</span>
-                                    <span class="fw-bold">Central Plot-arc</span>
-                                </div>
+
+                            <div class="cd-stat-item">
+                                <span class="cd-stat-label">Appears In</span>
+                                <span class="cd-stat-value">@chapterCount Chapter@(chapterCount != 1 ? "s" : "")</span>
+                            </div>
+                            <div class="cd-stat-item">
+                                <span class="cd-stat-label">Added On</span>
+                                <span class="cd-stat-value">@Model.CreatedAt.ToString("MM/dd/yyyy")</span>
+                            </div>
+                            <div class="cd-stat-item">
+                                <span class="cd-stat-label">Created By</span>
+                                <span class="cd-stat-value">@createdByName</span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    @if (!string.IsNullOrEmpty(Model.PersonalityTraits) || !string.IsNullOrEmpty(Model.PersonalityOverview) || !string.IsNullOrEmpty(Model.Motivations))
-                    {
-                        <div class="bg-white p-4 rounded-4 border">
-                            <h6 class="fw-bold text-peacock mb-3 small text-uppercase tracking-wider">Personality Profile</h6>
-                            <div class="row g-3" style="font-size: 13px;">
-                                @if (!string.IsNullOrEmpty(Model.PersonalityTraits))
+                <!-- Visual & Aesthetic Profile -->
+                <div class="cd-card">
+                    <div class="cd-card-header">
+                        <i data-lucide="palette" class="cd-card-icon"></i>
+                        <h3>Visual &amp; Aesthetic Profile</h3>
+                    </div>
+                    <div class="cd-aesthetic-grid">
+                        @if (!string.IsNullOrWhiteSpace(Model.ArcType))
+                        {
+                            <div class="cd-aesthetic-item">
+                                <span class="cd-aes-label">Archetype</span>
+                                <span class="cd-aes-value">@Model.ArcType</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Temperament))
+                        {
+                            <div class="cd-aesthetic-item">
+                                <span class="cd-aes-label">Visual Tone</span>
+                                <span class="cd-aes-value">@Model.Temperament</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Role))
+                        {
+                            <div class="cd-aesthetic-item">
+                                <span class="cd-aes-label">Conflict Association</span>
+                                <span class="cd-aes-value">
+                                    @(Model.Role.Contains("Protagonist", StringComparison.OrdinalIgnoreCase) ? "Central Plot Arc" :
+                                      Model.Role.Contains("Antagonist", StringComparison.OrdinalIgnoreCase) ? "Main Conflict Arc" :
+                                      Model.Role.Contains("Mentor", StringComparison.OrdinalIgnoreCase) ? "Guiding Arc" :
+                                      "Supporting Arc")
+                                </span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.ClothingStyle) || !string.IsNullOrWhiteSpace(Model.PreferredColors))
+                        {
+                            <div class="cd-aesthetic-item">
+                                <span class="cd-aes-label">Symbol</span>
+                                <span class="cd-aes-value">
+                                    @(string.IsNullOrWhiteSpace(Model.ClothingStyle) ? Model.PreferredColors : Model.ClothingStyle)
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Personality Profile (Overview card) -->
+                @if (traits.Length > 0 || !string.IsNullOrWhiteSpace(Model.PersonalityOverview) || !string.IsNullOrWhiteSpace(Model.Motivations))
+                {
+                    <div class="cd-card">
+                        <div class="cd-card-header">
+                            <i data-lucide="brain" class="cd-card-icon"></i>
+                            <h3>Personality Profile</h3>
+                        </div>
+                        <div class="cd-personality-grid">
+                            <div class="cd-pers-left">
+                                @if (traits.Length > 0)
                                 {
-                                    <div class="col-12">
-                                        <span class="text-muted d-block mb-1">Core Traits</span>
-                                        <div class="d-flex flex-wrap gap-1">
-                                            @foreach (var trait in Model.PersonalityTraits.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                                    <div class="cd-pers-section">
+                                        <span class="cd-pers-label">Core Traits</span>
+                                        <div class="cd-traits-row">
+                                            @foreach (var t in traits)
                                             {
-                                                <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-pill">@trait.Trim()</span>
+                                                <span class="cd-trait-badge">@t</span>
                                             }
                                         </div>
                                     </div>
                                 }
-                                @if (!string.IsNullOrEmpty(Model.Temperament))
+                                @if (!string.IsNullOrWhiteSpace(Model.ValuesBeliefs))
                                 {
-                                    <div class="col-md-6">
-                                        <span class="text-muted d-block mb-1">Temperament</span>
-                                        <span class="fw-bold">@Model.Temperament</span>
+                                    <div class="cd-pers-section">
+                                        <span class="cd-pers-label">Values &amp; Beliefs</span>
+                                        <span class="cd-pers-value-bold">@Model.ValuesBeliefs</span>
                                     </div>
                                 }
-                                @if (!string.IsNullOrEmpty(Model.ValuesBeliefs))
+                                @if (!string.IsNullOrWhiteSpace(Model.PersonalityOverview))
                                 {
-                                    <div class="col-md-6">
-                                        <span class="text-muted d-block mb-1">Values & Beliefs</span>
-                                        <span class="fw-bold">@Model.ValuesBeliefs</span>
+                                    <div class="cd-pers-section">
+                                        <span class="cd-pers-label">Personality Overview</span>
+                                        <p class="cd-pers-text">@Model.PersonalityOverview</p>
                                     </div>
                                 }
-                                @if (!string.IsNullOrEmpty(Model.PersonalityOverview))
+                            </div>
+                            <div class="cd-pers-right">
+                                @if (!string.IsNullOrWhiteSpace(Model.Motivations))
                                 {
-                                    <div class="col-12 mt-2">
-                                        <span class="text-muted d-block mb-1">Personality Overview</span>
-                                        <p class="text-slate-700 mb-0">@Model.PersonalityOverview</p>
+                                    <div class="cd-pers-section">
+                                        <span class="cd-pers-label">Motivations</span>
+                                        <p class="cd-pers-text">@Model.Motivations</p>
                                     </div>
                                 }
-                                @if (!string.IsNullOrEmpty(Model.Motivations))
+                                @if (!string.IsNullOrWhiteSpace(Model.Strengths))
                                 {
-                                    <div class="col-md-6 mt-2">
-                                        <span class="text-muted d-block mb-1">Motivations</span>
-                                        <p class="text-slate-700 mb-0">@Model.Motivations</p>
+                                    <div class="cd-pers-section">
+                                        <span class="cd-pers-label">Greatest Strength</span>
+                                        <p class="cd-pers-text">@Model.Strengths</p>
                                     </div>
                                 }
-                                @if (!string.IsNullOrEmpty(Model.Strengths))
+                                @if (!string.IsNullOrWhiteSpace(Model.Fears))
                                 {
-                                    <div class="col-md-6 mt-2">
-                                        <span class="text-muted d-block mb-1">Strengths</span>
-                                        <p class="text-slate-700 mb-0">@Model.Strengths</p>
+                                    <div class="cd-pers-section">
+                                        <span class="cd-pers-label">Greatest Fear</span>
+                                        <p class="cd-pers-text">@Model.Fears</p>
                                     </div>
                                 }
-                                @if (!string.IsNullOrEmpty(Model.Flaws))
+                                @if (!string.IsNullOrWhiteSpace(Model.Flaws))
                                 {
-                                    <div class="col-md-6 mt-2">
-                                        <span class="text-muted d-block mb-1">Flaws</span>
-                                        <p class="text-slate-700 mb-0">@Model.Flaws</p>
+                                    <div class="cd-pers-section">
+                                        <span class="cd-pers-label">Flaws</span>
+                                        <p class="cd-pers-text">@Model.Flaws</p>
                                     </div>
                                 }
-                                @if (!string.IsNullOrEmpty(Model.Fears))
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Background Snapshot -->
+                @{
+                    bool hasBackgroundData = !string.IsNullOrWhiteSpace(Model.PlaceOfBirth)
+                        || !string.IsNullOrWhiteSpace(Model.Nationality)
+                        || !string.IsNullOrWhiteSpace(Model.Languages)
+                        || !string.IsNullOrWhiteSpace(Model.FamilyBackground)
+                        || !string.IsNullOrWhiteSpace(Model.Education)
+                        || !string.IsNullOrWhiteSpace(Model.Upbringing)
+                        || !string.IsNullOrWhiteSpace(Model.KeyEvents)
+                        || !string.IsNullOrWhiteSpace(Model.Backstory);
+                }
+                @if (hasBackgroundData)
+                {
+                    <div class="cd-card">
+                        <div class="cd-card-header">
+                            <i data-lucide="map" class="cd-card-icon"></i>
+                            <h3>Background Snapshot</h3>
+                        </div>
+                        <div class="cd-bg-snap-row">
+                            @if (!string.IsNullOrWhiteSpace(Model.PlaceOfBirth))
+                            {
+                                <div class="cd-bg-snap-item">
+                                    <i data-lucide="map-pin" class="cd-bg-icon"></i>
+                                    <span class="cd-bg-label">Place of Birth</span>
+                                    <span class="cd-bg-val">@Model.PlaceOfBirth</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Nationality))
+                            {
+                                <div class="cd-bg-snap-item">
+                                    <i data-lucide="globe" class="cd-bg-icon"></i>
+                                    <span class="cd-bg-label">Nationality</span>
+                                    <span class="cd-bg-val">@Model.Nationality</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Languages))
+                            {
+                                <div class="cd-bg-snap-item">
+                                    <i data-lucide="message-circle" class="cd-bg-icon"></i>
+                                    <span class="cd-bg-label">Languages</span>
+                                    <span class="cd-bg-val">@Model.Languages</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.FamilyBackground))
+                            {
+                                <div class="cd-bg-snap-item">
+                                    <i data-lucide="home" class="cd-bg-icon"></i>
+                                    <span class="cd-bg-label">Family</span>
+                                    <span class="cd-bg-val">@Model.FamilyBackground</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Education))
+                            {
+                                <div class="cd-bg-snap-item">
+                                    <i data-lucide="graduation-cap" class="cd-bg-icon"></i>
+                                    <span class="cd-bg-label">Education</span>
+                                    <span class="cd-bg-val">@Model.Education</span>
+                                </div>
+                            }
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.Upbringing) || !string.IsNullOrWhiteSpace(Model.KeyEvents) || !string.IsNullOrWhiteSpace(Model.Backstory))
+                        {
+                            <div class="cd-bg-timeline">
+                                @if (!string.IsNullOrWhiteSpace(Model.Upbringing))
                                 {
-                                    <div class="col-md-6 mt-2">
-                                        <span class="text-muted d-block mb-1">Greatest Fear</span>
-                                        <p class="text-slate-700 mb-0">@Model.Fears</p>
+                                    <div class="cd-bg-tl-item">
+                                        <span class="cd-bg-tl-label">Childhood</span>
+                                        <p class="cd-bg-tl-text">@Model.Upbringing</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Education))
+                                {
+                                    <div class="cd-bg-tl-item">
+                                        <span class="cd-bg-tl-label">Education</span>
+                                        <p class="cd-bg-tl-text">@Model.Education</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.KeyEvents))
+                                {
+                                    <div class="cd-bg-tl-item">
+                                        <span class="cd-bg-tl-label">Turning Point</span>
+                                        <p class="cd-bg-tl-text">@Model.KeyEvents</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Backstory))
+                                {
+                                    <div class="cd-bg-tl-item">
+                                        <span class="cd-bg-tl-label">Current Stage</span>
+                                        <p class="cd-bg-tl-text">@Model.Backstory</p>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Bottom Row: Recent Appearances + Author's Note + Tags -->
+                <div class="cd-bottom-row">
+
+                    <!-- Recent Appearances -->
+                    @if (recentChapters.Count > 0)
+                    {
+                        <div class="cd-card cd-card-appearances">
+                            <div class="cd-card-header-inline">
+                                <h4>Recent Appearances</h4>
+                                <a href="@Url.Action("Index","Chapters", new { storyId = Model.StoryId })" class="cd-view-all">View All</a>
+                            </div>
+                            <div class="cd-appearances-list">
+                                @foreach (var ch in recentChapters)
+                                {
+                                    var daysAgo = (DateTime.UtcNow - ch.UpdatedAt).Days;
+                                    var label = daysAgo == 0 ? "Today" : daysAgo == 1 ? "1 day ago" : $"{daysAgo} days ago";
+                                    <div class="cd-appearance-item">
+                                        <i data-lucide="book-open" class="cd-app-icon"></i>
+                                        <span class="cd-app-title">@ch.Title</span>
+                                        <span class="cd-app-meta @(daysAgo == 0 ? "cd-app-current" : "")">@label</span>
                                     </div>
                                 }
                             </div>
                         </div>
                     }
 
-                    <div class="p-4 bg-gradient-to-r from-light to-white rounded-4 border">
-                        <h6 class="fw-bold text-secondary mb-2 small text-uppercase tracking-wider">Narrative Goals</h6>
-                        <p class="text-muted italic mb-0" style="font-size: 13px;">
-                            "To understand a character, look closely at their choices under pressure." - Mapped to the main conflicts of the story arcs.
-                        </p>
+                    <!-- Author's Note -->
+                    @if (!string.IsNullOrWhiteSpace(Model.AuthorNotes))
+                    {
+                        <div class="cd-card cd-card-author-note">
+                            <div class="cd-card-header-inline">
+                                <h4>Author's Note</h4>
+                                <a href="@Url.Action("Edit","Characters", new { id = Model.Id })" class="cd-view-all">Edit</a>
+                            </div>
+                            <div class="cd-author-note-body">
+                                <i data-lucide="feather" class="cd-feather-icon"></i>
+                                <p>@Model.AuthorNotes</p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Tags -->
+                    @if (tags.Length > 0)
+                    {
+                        <div class="cd-card cd-card-tags">
+                            <div class="cd-card-header-inline">
+                                <h4>Tags</h4>
+                                <a href="@Url.Action("Edit","Characters", new { id = Model.Id })" class="cd-view-all">Edit</a>
+                            </div>
+                            <div class="cd-tags-wrap">
+                                @foreach (var tag in tags)
+                                {
+                                    <span class="cd-tag-chip">@tag</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+            </div><!-- /overview tab -->
+
+            <!-- ══════ BIOGRAPHY TAB ══════ -->
+            <div class="cd-tab-panel" id="tab-biography">
+                <div class="cd-card">
+                    <div class="cd-card-header">
+                        <i data-lucide="book-open" class="cd-card-icon"></i>
+                        <h3>Biography</h3>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Backstory))
+                    {
+                        <p class="cd-bio-text">@Model.Backstory</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.BackgroundSummary))
+                    {
+                        <p class="cd-bio-text">@Model.BackgroundSummary</p>
+                    }
+                    @if (string.IsNullOrWhiteSpace(Model.Backstory) && string.IsNullOrWhiteSpace(Model.BackgroundSummary))
+                    {
+                        <p class="cd-empty-msg">No biography has been written yet. <a href="@Url.Action("Edit","Characters", new { id = Model.Id })">Add one →</a></p>
+                    }
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.AppearanceNotes))
+                {
+                    <div class="cd-card">
+                        <div class="cd-card-header">
+                            <i data-lucide="eye" class="cd-card-icon"></i>
+                            <h3>Appearance Notes</h3>
+                        </div>
+                        <p class="cd-bio-text">@Model.AppearanceNotes</p>
+                    </div>
+                }
+            </div>
+
+            <!-- ══════ PERSONALITY TAB ══════ -->
+            <div class="cd-tab-panel" id="tab-personality">
+                <div class="cd-card">
+                    <div class="cd-card-header">
+                        <i data-lucide="brain" class="cd-card-icon"></i>
+                        <h3>Personality Deep Dive</h3>
+                    </div>
+                    <div class="cd-personality-grid">
+                        <div class="cd-pers-left">
+                            @if (traits.Length > 0)
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Core Traits</span>
+                                    <div class="cd-traits-row">
+                                        @foreach (var t in traits)
+                                        { <span class="cd-trait-badge">@t</span> }
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.ValuesBeliefs))
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Values &amp; Beliefs</span>
+                                    <span class="cd-pers-value-bold">@Model.ValuesBeliefs</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.PersonalityOverview))
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Personality Overview</span>
+                                    <p class="cd-pers-text">@Model.PersonalityOverview</p>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Desires))
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Desires</span>
+                                    <p class="cd-pers-text">@Model.Desires</p>
+                                </div>
+                            }
+                        </div>
+                        <div class="cd-pers-right">
+                            @if (!string.IsNullOrWhiteSpace(Model.Motivations))
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Motivations</span>
+                                    <p class="cd-pers-text">@Model.Motivations</p>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Strengths))
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Strengths</span>
+                                    <p class="cd-pers-text">@Model.Strengths</p>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Flaws))
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Flaws</span>
+                                    <p class="cd-pers-text">@Model.Flaws</p>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Fears))
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Greatest Fear</span>
+                                    <p class="cd-pers-text">@Model.Fears</p>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Temperament))
+                            {
+                                <div class="cd-pers-section">
+                                    <span class="cd-pers-label">Temperament</span>
+                                    <p class="cd-pers-text">@Model.Temperament</p>
+                                </div>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+
+            <!-- ══════ BACKGROUND TAB ══════ -->
+            <div class="cd-tab-panel" id="tab-background">
+                <div class="cd-card">
+                    <div class="cd-card-header">
+                        <i data-lucide="map-pin" class="cd-card-icon"></i>
+                        <h3>Background Details</h3>
+                    </div>
+                    <div class="cd-detail-grid">
+                        @if (!string.IsNullOrWhiteSpace(Model.PlaceOfBirth))
+                        {
+                            <div class="cd-detail-item">
+                                <span class="cd-detail-label">Place of Birth</span>
+                                <span class="cd-detail-val">@Model.PlaceOfBirth</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.DateOfBirth))
+                        {
+                            <div class="cd-detail-item">
+                                <span class="cd-detail-label">Date of Birth</span>
+                                <span class="cd-detail-val">@Model.DateOfBirth</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Nationality))
+                        {
+                            <div class="cd-detail-item">
+                                <span class="cd-detail-label">Nationality</span>
+                                <span class="cd-detail-val">@Model.Nationality</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Languages))
+                        {
+                            <div class="cd-detail-item">
+                                <span class="cd-detail-label">Languages</span>
+                                <span class="cd-detail-val">@Model.Languages</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.FamilyBackground))
+                        {
+                            <div class="cd-detail-item">
+                                <span class="cd-detail-label">Family Background</span>
+                                <span class="cd-detail-val">@Model.FamilyBackground</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Education))
+                        {
+                            <div class="cd-detail-item">
+                                <span class="cd-detail-label">Education</span>
+                                <span class="cd-detail-val">@Model.Education</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.SocioeconomicStatus))
+                        {
+                            <div class="cd-detail-item">
+                                <span class="cd-detail-label">Socioeconomic Status</span>
+                                <span class="cd-detail-val">@Model.SocioeconomicStatus</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.CurrentResidence))
+                        {
+                            <div class="cd-detail-item">
+                                <span class="cd-detail-label">Current Residence</span>
+                                <span class="cd-detail-val">@Model.CurrentResidence</span>
+                            </div>
+                        }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Upbringing))
+                    {
+                        <div class="cd-pers-section mt-4">
+                            <span class="cd-pers-label">Upbringing</span>
+                            <p class="cd-pers-text">@Model.Upbringing</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.KeyEvents))
+                    {
+                        <div class="cd-pers-section mt-3">
+                            <span class="cd-pers-label">Key Events / Turning Points</span>
+                            <p class="cd-pers-text">@Model.KeyEvents</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Backstory))
+                    {
+                        <div class="cd-pers-section mt-3">
+                            <span class="cd-pers-label">Backstory</span>
+                            <p class="cd-pers-text">@Model.Backstory</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- ══════ RELATIONSHIPS TAB ══════ -->
+            <div class="cd-tab-panel" id="tab-relationships">
+                @if (relationships.Count > 0)
+                {
+                    <div class="cd-card">
+                        <div class="cd-card-header">
+                            <i data-lucide="users" class="cd-card-icon"></i>
+                            <h3>Key Relationships</h3>
+                        </div>
+                        <div class="cd-rel-list-full">
+                            @foreach (var rel in relationships)
+                            {
+                                string rAvatar = rel.Avatar?.ToString() ?? "";
+                                string rName = rel.Name?.ToString() ?? "";
+                                string rType = rel.Type?.ToString() ?? "";
+                                string rDesc = rel.Description?.ToString() ?? "";
+                                string rSent = rel.Sentiment?.ToString() ?? "";
+                                string sentClass = GetSentimentClass(rSent);
+                                string sentLabel = GetSentimentLabel(rSent);
+
+                                // Try to find matching sibling character
+                                var matchChar = siblingChars.FirstOrDefault(c => c.Name.Equals(rName, StringComparison.OrdinalIgnoreCase));
+
+                                <div class="cd-rel-card">
+                                    <div class="cd-rel-avatar">
+                                        @if (!string.IsNullOrWhiteSpace(rAvatar))
+                                        {
+                                            <img src="@rAvatar" alt="@rName" />
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(matchChar?.AvatarUrl))
+                                        {
+                                            <img src="@matchChar.AvatarUrl" alt="@rName" />
+                                        }
+                                        else
+                                        {
+                                            <div class="cd-rel-initials">@GetInitials(rName)</div>
+                                        }
+                                    </div>
+                                    <div class="cd-rel-info">
+                                        <div class="cd-rel-top">
+                                            <span class="cd-rel-name">@rName</span>
+                                            @if (!string.IsNullOrWhiteSpace(rSent))
+                                            {
+                                                <span class="cd-rel-sentiment @sentClass">@sentLabel</span>
+                                            }
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(rType))
+                                        {
+                                            <span class="cd-rel-type">@rType</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(rDesc))
+                                        {
+                                            <p class="cd-rel-desc">@rDesc</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Allies) || !string.IsNullOrWhiteSpace(Model.Enemies) || !string.IsNullOrWhiteSpace(Model.LoveInterests) || !string.IsNullOrWhiteSpace(Model.Family))
+                {
+                    <div class="cd-card">
+                        <div class="cd-card-header">
+                            <i data-lucide="heart" class="cd-card-icon"></i>
+                            <h3>Relationship Groups</h3>
+                        </div>
+                        <div class="cd-rel-groups">
+                            @if (!string.IsNullOrWhiteSpace(Model.LoveInterests))
+                            {
+                                <div class="cd-rel-group"><span class="cd-rg-label">❤️ Love Interests</span><span class="cd-rg-val">@Model.LoveInterests</span></div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Allies))
+                            {
+                                <div class="cd-rel-group"><span class="cd-rg-label">🤝 Allies</span><span class="cd-rg-val">@Model.Allies</span></div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Enemies))
+                            {
+                                <div class="cd-rel-group"><span class="cd-rg-label">⚔️ Enemies</span><span class="cd-rg-val">@Model.Enemies</span></div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Family))
+                            {
+                                <div class="cd-rel-group"><span class="cd-rg-label">🏠 Family</span><span class="cd-rg-val">@Model.Family</span></div>
+                            }
+                        </div>
+                    </div>
+                }
+                @if (relationships.Count == 0 && string.IsNullOrWhiteSpace(Model.Allies) && string.IsNullOrWhiteSpace(Model.Enemies))
+                {
+                    <div class="cd-card">
+                        <p class="cd-empty-msg">No relationships defined yet. <a href="@Url.Action("Edit","Characters", new { id = Model.Id })">Add some →</a></p>
+                    </div>
+                }
+            </div>
+
+            <!-- ══════ NOTES TAB ══════ -->
+            <div class="cd-tab-panel" id="tab-notes">
+                <div class="cd-card">
+                    <div class="cd-card-header">
+                        <i data-lucide="sticky-note" class="cd-card-icon"></i>
+                        <h3>Author's Notes</h3>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.AuthorNotes))
+                    {
+                        <div class="cd-author-note-body">
+                            <i data-lucide="feather" class="cd-feather-icon"></i>
+                            <p>@Model.AuthorNotes</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="cd-empty-msg">No notes added yet. <a href="@Url.Action("Edit","Characters", new { id = Model.Id })">Add a note →</a></p>
+                    }
+                </div>
+            </div>
+
+        </div><!-- /cd-main -->
+
+        <!-- ─────────────── RIGHT SIDEBAR ─────────────── -->
+        <aside class="cd-sidebar">
+
+            <!-- Character Photo Card -->
+            <div class="cd-photo-card">
+                @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+                {
+                    <div class="cd-photo-wrap">
+                        <img src="@Model.AvatarUrl" alt="@Model.Name" class="cd-photo-img" />
+                        <a href="@Url.Action("Edit","Characters", new { id = Model.Id })" class="cd-photo-edit-btn" title="Edit">
+                            <i data-lucide="edit-3"></i>
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="cd-photo-placeholder">
+                        <div class="cd-photo-initials">@GetInitials(Model.Name)</div>
+                        <a href="@Url.Action("Edit","Characters", new { id = Model.Id })" class="cd-photo-edit-btn" title="Edit">
+                            <i data-lucide="edit-3"></i>
+                        </a>
+                    </div>
+                }
+                <div class="cd-photo-role-tag">
+                    <i data-lucide="feather"></i> @(string.IsNullOrWhiteSpace(Model.Role) ? "Character" : Model.Role)
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.OneLineDescription))
+                {
+                    <blockquote class="cd-photo-quote">
+                        "@Model.OneLineDescription"
+                    </blockquote>
+                }
+            </div>
+
+            <!-- Quick Info -->
+            <div class="cd-sidebar-card">
+                <div class="cd-sidebar-card-header">
+                    <i data-lucide="info" class="cd-sc-icon"></i>
+                    <h4>Quick Info</h4>
+                </div>
+                <div class="cd-quick-info-list">
+                    <div class="cd-qi-row">
+                        <i data-lucide="user" class="cd-qi-icon"></i>
+                        <span class="cd-qi-label">Full Name</span>
+                        <span class="cd-qi-val">@Model.Name</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Nicknames))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="at-sign" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Nickname</span>
+                            <span class="cd-qi-val">@Model.Nicknames</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Age))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="calendar" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Age</span>
+                            <span class="cd-qi-val">@Model.Age</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Gender))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="users" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Gender</span>
+                            <span class="cd-qi-val">@Model.Gender</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Occupation))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="briefcase" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Occupation</span>
+                            <span class="cd-qi-val">@Model.Occupation</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Alignment))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="compass" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Alignment</span>
+                            <span class="cd-qi-val cd-qi-val--teal">@Model.Alignment</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Height))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="ruler" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Height</span>
+                            <span class="cd-qi-val">@Model.Height</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.EyeColor))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="eye" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Eye Color</span>
+                            <span class="cd-qi-val">@Model.EyeColor</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.HairColor))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="scissors" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Hair</span>
+                            <span class="cd-qi-val">@(Model.HairColor + (string.IsNullOrWhiteSpace(Model.HairStyle) ? "" : $", {Model.HairStyle}"))</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Nationality))
+                    {
+                        <div class="cd-qi-row">
+                            <i data-lucide="globe" class="cd-qi-icon"></i>
+                            <span class="cd-qi-label">Nationality</span>
+                            <span class="cd-qi-val">@Model.Nationality</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Key Relationships Sidebar -->
+            @if (relationships.Count > 0)
+            {
+                <div class="cd-sidebar-card">
+                    <div class="cd-sidebar-card-header">
+                        <i data-lucide="users" class="cd-sc-icon"></i>
+                        <h4>Key Relationships</h4>
+                        <a href="#" onclick="document.querySelector('[data-tab=relationships]').click(); return false;" class="cd-view-all">View All</a>
+                    </div>
+                    <div class="cd-rel-sidebar-list">
+                        @foreach (var rel in relationships.Take(3))
+                        {
+                            string rName = rel.Name?.ToString() ?? "";
+                            string rType = rel.Type?.ToString() ?? "";
+                            string rDesc = rel.Description?.ToString() ?? "";
+                            string rAvatar = rel.Avatar?.ToString() ?? "";
+                            string rSent = rel.Sentiment?.ToString() ?? "";
+                            string sentClass = GetSentimentClass(rSent);
+                            string sentLabel = GetSentimentLabel(rSent);
+
+                            var matchChar = siblingChars.FirstOrDefault(c => c.Name.Equals(rName, StringComparison.OrdinalIgnoreCase));
+
+                            <div class="cd-rel-sb-item">
+                                <div class="cd-rel-sb-avatar">
+                                    @if (!string.IsNullOrWhiteSpace(rAvatar))
+                                    {
+                                        <img src="@rAvatar" alt="@rName" />
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(matchChar?.AvatarUrl))
+                                    {
+                                        <img src="@matchChar.AvatarUrl" alt="@rName" />
+                                    }
+                                    else
+                                    {
+                                        <div class="cd-rel-sb-initials">@GetInitials(rName)</div>
+                                    }
+                                </div>
+                                <div class="cd-rel-sb-info">
+                                    <div class="cd-rel-sb-top">
+                                        <span class="cd-rel-sb-name">@rName</span>
+                                        @if (!string.IsNullOrWhiteSpace(rSent))
+                                        {
+                                            <span class="cd-rel-sentiment @sentClass">@sentLabel</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(rType))
+                                    {
+                                        <span class="cd-rel-sb-type">@rType</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(rDesc))
+                                    {
+                                        <p class="cd-rel-sb-desc">@rDesc</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+        </aside>
+
+    </div><!-- /cd-body -->
+</div><!-- /cd-wrapper -->
 
 <style>
-    .btn-peacock {
-        background: var(--peacock-gradient);
-        color: white;
-        border: none;
-    }
-    .btn-peacock:hover {
-        opacity: 0.95;
-        color: white;
-    }
+/* ═══════════════════════════════════════════════════════════════
+   CHARACTER DETAIL PAGE — FULL STYLESHEET
+   Matches the first reference image layout exactly
+═══════════════════════════════════════════════════════════════ */
+
+/* Tokens */
+:root {
+    --cd-teal:       #0d9488;
+    --cd-teal-light: #ccfbf1;
+    --cd-teal-mid:   #5eead4;
+    --cd-teal-dark:  #0f766e;
+    --cd-gold:       #f59e0b;
+    --cd-parch:      #fdf8f0;
+    --cd-border:     #e5e7eb;
+    --cd-text:       #1e293b;
+    --cd-muted:      #64748b;
+    --cd-red:        #ef4444;
+    --cd-green:      #22c55e;
+    --cd-card-bg:    #ffffff;
+    --cd-sidebar-bg: #ffffff;
+    --cd-radius:     14px;
+    --cd-shadow:     0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+}
+
+/* Wrapper */
+.cd-wrapper {
+    width: 100%;
+    font-family: 'Inter', 'Outfit', sans-serif;
+    color: var(--cd-text);
+}
+
+/* ── TOP BAR ── */
+.cd-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.cd-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--cd-muted);
+}
+.cd-breadcrumb a {
+    color: var(--cd-muted);
+    text-decoration: none;
+    transition: color .2s;
+}
+.cd-breadcrumb a:hover { color: var(--cd-teal); }
+.cd-chevron { width: 14px; height: 14px; }
+.cd-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cd-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid var(--cd-border);
+    border-radius: 8px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--cd-text);
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+}
+.cd-btn-ghost:hover { border-color: var(--cd-teal); background: var(--cd-teal-light); }
+.cd-btn-ghost i, .cd-btn-primary i { width: 15px; height: 15px; }
+.cd-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 18px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--cd-teal) 0%, var(--cd-teal-dark) 100%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity .2s, transform .15s;
+    box-shadow: 0 2px 8px rgba(13,148,136,.25);
+}
+.cd-btn-primary:hover { opacity: .92; color: #fff; transform: translateY(-1px); }
+.cd-btn-icon {
+    width: 34px; height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--cd-border);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .2s;
+}
+.cd-btn-icon:hover { border-color: var(--cd-teal); }
+.cd-btn-icon i { width: 16px; height: 16px; }
+
+/* ── HERO ── */
+.cd-hero { margin-bottom: 4px; }
+.cd-hero-name {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--cd-text);
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Georgia', serif;
+    letter-spacing: -.3px;
+}
+.cd-star-icon { width: 20px; height: 20px; color: var(--cd-gold); fill: var(--cd-gold); }
+.cd-hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+.cd-role-badge {
+    font-weight: 600;
+    color: var(--cd-teal);
+}
+.cd-meta-dot { color: var(--cd-muted); }
+.cd-story-link {
+    color: var(--cd-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.cd-story-link:hover { color: var(--cd-teal); }
+
+/* ── TABS ── */
+.cd-tabs-bar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-bottom: 2px solid var(--cd-border);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.cd-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--cd-muted);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    margin-bottom: -2px;
+    transition: color .2s, border-color .2s;
+    border-radius: 4px 4px 0 0;
+}
+.cd-tab i { width: 14px; height: 14px; }
+.cd-tab:hover { color: var(--cd-teal); }
+.cd-tab.active {
+    color: var(--cd-teal);
+    border-bottom-color: var(--cd-teal);
+    font-weight: 600;
+}
+
+/* ── BODY LAYOUT ── */
+.cd-body {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    align-items: start;
+}
+@@media (max-width: 900px) {
+    .cd-body { grid-template-columns: 1fr; }
+}
+
+/* ── TAB PANELS ── */
+.cd-tab-panel { display: none; }
+.cd-tab-panel.active { display: block; }
+
+/* ── CARDS ── */
+.cd-card {
+    background: var(--cd-card-bg);
+    border: 1px solid var(--cd-border);
+    border-radius: var(--cd-radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--cd-shadow);
+}
+.cd-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.cd-card-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cd-text);
+    margin: 0;
+}
+.cd-card-icon { width: 18px; height: 18px; color: var(--cd-teal); }
+
+.cd-card-header-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+.cd-card-header-inline h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--cd-text);
+}
+.cd-view-all {
+    font-size: 12px;
+    color: var(--cd-teal);
+    text-decoration: none;
+    font-weight: 500;
+}
+.cd-view-all:hover { text-decoration: underline; }
+
+/* Role & Summary */
+.cd-role-summary-body {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: start;
+}
+@@media (max-width: 640px) {
+    .cd-role-summary-body { grid-template-columns: 1fr; }
+}
+.cd-role-summary-text p {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #374151;
+    margin: 0 0 10px;
+}
+.cd-name-em {
+    font-weight: 700;
+    color: var(--cd-teal-dark);
+    letter-spacing: .3px;
+}
+.cd-quote {
+    border-left: 3px solid var(--cd-teal-mid);
+    padding: 10px 14px;
+    margin: 10px 0 0;
+    background: var(--cd-parch);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--cd-muted);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.cd-quote-icon { width: 16px; height: 16px; color: var(--cd-teal-mid); flex-shrink: 0; margin-top: 2px; }
+.cd-role-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+    min-width: 260px;
+}
+@@media (max-width: 640px) {
+    .cd-role-stats { grid-template-columns: repeat(4, 1fr); min-width: unset; }
+}
+.cd-stat-item { display: flex; flex-direction: column; gap: 3px; }
+.cd-stat-label { font-size: 11.5px; color: var(--cd-muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 500; }
+.cd-stat-value { font-size: 13.5px; font-weight: 700; color: var(--cd-text); }
+.cd-status-active { color: var(--cd-green) !important; }
+.cd-status-inactive { color: var(--cd-red) !important; }
+
+/* Aesthetic */
+.cd-aesthetic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+.cd-aesthetic-item {
+    background: #f8fafc;
+    border: 1px solid var(--cd-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cd-aes-label { font-size: 11px; color: var(--cd-muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 500; }
+.cd-aes-value { font-size: 13.5px; font-weight: 700; color: var(--cd-text); }
+
+/* Personality */
+.cd-personality-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+@@media (max-width: 600px) {
+    .cd-personality-grid { grid-template-columns: 1fr; }
+}
+.cd-pers-section { margin-bottom: 14px; }
+.cd-pers-label { font-size: 12px; color: var(--cd-muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; display: block; margin-bottom: 5px; }
+.cd-pers-value-bold { font-size: 13.5px; font-weight: 700; color: var(--cd-text); }
+.cd-pers-text { font-size: 13px; color: #374151; margin: 0; line-height: 1.6; }
+.cd-traits-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-trait-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--cd-border);
+    background: #f1f5f9;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cd-text);
+}
+
+/* Background Snapshot */
+.cd-bg-snap-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.cd-bg-snap-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 90px;
+    text-align: center;
+}
+.cd-bg-icon { width: 20px; height: 20px; color: var(--cd-teal); }
+.cd-bg-label { font-size: 11px; color: var(--cd-muted); text-transform: uppercase; letter-spacing: .4px; font-weight: 500; }
+.cd-bg-val { font-size: 13px; font-weight: 700; color: var(--cd-text); }
+
+.cd-bg-timeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 14px;
+    border-top: 1px solid var(--cd-border);
+    padding-top: 16px;
+}
+.cd-bg-tl-item { display: flex; flex-direction: column; gap: 5px; }
+.cd-bg-tl-label { font-size: 12px; font-weight: 700; color: var(--cd-text); }
+.cd-bg-tl-text { font-size: 12px; color: var(--cd-muted); margin: 0; line-height: 1.5; }
+
+/* Bottom Row */
+.cd-bottom-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+.cd-card-appearances, .cd-card-author-note, .cd-card-tags {
+    margin-bottom: 0;
+}
+
+/* Appearances */
+.cd-appearances-list { display: flex; flex-direction: column; gap: 10px; }
+.cd-appearance-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+.cd-app-icon { width: 14px; height: 14px; color: var(--cd-teal); flex-shrink: 0; }
+.cd-app-title { flex: 1; font-weight: 500; color: var(--cd-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cd-app-meta { font-size: 11.5px; color: var(--cd-muted); white-space: nowrap; }
+.cd-app-current {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--cd-teal-light);
+    color: var(--cd-teal-dark);
+    font-weight: 600;
+    font-size: 11px;
+}
+
+/* Author note */
+.cd-author-note-body {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.cd-feather-icon { width: 18px; height: 18px; color: var(--cd-teal-mid); flex-shrink: 0; margin-top: 2px; }
+.cd-author-note-body p { font-size: 13px; color: #374151; line-height: 1.7; margin: 0; }
+
+/* Tags */
+.cd-tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-tag-chip {
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--cd-teal-light);
+    color: var(--cd-teal-dark);
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #99f6e4;
+}
+
+/* Bio */
+.cd-bio-text { font-size: 13.5px; color: #374151; line-height: 1.8; margin: 0; }
+.cd-empty-msg { font-size: 13px; color: var(--cd-muted); font-style: italic; }
+.cd-empty-msg a { color: var(--cd-teal); }
+
+/* Detail Grid (background tab) */
+.cd-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+}
+.cd-detail-item { display: flex; flex-direction: column; gap: 4px; }
+.cd-detail-label { font-size: 11.5px; color: var(--cd-muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 500; }
+.cd-detail-val { font-size: 13.5px; font-weight: 600; color: var(--cd-text); }
+
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 18px; }
+
+/* Relationships */
+.cd-rel-list-full { display: flex; flex-direction: column; gap: 14px; }
+.cd-rel-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid var(--cd-border);
+}
+.cd-rel-avatar { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+.cd-rel-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cd-rel-initials {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cd-teal), var(--cd-teal-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+}
+.cd-rel-info { flex: 1; }
+.cd-rel-top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.cd-rel-name { font-weight: 700; font-size: 14px; color: var(--cd-text); }
+.cd-rel-type { font-size: 12px; color: var(--cd-muted); font-weight: 500; display: block; margin-bottom: 3px; }
+.cd-rel-desc { font-size: 12.5px; color: #374151; margin: 0; }
+.cd-rel-sentiment {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+.cd-rel-positive { background: #dcfce7; color: #15803d; }
+.cd-rel-negative { background: #fee2e2; color: #b91c1c; }
+.cd-rel-neutral  { background: #f1f5f9; color: #475569; }
+
+.cd-rel-groups { display: flex; flex-direction: column; gap: 10px; }
+.cd-rel-group { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--cd-border); }
+.cd-rel-group:last-child { border-bottom: none; }
+.cd-rg-label { font-size: 12.5px; font-weight: 600; color: var(--cd-text); white-space: nowrap; min-width: 110px; }
+.cd-rg-val { font-size: 13px; color: #374151; }
+
+/* ═══ SIDEBAR ═══ */
+.cd-sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+/* Photo card */
+.cd-photo-card {
+    background: linear-gradient(170deg, #1e293b 0%, #0f2027 100%);
+    border-radius: var(--cd-radius);
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--cd-shadow);
+}
+.cd-photo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/5;
+    overflow: hidden;
+}
+.cd-photo-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cd-photo-placeholder {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/5;
+    background: linear-gradient(135deg, var(--cd-teal-dark) 0%, #1e293b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.cd-photo-initials {
+    font-size: 72px;
+    font-weight: 800;
+    color: rgba(255,255,255,.15);
+    font-family: 'Georgia', serif;
+    letter-spacing: -2px;
+}
+.cd-photo-edit-btn {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,.15);
+    backdrop-filter: blur(8px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,.25);
+    transition: background .2s;
+}
+.cd-photo-edit-btn:hover { background: var(--cd-teal); color: #fff; }
+.cd-photo-edit-btn i { width: 15px; height: 15px; }
+.cd-photo-role-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: rgba(13,148,136,.15);
+    color: var(--cd-teal-mid);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    border-top: 1px solid rgba(255,255,255,.06);
+}
+.cd-photo-role-tag i { width: 13px; height: 13px; }
+.cd-photo-quote {
+    padding: 14px 16px 14px 20px;
+    margin: 0;
+    font-style: italic;
+    font-size: 13px;
+    color: rgba(255,255,255,.7);
+    line-height: 1.6;
+    border-left: 3px solid var(--cd-teal);
+}
+
+/* Sidebar cards */
+.cd-sidebar-card {
+    background: var(--cd-sidebar-bg);
+    border: 1px solid var(--cd-border);
+    border-radius: var(--cd-radius);
+    padding: 16px;
+    box-shadow: var(--cd-shadow);
+}
+.cd-sidebar-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.cd-sidebar-card-header h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    flex: 1;
+    color: var(--cd-text);
+}
+.cd-sc-icon { width: 16px; height: 16px; color: var(--cd-teal); }
+
+/* Quick info */
+.cd-quick-info-list { display: flex; flex-direction: column; gap: 0; }
+.cd-qi-row {
+    display: grid;
+    grid-template-columns: 18px 80px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12.5px;
+}
+.cd-qi-row:last-child { border-bottom: none; }
+.cd-qi-icon { width: 14px; height: 14px; color: var(--cd-muted); }
+.cd-qi-label { color: var(--cd-muted); font-weight: 500; }
+.cd-qi-val { font-weight: 600; color: var(--cd-text); word-break: break-word; }
+.cd-qi-val--teal { color: var(--cd-teal-dark); }
+
+/* Sidebar relationships */
+.cd-rel-sidebar-list { display: flex; flex-direction: column; gap: 12px; }
+.cd-rel-sb-item { display: flex; gap: 10px; align-items: flex-start; }
+.cd-rel-sb-avatar { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+.cd-rel-sb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cd-rel-sb-initials {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cd-teal), var(--cd-teal-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+}
+.cd-rel-sb-info { flex: 1; }
+.cd-rel-sb-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+.cd-rel-sb-name { font-weight: 700; font-size: 13px; color: var(--cd-text); }
+.cd-rel-sb-type { font-size: 11.5px; color: var(--cd-muted); display: block; margin-bottom: 2px; }
+.cd-rel-sb-desc { font-size: 11.5px; color: #374151; margin: 0; line-height: 1.5; }
 </style>
+
+<script>
+// Tab switching
+document.querySelectorAll('.cd-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var tabId = this.getAttribute('data-tab');
+        // Deactivate all
+        document.querySelectorAll('.cd-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.cd-tab-panel').forEach(p => p.classList.remove('active'));
+        // Activate target
+        this.classList.add('active');
+        var panel = document.getElementById('tab-' + tabId);
+        if (panel) panel.classList.add('active');
+    });
+});
+</script>

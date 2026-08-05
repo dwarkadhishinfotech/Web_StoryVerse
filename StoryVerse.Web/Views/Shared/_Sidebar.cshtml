@@ -15,6 +15,7 @@
     .sidebar-custom {
         background-color: #0A1128; /* Very dark blue from screenshot */
         position: relative;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     .sidebar-nav-link {
         color: #94A3B8 !important;
@@ -59,84 +60,125 @@
         justify-content: center;
         margin: 0 auto 6px auto;
     }
+
+    /* Collapsed Sidebar Styles */
+    .sidebar-custom.sidebar-collapsed {
+        width: 72px !important;
+        min-width: 72px !important;
+        max-width: 72px !important;
+    }
+    .sidebar-custom.sidebar-collapsed .sidebar-text-label,
+    .sidebar-custom.sidebar-collapsed .sidebar-streak-card {
+        display: none !important;
+    }
+    .sidebar-custom.sidebar-collapsed .sidebar-header {
+        justify-content: center !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .sidebar-custom.sidebar-collapsed .sidebar-workspace-wrapper {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    .sidebar-custom.sidebar-collapsed .sidebar-nav-link {
+        justify-content: center !important;
+        padding: 10px !important;
+    }
+    .sidebar-custom.sidebar-collapsed #sidebarCollapseBtn {
+        justify-content: center !important;
+    }
+    .sidebar-custom.sidebar-collapsed .sidebar-collapse-icon {
+        transform: rotate(180deg);
+    }
 </style>
 
-<nav class="sidebar-custom shadow-lg d-flex flex-column" style="width: 250px; min-width: 250px; max-width: 250px; height: 100vh; flex-shrink: 0; overflow: hidden;">
+<nav id="mainSidebar" class="sidebar-custom shadow-lg d-flex flex-column" style="width: 250px; min-width: 250px; max-width: 250px; height: 100vh; flex-shrink: 0; overflow: hidden;">
     <!-- Logo Section -->
-    <div class="px-4 pt-4 pb-2 d-flex align-items-center gap-3">
-        <div style="height: 32px; width: 32px;">
-            <img src="/images/Logo_Transparent.PNG" alt="StoryVerse Logo" class="img-fluid" onerror="this.style.display='none'" />
-            <!-- Fallback if image doesn't exist -->
+    <div class="px-4 pt-4 pb-2 d-flex align-items-center gap-3 sidebar-header">
+        <div style="height: 32px; width: 32px; flex-shrink: 0;">
+            <img src="/images/CompanyLogo/Logo_Transperent.png" alt="StoryVerse Logo" class="img-fluid" onerror="this.style.display='none'" />
             <i data-lucide="feather" class="text-white" style="width:24px; height:24px; display:none;" onload="if(!this.previousElementSibling.complete || this.previousElementSibling.naturalHeight === 0) this.style.display='block';"></i>
         </div>
-        <div class="d-flex flex-column">
+        <div class="d-flex flex-column sidebar-text-label">
             <span class="font-serif fw-bold text-white" style="font-size: 1.25rem; line-height: 1.1; font-family: 'Playfair Display', serif;">StoryVerse</span>
             <span class="fw-bold text-uppercase" style="font-size: 0.55rem; letter-spacing: 0.1em; color: #13A8A6; font-family: 'Inter', sans-serif;">AUTHOR OS</span>
         </div>
     </div>
 
     <!-- Current Workspace -->
-    <div class="px-4 mt-4 mb-2">
-        <div class="text-uppercase fw-bold text-white mb-2" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.6; font-family: 'Inter', sans-serif;">CURRENT WORKSPACE</div>
+    <div class="px-4 mt-4 mb-2 sidebar-workspace-wrapper">
+        <div class="text-uppercase fw-bold text-white mb-2 sidebar-text-label" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.6; font-family: 'Inter', sans-serif;">CURRENT WORKSPACE</div>
         <div class="d-flex align-items-center justify-content-between p-2 rounded-3 cursor-pointer" style="background: rgba(255, 255, 255, 0.05);">
             <div class="d-flex align-items-center gap-2">
-                <i data-lucide="home" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                <span class="text-white fw-medium" style="font-size: 0.85rem; font-family: 'Inter', sans-serif;">My Workspace</span>
+                <i data-lucide="home" style="width: 16px; height: 16px; color: #94A3B8; flex-shrink: 0;"></i>
+                <span class="text-white fw-medium sidebar-text-label" style="font-size: 0.85rem; font-family: 'Inter', sans-serif;">My Workspace</span>
             </div>
-            <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+            <i data-lucide="chevron-down" class="sidebar-text-label" style="width: 14px; height: 14px; color: #94A3B8;"></i>
         </div>
     </div>
 
     <!-- Navigation Menu -->
     <div class="flex-grow-1 px-3 py-3 no-scrollbar" style="overflow-y: auto;">
-        <a href="@Url.Action("Index", "Dashboard")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Dashboard" || controller == null ? "active" : "")">
-            <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Dashboard</span>
+        <a href="@Url.Action("Index", "Dashboard")" title="Dashboard" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Dashboard" || controller == null ? "active" : "")">
+            <i data-lucide="layout-grid" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Dashboard</span>
         </a>
-        <a href="@Url.Action("Index", "Stories")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Stories" ? "active" : "")">
-            <i data-lucide="book" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Stories</span>
+        <a href="@Url.Action("Index", "Stories")" title="Stories" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Stories" ? "active" : "")">
+            <i data-lucide="book" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Stories</span>
         </a>
-        <a href="@Url.Action("Index", "Characters")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Characters" ? "active" : "")">
-            <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Characters</span>
+        <a href="@Url.Action("Index", "Characters")" title="Characters" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Characters" ? "active" : "")">
+            <i data-lucide="users" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Characters</span>
         </a>
-        <a href="@Url.Action("Index", "Chapters")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Chapters" ? "active" : "")">
-            <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Chapters</span>
+        <div>
+            <a href="@Url.Action("Index", "WorldBuilding")" title="World Building" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(controller == "WorldBuilding" ? "active" : "")" data-bs-toggle="collapse" data-bs-target="#worldBuildingSubmenu" aria-expanded="@(controller == "WorldBuilding" ? "true" : "false")">
+                <div class="d-flex align-items-center gap-3">
+                    <i data-lucide="globe-2" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                    <span class="sidebar-text-label" style="font-size: 0.85rem;">World Building</span>
+                </div>
+                <i data-lucide="chevron-down" class="sidebar-text-label" style="width: 14px; height: 14px;"></i>
+            </a>
+            <div class="collapse @(controller == "WorldBuilding" ? "show" : "") ms-3 ps-3 border-start border-white border-opacity-10 my-1 sidebar-text-label" id="worldBuildingSubmenu">
+                <a href="@Url.Action("Index", "WorldBuilding")" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">World Dashboard</a>
+                <a href="@Url.Action("Index", "WorldBuilding", new { category = "All Entities" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1 fw-semibold text-white">Entities</a>
+                <a href="@Url.Action("Index", "WorldBuilding", new { category = "Locations" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Maps</a>
+                <a href="@Url.Action("Index", "WorldBuilding", new { category = "Organizations" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Relationships</a>
+                <a href="@Url.Action("Index", "WorldBuilding")" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small" data-bs-toggle="modal" data-bs-target="#templatesModal">Templates</a>
+            </div>
+        </div>
+        <a href="@Url.Action("Index", "Chapters")" title="Chapters" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Chapters" ? "active" : "")">
+            <i data-lucide="file-text" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Chapters</span>
         </a>
-        <a href="@Url.Action("Index", "Timeline")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Timeline" ? "active" : "")">
-            <i data-lucide="clock" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Timeline</span>
+        <a href="@Url.Action("Index", "Timeline")" title="Timeline" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Timeline" ? "active" : "")">
+            <i data-lucide="clock" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Timeline</span>
         </a>
-        <a href="@Url.Action("Index", "WorldBuilding")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "WorldBuilding" ? "active" : "")">
-            <i data-lucide="globe-2" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">World Building</span>
+        <a href="@Url.Action("Index", "Research")" title="Research" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Research" ? "active" : "")">
+            <i data-lucide="search" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Research</span>
         </a>
-        <a href="@Url.Action("Index", "Research")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Research" ? "active" : "")">
-            <i data-lucide="search" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Research</span>
+        <a href="@Url.Action("Index", "Maps")" title="Maps" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Maps" ? "active" : "")">
+            <i data-lucide="map" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Maps</span>
         </a>
-        <a href="@Url.Action("Index", "Maps")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Maps" ? "active" : "")">
-            <i data-lucide="map" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Maps</span>
+        <a href="@Url.Action("Index", "Notes")" title="Notes" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Notes" ? "active" : "")">
+            <i data-lucide="file" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Notes</span>
         </a>
-        <a href="@Url.Action("Index", "Notes")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Notes" ? "active" : "")">
-            <i data-lucide="file" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Notes</span>
+        <a href="@Url.Action("Index", "Assets")" title="Assets" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Assets" ? "active" : "")">
+            <i data-lucide="folder-open" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Assets</span>
         </a>
-        <a href="@Url.Action("Index", "Assets")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Assets" ? "active" : "")">
-            <i data-lucide="folder-open" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Assets</span>
-        </a>
-        <a href="@Url.Action("Index", "Analytics")" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Analytics" ? "active" : "")">
-            <i data-lucide="bar-chart-2" style="width: 18px; height: 18px;"></i>
-            <span style="font-size: 0.85rem;">Analytics</span>
+        <a href="@Url.Action("Index", "Analytics")" title="Analytics" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Analytics" ? "active" : "")">
+            <i data-lucide="bar-chart-2" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Analytics</span>
         </a>
     </div>
 
     <!-- Writing Streak -->
-    <div class="px-4 mb-4">
+    <div class="px-4 mb-4 sidebar-streak-card">
         <div class="d-flex justify-content-between align-items-center mb-1">
             <span class="text-uppercase fw-bold text-white" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.6; font-family: 'Inter', sans-serif;">WRITING STREAK</span>
             <span style="font-size: 14px;">🔥</span>
@@ -162,19 +204,42 @@
     <div class="px-4 pb-4">
         <div class="d-flex align-items-center justify-content-between mb-4">
             <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="height: 36px; width: 36px; background-color: #13A8A6; color: white; font-size: 0.9rem; font-family: 'Inter', sans-serif;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="height: 36px; width: 36px; background-color: #13A8A6; color: white; font-size: 0.9rem; font-family: 'Inter', sans-serif; flex-shrink: 0;">
                     @initials
                 </div>
-                <div class="d-flex flex-column">
+                <div class="d-flex flex-column sidebar-text-label">
                     <span class="text-white fw-bold lh-sm text-truncate" style="font-size: 0.85rem; max-width: 110px; font-family: 'Inter', sans-serif;">@displayName</span>
                     <span class="fw-medium mt-0.5" style="font-size: 11px; color: #64748B; font-family: 'Inter', sans-serif;">Author</span>
                 </div>
             </div>
-            <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748B; cursor: pointer;"></i>
+            <i data-lucide="chevron-down" class="sidebar-text-label" style="width: 16px; height: 16px; color: #64748B; cursor: pointer;"></i>
         </div>
-        <div class="d-flex align-items-center gap-2 text-white-50 cursor-pointer hover-text-white transition-all">
-            <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
-            <span style="font-size: 0.85rem; font-weight: 500; font-family: 'Inter', sans-serif;">Collapse</span>
+
+        <!-- Collapse Toggle Button -->
+        <div id="sidebarCollapseBtn" class="d-flex align-items-center gap-2 text-white-50 cursor-pointer hover-text-white transition-all py-1 px-2 rounded-2" onclick="toggleSidebarCollapse()" style="user-select: none;">
+            <i data-lucide="chevron-left" class="sidebar-collapse-icon" style="width: 16px; height: 16px; transition: transform 0.3s ease; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem; font-weight: 500; font-family: 'Inter', sans-serif;">Collapse</span>
         </div>
     </div>
 </nav>
+
+<script>
+    function toggleSidebarCollapse() {
+        var sidebar = document.getElementById('mainSidebar');
+        if (!sidebar) return;
+        
+        sidebar.classList.toggle('sidebar-collapsed');
+        var isCollapsed = sidebar.classList.contains('sidebar-collapsed');
+        localStorage.setItem('storyverse_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+    }
+
+    // Restore state on page load
+    (function() {
+        if (localStorage.getItem('storyverse_sidebar_collapsed') === 'true') {
+            var sidebar = document.getElementById('mainSidebar');
+            if (sidebar) {
+                sidebar.classList.add('sidebar-collapsed');
+            }
+        }
+    })();
+</script>

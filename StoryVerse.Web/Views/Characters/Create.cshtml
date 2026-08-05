@@ -7,6 +7,12 @@
 
 @section Styles {
     <style>
+        #addRelationshipModal {
+            z-index: 1060 !important;
+        }
+        .modal-backdrop {
+            z-index: 1050 !important;
+        }
         .character-create-container {
             font-family: 'Inter', sans-serif;
             color: #1E293B;
@@ -1034,6 +1040,10 @@
             <div class="glass-form-card">
                 <form id="characterForm" asp-action="Create" method="post" class="needs-validation" novalidate>
                     @Html.AntiForgeryToken()
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div asp-validation-summary="All" class="alert alert-danger mb-3" style="font-size: 0.85rem;"></div>
+                    }
                     <input type="hidden" asp-for="StoryId" id="StoryId" />
                     <input type="hidden" asp-for="Role" id="Role" />
                     <input type="hidden" asp-for="ArcType" id="ArcType" />
@@ -1050,6 +1060,12 @@
                     <input type="hidden" asp-for="PersonalityTraits" id="PersonalityTraits" />
                     <input type="hidden" asp-for="ValuesBeliefs" id="ValuesBeliefs" />
                     <input type="hidden" asp-for="Temperament" id="Temperament" />
+                    <input type="hidden" asp-for="Desires" id="Desires" />
+                    <input type="hidden" asp-for="Backstory" id="Backstory" />
+                    <input type="hidden" asp-for="AuthorNotes" id="AuthorNotes" />
+                    <input type="hidden" asp-for="FamilyCrest" id="FamilyCrest" />
+                    <input type="hidden" asp-for="ThemeColor" id="ThemeColor" />
+                    <input type="hidden" asp-for="CustomDocumentUrl" id="CustomDocumentUrl" />
 
                     <!-- STEP 1: Basic Information -->
                     <div id="step-pane-1" class="step-pane">
@@ -3263,29 +3279,142 @@
                     </div>
                     <div class="col-5">
                         <label class="form-label-custom">Role</label>
-                        <select id="modalRelRole" class="form-select form-control-custom">
-                            <option value="Main">Main</option>
-                            <option value="Supporting">Supporting</option>
-                            <option value="Antagonist">Antagonist</option>
-                            <option value="Minor">Minor</option>
-                        </select>
+                        <div class="theme-dropdown-wrapper" id="dd-modal-relrole-wrapper">
+                            <input type="hidden" id="modalRelRole" value="Main" />
+                            <div class="theme-dropdown-trigger" onclick="toggleDropdown('dd-modal-relrole-wrapper')">
+                                <span id="dd-modal-relrole-text">Main</span>
+                                <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748B;"></i>
+                            </div>
+                            <div class="theme-dropdown-menu">
+                                <div class="theme-dropdown-option active-option" onclick="selectModalRoleOption('Main', 'dd-modal-relrole-wrapper')">
+                                    <div class="option-title">Main</div>
+                                    <div class="option-desc">Central role in the story arc.</div>
+                                </div>
+                                <div class="theme-dropdown-option" onclick="selectModalRoleOption('Supporting', 'dd-modal-relrole-wrapper')">
+                                    <div class="option-title">Supporting</div>
+                                    <div class="option-desc">Secondary role providing key support.</div>
+                                </div>
+                                <div class="theme-dropdown-option" onclick="selectModalRoleOption('Antagonist', 'dd-modal-relrole-wrapper')">
+                                    <div class="option-title">Antagonist</div>
+                                    <div class="option-desc">Opposing force or rival character.</div>
+                                </div>
+                                <div class="theme-dropdown-option" onclick="selectModalRoleOption('Minor', 'dd-modal-relrole-wrapper')">
+                                    <div class="option-title">Minor</div>
+                                    <div class="option-desc">Background or cameo character.</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Relationship Type -->
+                <!-- Relationship Type (Searchable Theme Dropdown) -->
                 <div class="mb-3">
                     <label class="form-label-custom">Relationship Type</label>
-                    <select id="modalRelType" class="form-select form-control-custom">
-                        <option value="Best Friend">Best Friend</option>
-                        <option value="Mentor">Mentor</option>
-                        <option value="Rival">Rival</option>
-                        <option value="Childhood Friend">Childhood Friend</option>
-                        <option value="Ally">Ally</option>
-                        <option value="Family">Family Member</option>
-                        <option value="Love Interest">Love Interest</option>
-                        <option value="Enemy">Enemy / Nemesis</option>
-                        <option value="Acquaintance">Acquaintance</option>
-                    </select>
+                    <div class="theme-dropdown-wrapper" id="dd-modal-reltype-wrapper">
+                        <input type="hidden" id="modalRelType" value="Parent" />
+                        <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('dd-modal-reltype-wrapper')">
+                            <span id="dd-modal-reltype-text" class="fw-medium text-slate-800">Parent (Father / Mother / Guardian)</span>
+                            <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #64748B;"></i>
+                        </div>
+                        <div class="theme-dropdown-menu" style="max-height: 280px; overflow-y: auto; padding: 6px;">
+                            <!-- Search Header -->
+                            <div class="p-2 mb-2 bg-slate-50 rounded-3 border sticky-top" onclick="event.stopPropagation();" style="z-index: 10;">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white border-end-0 text-slate-400" style="border-radius: 8px 0 0 8px;">
+                                        <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                                    </span>
+                                    <input type="text" id="modalRelTypeSearch" class="form-control form-control-sm border-start-0 ps-0" 
+                                           placeholder="Search relationship (e.g. Parent, Father, Mentor)..." 
+                                           oninput="filterRelTypeOptions(this.value)" 
+                                           style="border-radius: 0 8px 8px 0; font-size: 0.82rem;" />
+                                </div>
+                            </div>
+                            <!-- Options List -->
+                            <div id="modalRelTypeOptionsContainer">
+                                <!-- Family / Parents -->
+                                <div class="dropdown-category-header text-uppercase fw-bold text-teal-700 px-2 py-1" style="font-size: 0.68rem; letter-spacing: 0.05em;">Family & Parents</div>
+                                <div class="theme-dropdown-option rel-type-opt active-option" data-title="Parent (Father / Mother / Guardian)" data-cat="Family" onclick="selectModalRelType('Parent', 'Parent (Father / Mother / Guardian)')">
+                                    <div class="option-title">👨‍👩‍👧 Parent (Father / Mother / Guardian)</div>
+                                    <div class="option-desc">Primary parent, father, mother, or legal guardian figure.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Father" data-cat="Family" onclick="selectModalRelType('Father', 'Father')">
+                                    <div class="option-title">👨 Father</div>
+                                    <div class="option-desc">Biological or adoptive father.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Mother" data-cat="Family" onclick="selectModalRelType('Mother', 'Mother')">
+                                    <div class="option-title">👩 Mother</div>
+                                    <div class="option-desc">Biological or adoptive mother.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Child (Son / Daughter)" data-cat="Family" onclick="selectModalRelType('Child', 'Child (Son / Daughter)')">
+                                    <div class="option-title">👶 Child (Son / Daughter)</div>
+                                    <div class="option-desc">Son, daughter, or offspring connection.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Sibling (Brother / Sister)" data-cat="Family" onclick="selectModalRelType('Sibling', 'Sibling (Brother / Sister)')">
+                                    <div class="option-title">👫 Sibling (Brother / Sister)</div>
+                                    <div class="option-desc">Brother, sister, or sibling bond.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Spouse / Partner / Fiancé" data-cat="Family" onclick="selectModalRelType('Spouse', 'Spouse / Partner / Fiancé')">
+                                    <div class="option-title">💍 Spouse / Partner / Fiancé</div>
+                                    <div class="option-desc">Husband, wife, fiancé, or life partner.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Family Member / Relative" data-cat="Family" onclick="selectModalRelType('Family Member', 'Family Member / Relative')">
+                                    <div class="option-title">🏠 Family Member / Relative</div>
+                                    <div class="option-desc">Extended family, cousin, aunt, uncle, grandparent.</div>
+                                </div>
+
+                                <!-- Friends & Allies -->
+                                <div class="dropdown-category-header text-uppercase fw-bold text-teal-700 px-2 py-1 mt-2" style="font-size: 0.68rem; letter-spacing: 0.05em;">Friends & Allies</div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Best Friend" data-cat="Friendship" onclick="selectModalRelType('Best Friend', 'Best Friend')">
+                                    <div class="option-title">🤝 Best Friend</div>
+                                    <div class="option-desc">Deep bond of trust, loyalty, and mutual protection.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Childhood Friend" data-cat="Friendship" onclick="selectModalRelType('Childhood Friend', 'Childhood Friend')">
+                                    <div class="option-title">🎈 Childhood Friend</div>
+                                    <div class="option-desc">Longstanding history built from early youth.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Ally / Companion" data-cat="Alliance" onclick="selectModalRelType('Ally', 'Ally / Companion')">
+                                    <div class="option-title">🛡️ Ally / Companion</div>
+                                    <div class="option-desc">Strategic partnership with shared objectives.</div>
+                                </div>
+
+                                <!-- Mentorship -->
+                                <div class="dropdown-category-header text-uppercase fw-bold text-teal-700 px-2 py-1 mt-2" style="font-size: 0.68rem; letter-spacing: 0.05em;">Mentorship</div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Mentor / Teacher" data-cat="Mentorship" onclick="selectModalRelType('Mentor', 'Mentor / Teacher')">
+                                    <div class="option-title">🧙‍♂️ Mentor / Teacher</div>
+                                    <div class="option-desc">Teaches, guides, and imparts vital wisdom.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Student / Protégé" data-cat="Mentorship" onclick="selectModalRelType('Student', 'Student / Protégé')">
+                                    <div class="option-title">📚 Student / Protégé</div>
+                                    <div class="option-desc">Apprentice, student, or mentee.</div>
+                                </div>
+
+                                <!-- Romance -->
+                                <div class="dropdown-category-header text-uppercase fw-bold text-teal-700 px-2 py-1 mt-2" style="font-size: 0.68rem; letter-spacing: 0.05em;">Romance</div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Love Interest / Crush" data-cat="Romance" onclick="selectModalRelType('Love Interest', 'Love Interest / Crush')">
+                                    <div class="option-title">💖 Love Interest / Crush</div>
+                                    <div class="option-desc">Romantic feelings, courtship, or profound affection.</div>
+                                </div>
+
+                                <!-- Conflict -->
+                                <div class="dropdown-category-header text-uppercase fw-bold text-teal-700 px-2 py-1 mt-2" style="font-size: 0.68rem; letter-spacing: 0.05em;">Rivalry & Conflict</div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Rival / Competitor" data-cat="Conflict" onclick="selectModalRelType('Rival', 'Rival / Competitor')">
+                                    <div class="option-title">⚡ Rival / Competitor</div>
+                                    <div class="option-desc">Friendly or intense competition driving growth.</div>
+                                </div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Enemy / Nemesis" data-cat="Conflict" onclick="selectModalRelType('Enemy', 'Enemy / Nemesis')">
+                                    <div class="option-title">⚔️ Enemy / Nemesis</div>
+                                    <div class="option-desc">Direct adversary, arch-foe, or hostile opponent.</div>
+                                </div>
+
+                                <!-- Social -->
+                                <div class="dropdown-category-header text-uppercase fw-bold text-teal-700 px-2 py-1 mt-2" style="font-size: 0.68rem; letter-spacing: 0.05em;">Social</div>
+                                <div class="theme-dropdown-option rel-type-opt" data-title="Acquaintance / Peer" data-cat="Social" onclick="selectModalRelType('Acquaintance', 'Acquaintance / Peer')">
+                                    <div class="option-title">👥 Acquaintance / Peer</div>
+                                    <div class="option-desc">Casual connection, work associate, or peer.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Dynamics Category -->
@@ -3329,6 +3458,17 @@
 
     <partial name="_ValidationScriptsPartial" />
     <script>
+        function safeTrim(selector) {
+            try {
+                var el = typeof selector === 'string' ? $(selector) : $(selector);
+                if (el && el.length > 0) {
+                    var v = el.val();
+                    return (v !== undefined && v !== null) ? String(v).trim() : '';
+                }
+            } catch (e) { }
+            return '';
+        }
+
         let currentStep = 1;
         let activeTraits = ['Brave', 'Loyal', 'Intelligent', 'Stubborn', 'Protective'];
 
@@ -3477,7 +3617,7 @@
         }
 
         function addCustomTrait() {
-            var val = $('#customTraitInput').val().trim();
+            var val = safeTrim('#customTraitInput');
             if (val && !activeTraits.includes(val)) {
                 activeTraits.push(val);
                 renderTraits();
@@ -3491,7 +3631,7 @@
             $('.value-checkbox:checked').each(function() {
                 var val = $(this).val();
                 if (val === 'Other') {
-                    var otherText = $('#otherValueInput').val().trim();
+                    var otherText = safeTrim('#otherValueInput');
                     if (otherText) selected.push(otherText);
                 } else {
                     selected.push(val);
@@ -3499,6 +3639,98 @@
             });
             $('#ValuesBeliefs').val(selected.join(', '));
         }
+
+        // Initialize tooltips & character counts
+        $(document.body).ready(function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Character counter initialization
+            updateCharCounter('NameInput', 'name-counter');
+            updateCharCounter('NicknamesInput', 'nick-counter');
+            updateCharCounter('AgeInput', 'age-counter');
+            updateCharCounter('PronounsInput', 'pronouns-counter');
+            updateCharCounter('OccupationInput', 'occ-counter');
+            updateCharCounter('OneLineDescInput', 'oneline-counter');
+            updateCharCounter('BgSummaryInput', 'bg-counter');
+            updateCharCounter('TagsInput', 'tags-counter');
+
+            // Personality Step counters
+            updateCharCounter('PersonalityOverviewInput', 'overview-counter');
+            updateCharCounter('StrengthsInput', 'strengths-counter');
+            updateCharCounter('MotivationsInput', 'motivations-counter');
+            updateCharCounter('FlawsInput', 'flaws-counter');
+            updateCharCounter('FearsInput', 'fears-counter');
+
+            // Background Step counters & sync
+            updateCharCounter('FamilyBackgroundInput', 'fam-bg-counter');
+            updateCharCounter('UpbringingInput', 'upbringing-counter');
+            updateCharCounter('EducationInput', 'edu-counter');
+            updateCharCounter('LifeEventsInput', 'events-counter');
+            updateCharCounter('OccupationInput', 'occ-counter');
+            updateCharCounter('LanguagesInput', 'lang-counter');
+
+            // Hydrate initial background field values
+            var initPob = $('#PlaceOfBirth').val();
+            if (initPob) $('#PlaceOfBirthInput').val(initPob);
+
+            var initResidence = $('#CurrentResidence').val();
+            if (initResidence) $('#CurrentResidenceInput').val(initResidence);
+
+            var initAge = $('#AgeInput').val();
+            if (initAge) $('#AgeInputBg').val(initAge);
+
+            var initNationality = $('#Nationality').val();
+            if (initNationality) {
+                $('#NationalityInput').val(initNationality);
+                $('#dd-nationality-trigger-text').text(initNationality);
+            }
+
+            var initStatus = $('#SocioeconomicStatus').val();
+            if (initStatus) $('#dd-status-trigger-text').text(initStatus);
+
+            var initDocUrl = $('#BackgroundDocumentUrl').val();
+            if (initDocUrl) {
+                $('#bgDocStatusText').text('Document attached');
+                $('#bgDocLink').attr('href', initDocUrl).text('View Attached Background File');
+                $('#bgDocUploadedInfo').show();
+            }
+
+            // Initialize Traits & Values
+            var existingTraits = $('#PersonalityTraits').val();
+            if (existingTraits && existingTraits.trim().length > 0) {
+                activeTraits = existingTraits.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+            }
+            renderTraits();
+
+            var initialTemp = $('#Temperament').val() || 'Choleric (Leader)';
+            $('#Temperament').val(initialTemp);
+            $('#dd-temperament-trigger-text').text(initialTemp);
+
+            var initialValues = $('#ValuesBeliefs').val();
+            if (initialValues) {
+                var valArr = initialValues.split(',').map(function(v) { return v.trim(); });
+                $('.value-checkbox').each(function() {
+                    if (valArr.includes($(this).val())) {
+                        $(this).prop('checked', true);
+                    }
+                });
+            } else {
+                updateValuesBeliefs();
+            }
+
+            updateLivePreview();
+        });
+
+        // Close dropdowns on click outside
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('.theme-dropdown-wrapper').length) {
+                $('.theme-dropdown-wrapper').removeClass('open');
+            }
+        });
+
 
         function toggleOtherValueInput() {
             if ($('#chk-other-value').is(':checked')) {
@@ -3532,25 +3764,25 @@
         }
 
         function updateLivePreview() {
-            var name = $('#NameInput').val().trim();
+            var name = safeTrim('#NameInput');
             $('#prev-name').text(name.length > 0 ? name : 'Unnamed Character');
 
-            var role = $('#Role').val().trim();
+            var role = safeTrim('#Role');
             $('#prev-role').text(role.length > 0 ? role : 'Role');
 
-            var oneline = $('#OneLineDescInput').val().trim();
+            var oneline = safeTrim('#OneLineDescInput');
             $('#prev-oneline').text(oneline.length > 0 ? oneline : 'One line description will appear here...');
 
-            var age = $('#AgeInput').val().trim();
+            var age = safeTrim('#AgeInput');
             $('#prev-age').text(age.length > 0 ? age : '-');
 
-            var occ = $('#OccupationInput').val().trim();
+            var occ = safeTrim('#OccupationInput');
             $('#prev-occ').text(occ.length > 0 ? occ : '-');
 
-            var status = $('#Status').val().trim();
+            var status = safeTrim('#Status');
             $('#prev-status').text(status.length > 0 ? status : '-');
 
-            var align = $('#Alignment').val().trim();
+            var align = safeTrim('#Alignment');
             $('#prev-align').text(align.length > 0 ? align : '-');
         }
 
@@ -3577,12 +3809,8 @@
             }
         }
 
-        /* Background Functions */
-        function selectLocationOption(inputId, hiddenId, val, wrapperId) {
-            $('#' + inputId).val(val);
-            $('#' + hiddenId).val(val);
-            $('#' + wrapperId).removeClass('open');
-            checkBackgroundChecklist();
+        function syncNationality(val) {
+            $('#Nationality').val(val);
         }
 
         function syncPlaceOfBirth(val) {
@@ -3650,19 +3878,19 @@
             setCheckState('chk-bg-dob', hasDob);
 
             // 3. Family background
-            var hasFam = !!$('#FamilyBackgroundInput').val().trim();
+            var hasFam = !!safeTrim('#FamilyBackgroundInput');
             setCheckState('chk-bg-fam', hasFam);
 
             // 4. Upbringing
-            var hasUpbringing = !!$('#UpbringingInput').val().trim();
+            var hasUpbringing = !!safeTrim('#UpbringingInput');
             setCheckState('chk-bg-upbringing', hasUpbringing);
 
             // 5. Key life events
-            var hasEvents = !!$('#LifeEventsInput').val().trim();
+            var hasEvents = !!safeTrim('#LifeEventsInput');
             setCheckState('chk-bg-events', hasEvents);
 
             // 6. Education & career
-            var hasEdu = !!($('#EducationInput').val().trim() || $('#OccupationInput').val().trim());
+            var hasEdu = !!(safeTrim('#EducationInput') || safeTrim('#OccupationInput'));
             setCheckState('chk-bg-edu', hasEdu);
 
             // 7. Current residence
@@ -3746,7 +3974,7 @@
             } else if (tab === 'tree') {
                 $('#rel-subnav-tree-btn').addClass('active');
                 $('#rel-subpane-tree').removeClass('d-none');
-                var charName = $('#NameInput').val().trim() || 'Unnamed Character';
+                var charName = safeTrim('#NameInput') || 'Unnamed Character';
                 $('#ft-main-name').text(charName);
             } else if (tab === 'map') {
                 $('#rel-subnav-map-btn').addClass('active');
@@ -3867,7 +4095,7 @@
         }
 
         function renderRelationshipMap() {
-            var charName = $('#NameInput').val().trim() || 'Unnamed Character';
+            var charName = safeTrim('#NameInput') || 'Unnamed Character';
             var mainAvatar = $('#avatarUploadedImg').attr('src') || '';
             var avatarHtml = mainAvatar ? `<img src="${mainAvatar}" class="rounded-circle" style="width:48px; height:48px; object-fit:cover;" />`
                 : `<div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:48px; height:48px; background:#13A8A6;">${charName.charAt(0)}</div>`;
@@ -3904,7 +4132,8 @@
 
             var allies = characterRelationships.filter(r => r.relationship === 'Best Friend' || r.relationship === 'Ally' || r.relationship === 'Childhood Friend' || r.relationship === 'Mentor').map(r => r.name);
             var enemies = characterRelationships.filter(r => r.relationship === 'Rival' || r.relationship === 'Enemy').map(r => r.name);
-            var family = characterRelationships.filter(r => r.relationship === 'Family').map(r => r.name);
+            var familyTypes = ['Parent', 'Father', 'Mother', 'Child', 'Sibling', 'Spouse', 'Family Member', 'Family'];
+            var family = characterRelationships.filter(r => familyTypes.some(ft => (r.relationship || '').includes(ft))).map(r => r.name);
             var love = characterRelationships.filter(r => r.relationship === 'Love Interest').map(r => r.name);
 
             $('#Allies').val(allies.join(', '));
@@ -3915,17 +4144,71 @@
             checkRelationshipsChecklist();
         }
 
+        function filterRelTypeOptions(query) {
+            var q = (query || '').toLowerCase().trim();
+            $('.rel-type-opt').each(function() {
+                var title = $(this).attr('data-title') || '';
+                var desc = $(this).find('.option-desc').text() || '';
+                var text = $(this).text() || '';
+                if (!q || title.toLowerCase().includes(q) || desc.toLowerCase().includes(q) || text.toLowerCase().includes(q)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            $('.dropdown-category-header').each(function() {
+                var hasVisible = $(this).nextUntil('.dropdown-category-header', '.rel-type-opt:visible').length > 0;
+                if (hasVisible || !q) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        function selectModalRelType(val, displayText) {
+            $('#modalRelType').val(val);
+            $('#dd-modal-reltype-text').text(displayText);
+            $('.rel-type-opt').removeClass('active-option');
+            $('.rel-type-opt[data-title="' + displayText.replace(/"/g, '\\"') + '"]').addClass('active-option');
+            $('#dd-modal-reltype-wrapper').removeClass('open');
+        }
+
+        function selectModalRoleOption(val, wrapperId) {
+            $('#modalRelRole').val(val);
+            $('#dd-modal-relrole-text').text(val);
+            $('#' + wrapperId + ' .theme-dropdown-option').removeClass('active-option');
+            $('#' + wrapperId + ' .theme-dropdown-option:contains("' + val + '")').addClass('active-option');
+            $('#' + wrapperId).removeClass('open');
+        }
+
         function openAddRelationshipModal(presetType) {
             $('#editRelIndex').val('-1');
             $('#modalRelTitle').text('Add Relationship');
-            $('#modalRelName').val('');
+            $('#modalRelName').val('').removeClass('is-invalid');
             $('#modalRelSubtitle').val('');
-            $('#modalRelRole').val('Main');
-            $('#modalRelType').val(presetType || 'Best Friend');
+            
+            selectModalRoleOption('Main', 'dd-modal-relrole-wrapper');
+
+            var initialType = presetType || 'Parent';
+            var displayText = 'Parent (Father / Mother / Guardian)';
+            if (initialType === 'Best Friend') displayText = 'Best Friend';
+            else if (initialType === 'Mentor') displayText = 'Mentor / Teacher';
+            else if (initialType === 'Rival') displayText = 'Rival / Competitor';
+            else if (initialType === 'Love Interest') displayText = 'Love Interest / Crush';
+
+            selectModalRelType(initialType, displayText);
+            $('#modalRelTypeSearch').val('');
+            filterRelTypeOptions('');
+
             $('#dynPos').prop('checked', true);
             $('#modalRelDesc').val('');
 
             var modalEl = document.getElementById('addRelationshipModal');
+            if (modalEl && modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
             var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
         }
@@ -3936,10 +4219,21 @@
 
             $('#editRelIndex').val(index);
             $('#modalRelTitle').text('Edit Relationship');
-            $('#modalRelName').val(rel.name);
+            $('#modalRelName').val(rel.name).removeClass('is-invalid');
             $('#modalRelSubtitle').val(rel.subtitle || '');
-            $('#modalRelRole').val(rel.role || 'Main');
-            $('#modalRelType').val(rel.relationship || 'Best Friend');
+            
+            var relRole = rel.role || 'Main';
+            selectModalRoleOption(relRole, 'dd-modal-relrole-wrapper');
+
+            var typeVal = rel.relationship || 'Parent';
+            var displayText = typeVal;
+            var matchingOpt = $('.rel-type-opt[data-title*="' + typeVal + '"]').first();
+            if (matchingOpt.length > 0) {
+                displayText = matchingOpt.attr('data-title');
+            }
+            selectModalRelType(typeVal, displayText);
+            $('#modalRelTypeSearch').val('');
+            filterRelTypeOptions('');
 
             if (rel.dynamicsType === 'Complex') $('#dynComp').prop('checked', true);
             else if (rel.dynamicsType === 'Negative') $('#dynNeg').prop('checked', true);
@@ -3949,12 +4243,15 @@
             $('#modalRelDesc').val(rel.dynamicsText || '');
 
             var modalEl = document.getElementById('addRelationshipModal');
+            if (modalEl && modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
             var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
         }
 
         function saveRelationshipFromModal() {
-            var name = $('#modalRelName').val().trim();
+            var name = safeTrim('#modalRelName');
             if (!name) {
                 $('#modalRelName').addClass('is-invalid');
                 return;
@@ -3963,11 +4260,11 @@
             }
 
             var index = parseInt($('#editRelIndex').val());
-            var subtitle = $('#modalRelSubtitle').val().trim() || 'Story Character';
+            var subtitle = safeTrim('#modalRelSubtitle') || 'Story Character';
             var role = $('#modalRelRole').val();
             var relType = $('#modalRelType').val();
             var dynType = $('input[name="modalDynamicsType"]:checked').val() || 'Positive';
-            var desc = $('#modalRelDesc').val().trim() || 'Standard relationship dynamics.';
+            var desc = safeTrim('#modalRelDesc') || 'Standard relationship dynamics.';
 
             var avatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
             if (index >= 0 && characterRelationships[index]) {
@@ -4083,8 +4380,8 @@
         function validateStep(step) {
             if (step === 1) {
                 var valid = true;
-                var name = $('#NameInput').val().trim();
-                var role = $('#Role').val().trim();
+                var name = safeTrim('#NameInput');
+                var role = safeTrim('#Role');
                 var storyId = $('#StoryId').val();
 
                 if (!name) {
@@ -4092,13 +4389,13 @@
                     valid = false;
                 } else {
                     $('#NameInput').removeClass('is-invalid');
-                }
-
-                if (!role) {
-                    $('#dd-role-wrapper .theme-dropdown-trigger').css('border-color', '#EF4444');
-                    valid = false;
+                   if (!role) {
+                    $('#Role').val('Protagonist');
+                    $('#dd-role-trigger-text').text('Protagonist');
+                    $('#dd-role-wrapper .theme-dropdown-trigger').css('border-color', '');
                 } else {
                     $('#dd-role-wrapper .theme-dropdown-trigger').css('border-color', '');
+                }
                 }
 
                 if (!storyId || storyId === '00000000-0000-0000-0000-000000000000') {
@@ -4113,8 +4410,8 @@
 
             if (step === 3) {
                 var valid = true;
-                var overview = $('#PersonalityOverviewInput').val().trim();
-                var motivations = $('#MotivationsInput').val().trim();
+                var overview = safeTrim('#PersonalityOverviewInput');
+                var motivations = safeTrim('#MotivationsInput');
 
                 if (activeTraits.length === 0) {
                     $('#core-traits-pills-container').parent().css('border-color', '#EF4444');
@@ -4142,7 +4439,7 @@
 
             if (step === 4) {
                 var valid = true;
-                var pob = $('#PlaceOfBirthInput').val().trim() || $('#PlaceOfBirth').val().trim();
+                var pob = safeTrim('#PlaceOfBirthInput') || safeTrim('#PlaceOfBirth');
                 if (!pob) {
                     $('#PlaceOfBirthInput').addClass('is-invalid');
                     valid = false;
@@ -4334,10 +4631,10 @@
             }
 
             setCheckState('chk-pers-traits', activeTraits.length > 0);
-            setCheckState('chk-pers-overview', !!$('#PersonalityOverviewInput').val().trim());
-            setCheckState('chk-pers-motivations', !!$('#MotivationsInput').val().trim());
-            setCheckState('chk-pers-strengthsflaws', !!($('#StrengthsInput').val().trim() || $('#FlawsInput').val().trim()));
-            setCheckState('chk-pers-fear', !!$('#FearsInput').val().trim());
+            setCheckState('chk-pers-overview', !!safeTrim('#PersonalityOverviewInput'));
+            setCheckState('chk-pers-motivations', !!safeTrim('#MotivationsInput'));
+            setCheckState('chk-pers-strengthsflaws', !!(safeTrim('#StrengthsInput') || safeTrim('#FlawsInput')));
+            setCheckState('chk-pers-fear', !!safeTrim('#FearsInput'));
         }
 
         function populateReviewSummary() {
@@ -4345,34 +4642,34 @@
             var storyTitle = $('#dd-story-trigger-text span').text().trim() || 'No story selected';
             $('#rev-story-title').text(storyTitle);
 
-            var name = $('#NameInput').val().trim();
+            var name = safeTrim('#NameInput');
             $('#rev-name').text(name || 'Not specified');
 
-            var role = $('#Role').val().trim();
+            var role = safeTrim('#Role');
             $('#rev-role').text(role || 'Not specified');
 
-            var arc = $('#ArcType').val().trim();
+            var arc = safeTrim('#ArcType');
             $('#rev-arc').text(arc || 'Not specified');
 
-            var nicknames = $('#NicknamesInput').val().trim();
+            var nicknames = safeTrim('#NicknamesInput');
             $('#rev-nicknames').text(nicknames || 'None');
 
-            var age = $('#AgeInputBg').val().trim() || $('#AgeInput').val().trim();
+            var age = safeTrim('#AgeInputBg') || safeTrim('#AgeInput');
             $('#rev-age').text(age || 'Not specified');
 
-            var gender = $('#Gender').val().trim() || $('#PronounsInput').val().trim();
+            var gender = safeTrim('#Gender') || safeTrim('#PronounsInput');
             $('#rev-gender').text(gender || 'Not specified');
 
-            var occ = $('#OccupationInput').val().trim();
+            var occ = safeTrim('#OccupationInput');
             $('#rev-occ').text(occ || 'Not specified');
 
-            var status = $('#Status').val().trim() || 'Active';
+            var status = safeTrim('#Status') || 'Active';
             $('#rev-status').text(status);
 
-            var align = $('#Alignment').val().trim();
+            var align = safeTrim('#Alignment');
             $('#rev-align').text(align || 'Not specified');
 
-            var oneline = $('#OneLineDescInput').val().trim();
+            var oneline = safeTrim('#OneLineDescInput');
             $('#rev-oneline').text(oneline || 'No description provided.');
 
             // 2. Appearance Card
@@ -4385,14 +4682,14 @@
                 $('#rev-avatar-fallback').show();
             }
 
-            $('#rev-height').text($('#HeightInput').val().trim() || 'Not specified');
-            $('#rev-build').text($('#Build').val().trim() || 'Not specified');
-            $('#rev-eyecolor').text($('#EyeColor').val().trim() || 'Not specified');
-            $('#rev-haircolor').text($('#HairColor').val().trim() || 'Not specified');
-            $('#rev-distinctive').text($('#DistinctiveFeaturesInput').val().trim() || 'None');
-            $('#rev-clothingstyle').text($('#ClothingStyle').val().trim() || 'Not specified');
-            $('#rev-accessories').text($('#AccessoriesInput').val().trim() || 'None');
-            $('#rev-overall-look').text($('#AppearanceNotesInput').val().trim() || 'No overall look notes.');
+            $('#rev-height').text(safeTrim('#HeightInput') || 'Not specified');
+            $('#rev-build').text(safeTrim('#Build') || 'Not specified');
+            $('#rev-eyecolor').text(safeTrim('#EyeColor') || 'Not specified');
+            $('#rev-haircolor').text(safeTrim('#HairColor') || 'Not specified');
+            $('#rev-distinctive').text(safeTrim('#DistinctiveFeaturesInput') || 'None');
+            $('#rev-clothingstyle').text(safeTrim('#ClothingStyle') || 'Not specified');
+            $('#rev-accessories').text(safeTrim('#AccessoriesInput') || 'None');
+            $('#rev-overall-look').text(safeTrim('#AppearanceNotesInput') || 'No overall look notes.');
 
             // 3. Personality Card
             var traitsHtml = '';
@@ -4405,30 +4702,30 @@
             }
             $('#rev-traits-pills').html(traitsHtml);
 
-            $('#rev-strengths').text($('#StrengthsInput').val().trim() || 'Not specified');
-            $('#rev-motivations').text($('#MotivationsInput').val().trim() || 'Not specified');
-            $('#rev-fears').text($('#FearsInput').val().trim() || 'Not specified');
-            $('#rev-flaws').text($('#FlawsInput').val().trim() || 'Not specified');
+            $('#rev-strengths').text(safeTrim('#StrengthsInput') || 'Not specified');
+            $('#rev-motivations').text(safeTrim('#MotivationsInput') || 'Not specified');
+            $('#rev-fears').text(safeTrim('#FearsInput') || 'Not specified');
+            $('#rev-flaws').text(safeTrim('#FlawsInput') || 'Not specified');
             $('#rev-temperament').text($('#Temperament').val() || 'Not specified');
             $('#rev-values').text($('#ValuesBeliefs').val() || 'Not specified');
 
             // 4. Background Card
-            $('#rev-pob').text($('#PlaceOfBirthInput').val().trim() || $('#PlaceOfBirth').val().trim() || 'Not specified');
+            $('#rev-pob').text(safeTrim('#PlaceOfBirthInput') || safeTrim('#PlaceOfBirth') || 'Not specified');
             
-            var dob = $('#DateOfBirthInput').val().trim();
-            var bgAge = $('#AgeInputBg').val().trim() || $('#AgeInput').val().trim();
+            var dob = safeTrim('#DateOfBirthInput');
+            var bgAge = safeTrim('#AgeInputBg') || safeTrim('#AgeInput');
             var dobAgeText = 'Not specified';
             if (dob && bgAge) { dobAgeText = dob + ' (' + bgAge + ')'; }
             else if (dob) { dobAgeText = dob; }
             else if (bgAge) { dobAgeText = bgAge + ' years old'; }
             $('#rev-dob-age').text(dobAgeText);
 
-            $('#rev-nationality').text($('#Nationality').val().trim() || 'Not specified');
-            $('#rev-fam-bg').text($('#FamilyBackgroundInput').val().trim() || 'Not specified');
-            $('#rev-upbringing').text($('#UpbringingInput').val().trim() || 'Not specified');
-            $('#rev-education').text($('#EducationInput').val().trim() || 'Not specified');
-            $('#rev-residence').text($('#CurrentResidenceInput').val().trim() || $('#CurrentResidence').val().trim() || 'Not specified');
-            $('#rev-languages').text($('#LanguagesInput').val().trim() || 'Not specified');
+            $('#rev-nationality').text(safeTrim('#Nationality') || 'Not specified');
+            $('#rev-fam-bg').text(safeTrim('#FamilyBackgroundInput') || 'Not specified');
+            $('#rev-upbringing').text(safeTrim('#UpbringingInput') || 'Not specified');
+            $('#rev-education').text(safeTrim('#EducationInput') || 'Not specified');
+            $('#rev-residence').text(safeTrim('#CurrentResidenceInput') || safeTrim('#CurrentResidence') || 'Not specified');
+            $('#rev-languages').text(safeTrim('#LanguagesInput') || 'Not specified');
 
             // 5. Relationships Card
             var relsHtml = '';
@@ -4459,11 +4756,11 @@
             $('#rev-relationships-container').html(relsHtml);
 
             // 6. Additional Notes Card
-            var authorsNotes = $('#BgSummaryInput').val().trim() || $('#Backstory').val().trim();
+            var authorsNotes = safeTrim('#BgSummaryInput') || safeTrim('#Backstory');
             $('#rev-authors-notes').text(authorsNotes || 'No additional notes provided.');
             $('#AuthorNotes').val(authorsNotes);
 
-            var tagsVal = $('#TagsInput').val().trim();
+            var tagsVal = safeTrim('#TagsInput');
             var tagsHtml = '';
             if (tagsVal) {
                 tagsVal.split(',').forEach(function(tg) {
@@ -4571,11 +4868,31 @@
         }
 
         function submitCharacterForm() {
-            if (validateStep(1)) {
-                $('#characterForm').submit();
-            } else {
+            try {
+                populateReviewSummary();
+            } catch (e) { console.warn('populateReviewSummary:', e); }
+
+            try {
+                syncRelationshipHiddenFields();
+            } catch (e) { console.warn('syncRelationshipHiddenFields:', e); }
+
+            if (!validateStep(1)) {
                 showStep(1);
+                $('#NameInput').focus();
+                alert('Please enter a Character Name before saving.');
+                return false;
             }
+
+            var form = document.getElementById('characterForm');
+            if (form) {
+                setTimeout(function() {
+                    $('#nextStepBtn, #topSaveBtn').html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving Character...');
+                }, 10);
+                form.submit();
+            } else {
+                $('#characterForm').submit();
+            }
+            return true;
         }
 
         async function uploadPortraitImage(event) {

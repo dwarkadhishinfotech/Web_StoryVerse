@@ -190,5 +190,116 @@ public static class DbSeeder
                 await context.SaveChangesAsync();
             }
         }
+
+        await SeedWorldBuildingDefaultsAsync(context);
+    }
+
+    private static async Task SeedWorldBuildingDefaultsAsync(ApplicationDbContext context)
+    {
+        if (!await context.WorldEntityTypes.AnyAsync())
+        {
+            var types = new List<WorldEntityType>
+            {
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Kingdom", Category = "Locations", Icon = "crown", Description = "A realm or country ruled by a king, queen, or sovereign.", DisplayOrder = 1, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Country", Category = "Locations", Icon = "flag", Description = "A nation with its own government, occupying a particular territory.", DisplayOrder = 2, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "City", Category = "Locations", Icon = "building-2", Description = "A major urban settlement with infrastructure and population.", DisplayOrder = 3, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Castle", Category = "Locations", Icon = "castle", Description = "A fortified stronghold or royal palace.", DisplayOrder = 4, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Village", Category = "Locations", Icon = "home", Description = "A small rural community or town.", DisplayOrder = 5, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Planet", Category = "Locations", Icon = "globe", Description = "A celestial body in a solar system.", DisplayOrder = 6, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Space Station", Category = "Locations", Icon = "orbit", Description = "An artificial orbital outpost.", DisplayOrder = 7, IsSystemDefault = true },
+
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Military", Category = "Organizations", Icon = "shield", Description = "Armed forces or royal guard units.", DisplayOrder = 8, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Secret Society", Category = "Organizations", Icon = "eye", Description = "A hidden faction working in the shadows.", DisplayOrder = 9, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Guild", Category = "Organizations", Icon = "award", Description = "An association of craftsmen, mages, or merchants.", DisplayOrder = 10, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Police Department", Category = "Organizations", Icon = "badge", Description = "Law enforcement agency.", DisplayOrder = 11, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Crime Syndicate", Category = "Organizations", Icon = "skull", Description = "Underworld criminal syndicate or cartel.", DisplayOrder = 12, IsSystemDefault = true },
+
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Faction", Category = "People Groups", Icon = "users", Description = "A political, ideological, or social group.", DisplayOrder = 13, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Dynasty", Category = "People Groups", Icon = "tree-pine", Description = "A hereditary line of rulers or noble family.", DisplayOrder = 14, IsSystemDefault = true },
+
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Faith", Category = "Cultures", Icon = "sparkles", Description = "A religious belief system or pantheon.", DisplayOrder = 15, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Religion", Category = "Religions", Icon = "church", Description = "Religious organization, faith, or belief system.", DisplayOrder = 16, IsSystemDefault = true },
+
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Species", Category = "Species", Icon = "paw-print", Description = "Biological or magical species.", DisplayOrder = 17, IsSystemDefault = true },
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Alien Species", Category = "Species", Icon = "bot", Description = "Extraterrestrial lifeform.", DisplayOrder = 18, IsSystemDefault = true },
+
+                new WorldEntityType { Id = Guid.NewGuid(), Name = "Historical Event", Category = "Historical Events", Icon = "history", Description = "Significant past war, treaty, or occurrence.", DisplayOrder = 19, IsSystemDefault = true }
+            };
+
+            context.WorldEntityTypes.AddRange(types);
+            await context.SaveChangesAsync();
+        }
+        else
+        {
+            if (!await context.WorldEntityTypes.AnyAsync(t => t.Name == "Country"))
+            {
+                context.WorldEntityTypes.Add(new WorldEntityType
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Country",
+                    Category = "Locations",
+                    Icon = "flag",
+                    Description = "A nation with its own government, occupying a particular territory.",
+                    DisplayOrder = 2,
+                    IsSystemDefault = true
+                });
+                await context.SaveChangesAsync();
+            }
+        }
+
+        if (!await context.WorldTemplates.AnyAsync())
+        {
+            var templates = new List<WorldTemplate>
+            {
+                new WorldTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Fantasy Kingdom",
+                    Genre = "Fantasy",
+                    Icon = "castle",
+                    SubTypesSummary = "Kingdom, City, Castle, Village, Guild...",
+                    Description = "Comprehensive template for high fantasy worlds with noble dynasties, magic guilds, and sacred temples."
+                },
+                new WorldTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Modern City",
+                    Genre = "Contemporary",
+                    Icon = "building-2",
+                    SubTypesSummary = "City, District, Building, Landmark...",
+                    Description = "Urban template for contemporary thrillers, romances, and mystery stories."
+                },
+                new WorldTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Crime World",
+                    Genre = "Crime Thriller",
+                    Icon = "scale",
+                    SubTypesSummary = "Police Station, Crime Syndicate, Court...",
+                    Description = "Dark crime thriller template covering police precincts, underworld syndicates, and courtrooms."
+                },
+                new WorldTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Sci-Fi Universe",
+                    Genre = "Sci-Fi",
+                    Icon = "orbit",
+                    SubTypesSummary = "Planet, Space Station, Faction...",
+                    Description = "Interstellar template for futuristic planets, orbital stations, alien species, and hyper-tech."
+                },
+                new WorldTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Historical Realm",
+                    Genre = "Historical",
+                    Icon = "landmark",
+                    SubTypesSummary = "Empire, Dynasty, Military, Trade Route...",
+                    Description = "Historical fiction template for ancient empires, military campaigns, and feudal dynasties."
+                }
+            };
+
+            context.WorldTemplates.AddRange(templates);
+            await context.SaveChangesAsync();
+        }
     }
 }

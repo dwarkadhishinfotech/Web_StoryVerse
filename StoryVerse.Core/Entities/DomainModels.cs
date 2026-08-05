@@ -45,77 +45,77 @@ namespace StoryVerse.Core.Entities
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid StoryId { get; set; }
-        public Story Story { get; set; } = null!;
+        public Story? Story { get; set; }
         
         public string Name { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-        public string ArcType { get; set; } = string.Empty;
-        public string Nicknames { get; set; } = string.Empty;
-        public string Age { get; set; } = string.Empty;
-        public string Gender { get; set; } = string.Empty;
-        public string Pronouns { get; set; } = string.Empty;
-        public string Occupation { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public string Alignment { get; set; } = string.Empty;
-        public string OneLineDescription { get; set; } = string.Empty;
-        public string BackgroundSummary { get; set; } = string.Empty;
-        public string Tags { get; set; } = string.Empty;
-        public string AvatarUrl { get; set; } = string.Empty;
+        public string? Role { get; set; }
+        public string? ArcType { get; set; }
+        public string? Nicknames { get; set; }
+        public string? Age { get; set; }
+        public string? Gender { get; set; }
+        public string? Pronouns { get; set; }
+        public string? Occupation { get; set; }
+        public string? Status { get; set; }
+        public string? Alignment { get; set; }
+        public string? OneLineDescription { get; set; }
+        public string? BackgroundSummary { get; set; }
+        public string? Tags { get; set; }
+        public string? AvatarUrl { get; set; }
 
         // Step 2: Appearance
-        public string Height { get; set; } = string.Empty;
-        public string Build { get; set; } = string.Empty;
-        public string Complexion { get; set; } = string.Empty;
-        public string EyeColor { get; set; } = string.Empty;
-        public string HairColor { get; set; } = string.Empty;
-        public string HairStyle { get; set; } = string.Empty;
-        public string DistinguishingFeatures { get; set; } = string.Empty;
-        public string ClothingStyle { get; set; } = string.Empty;
-        public string PreferredColors { get; set; } = string.Empty;
-        public string Accessories { get; set; } = string.Empty;
-        public string VoiceTone { get; set; } = string.Empty;
-        public string Accent { get; set; } = string.Empty;
-        public string SpeechPattern { get; set; } = string.Empty;
-        public string AppearanceNotes { get; set; } = string.Empty;
+        public string? Height { get; set; }
+        public string? Build { get; set; }
+        public string? Complexion { get; set; }
+        public string? EyeColor { get; set; }
+        public string? HairColor { get; set; }
+        public string? HairStyle { get; set; }
+        public string? DistinguishingFeatures { get; set; }
+        public string? ClothingStyle { get; set; }
+        public string? PreferredColors { get; set; }
+        public string? Accessories { get; set; }
+        public string? VoiceTone { get; set; }
+        public string? Accent { get; set; }
+        public string? SpeechPattern { get; set; }
+        public string? AppearanceNotes { get; set; }
 
         // Step 3: Personality
-        public string PersonalityTraits { get; set; } = string.Empty;
-        public string PersonalityOverview { get; set; } = string.Empty;
-        public string ValuesBeliefs { get; set; } = string.Empty;
-        public string Strengths { get; set; } = string.Empty;
-        public string Motivations { get; set; } = string.Empty;
-        public string Temperament { get; set; } = string.Empty;
-        public string Flaws { get; set; } = string.Empty;
-        public string Fears { get; set; } = string.Empty;
-        public string Desires { get; set; } = string.Empty;
+        public string? PersonalityTraits { get; set; }
+        public string? PersonalityOverview { get; set; }
+        public string? ValuesBeliefs { get; set; }
+        public string? Strengths { get; set; }
+        public string? Motivations { get; set; }
+        public string? Temperament { get; set; }
+        public string? Flaws { get; set; }
+        public string? Fears { get; set; }
+        public string? Desires { get; set; }
 
         // Step 4: Background
-        public string PlaceOfBirth { get; set; } = string.Empty;
-        public string DateOfBirth { get; set; } = string.Empty;
-        public string Nationality { get; set; } = string.Empty;
-        public string FamilyBackground { get; set; } = string.Empty;
-        public string Upbringing { get; set; } = string.Empty;
-        public string Education { get; set; } = string.Empty;
-        public string KeyEvents { get; set; } = string.Empty;
-        public string Backstory { get; set; } = string.Empty;
-        public string SocioeconomicStatus { get; set; } = string.Empty;
-        public string CurrentResidence { get; set; } = string.Empty;
-        public string Languages { get; set; } = string.Empty;
-        public string BackgroundDocumentUrl { get; set; } = string.Empty;
+        public string? PlaceOfBirth { get; set; }
+        public string? DateOfBirth { get; set; }
+        public string? Nationality { get; set; }
+        public string? FamilyBackground { get; set; }
+        public string? Upbringing { get; set; }
+        public string? Education { get; set; }
+        public string? KeyEvents { get; set; }
+        public string? Backstory { get; set; }
+        public string? SocioeconomicStatus { get; set; }
+        public string? CurrentResidence { get; set; }
+        public string? Languages { get; set; }
+        public string? BackgroundDocumentUrl { get; set; }
 
         // Step 5: Relationships
-        public string Allies { get; set; } = string.Empty;
-        public string Enemies { get; set; } = string.Empty;
-        public string Family { get; set; } = string.Empty;
-        public string LoveInterests { get; set; } = string.Empty;
-        public string RelationshipsJson { get; set; } = string.Empty;
-        public string RelationshipChartUrl { get; set; } = string.Empty;
+        public string? Allies { get; set; }
+        public string? Enemies { get; set; }
+        public string? Family { get; set; }
+        public string? LoveInterests { get; set; }
+        public string? RelationshipsJson { get; set; }
+        public string? RelationshipChartUrl { get; set; }
 
         // Step 6: Review & Additional Details
-        public string AuthorNotes { get; set; } = string.Empty;
-        public string FamilyCrest { get; set; } = string.Empty;
-        public string ThemeColor { get; set; } = string.Empty;
-        public string CustomDocumentUrl { get; set; } = string.Empty;
+        public string? AuthorNotes { get; set; }
+        public string? FamilyCrest { get; set; }
+        public string? ThemeColor { get; set; }
+        public string? CustomDocumentUrl { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
