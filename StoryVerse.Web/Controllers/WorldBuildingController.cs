@@ -508,6 +508,266 @@ namespace StoryVerse.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: WorldBuilding/ApplyTemplate
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApplyTemplate(Guid templateId, Guid storyId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var template = await _context.WorldTemplates.FindAsync(templateId);
+            if (template == null)
+            {
+                TempData["Error"] = "Template not found.";
+                return RedirectToAction(nameof(Index), new { storyId });
+            }
+
+            // 1. Ensure Entity Types exist for this genre
+            var genreTypes = new Dictionary<string, List<(string Name, string Category, string Icon, string Desc)>>
+            {
+                ["Fantasy"] = new()
+                {
+                    ("Kingdom",     "Locations",       "crown",     "A realm ruled by a monarch."),
+                    ("City",        "Locations",       "building-2","A major urban settlement."),
+                    ("Castle",      "Locations",       "castle",    "A fortified stronghold."),
+                    ("Village",     "Locations",       "home",      "A small rural community."),
+                    ("Guild",       "Organizations",   "award",     "An association of craftsmen or mages."),
+                    ("Dynasty",     "People Groups",   "tree-pine", "A hereditary line of rulers."),
+                    ("Faith",       "Cultures",        "sparkles",  "A religious belief system."),
+                },
+                ["Sci-Fi"] = new()
+                {
+                    ("Planet",        "Locations",     "globe",     "A celestial body."),
+                    ("Space Station", "Locations",     "orbit",     "An artificial orbital outpost."),
+                    ("Colony",        "Locations",     "building-2","A settled off-world community."),
+                    ("Faction",       "People Groups", "users",     "A political or ideological group."),
+                    ("Alien Species", "Species",       "bot",       "An extraterrestrial lifeform."),
+                    ("Corporation",   "Organizations", "briefcase", "A mega-corporation or tech conglomerate."),
+                },
+                ["Contemporary"] = new()
+                {
+                    ("City",       "Locations",       "building-2","An urban metropolitan area."),
+                    ("District",   "Locations",       "map-pin",   "A defined area within a city."),
+                    ("Building",   "Locations",       "landmark",  "A notable structure or venue."),
+                    ("Landmark",   "Locations",       "map",       "An iconic or significant location."),
+                    ("Agency",     "Organizations",   "badge",     "A government or private agency."),
+                },
+                ["Historical"] = new()
+                {
+                    ("Empire",       "Locations",       "crown",    "A vast empire with territories."),
+                    ("Dynasty",      "People Groups",   "tree-pine","A ruling family or bloodline."),
+                    ("Military",     "Organizations",   "shield",   "Armed forces or standing army."),
+                    ("Trade Route",  "Locations",       "route",    "A major trade or commerce path."),
+                    ("Historical Event", "Historical Events", "history", "A defining past event."),
+                },
+                ["Crime Thriller"] = new()
+                {
+                    ("Police Station", "Organizations", "badge",    "Law enforcement headquarters."),
+                    ("Crime Syndicate","Organizations", "skull",    "Underworld criminal organization."),
+                    ("Courthouse",     "Locations",     "landmark", "A judicial building."),
+                    ("Safe House",     "Locations",     "home",     "A hidden refuge."),
+                    ("Gang",           "Organizations", "users",    "A street-level criminal gang."),
+                },
+            };
+
+            if (genreTypes.TryGetValue(template.Genre, out var typesToAdd))
+            {
+                int order = await _context.WorldEntityTypes.MaxAsync(t => (int?)t.DisplayOrder) ?? 0;
+                foreach (var (name, category, icon, desc) in typesToAdd)
+                {
+                    bool exists = await _context.WorldEntityTypes
+                        .AnyAsync(t => t.Name == name && t.Category == category);
+                    if (!exists)
+                    {
+                        order++;
+                        _context.WorldEntityTypes.Add(new WorldEntityType
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = name,
+                            Category = category,
+                            Icon = icon,
+                            Description = desc,
+                            DisplayOrder = order,
+                            IsSystemDefault = false,
+                            UserId = user.Id
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // Fetch all available types
+            var allTypes = await _context.WorldEntityTypes.ToListAsync();
+
+            // 2. Starter Entities definition map per genre
+            var starterEntitiesMap = new Dictionary<string, List<(string Name, string TypeName, string Category, string Summary, string Description, string Status, string Importance, string Icon, string CoverImage, string Tags)>>
+            {
+                ["Crime Thriller"] = new()
+                {
+                    ("Metropolitan Police 1st Precinct", "Police Station", "Organizations", 
+                     "Primary law enforcement headquarters managing city precincts and homicide divisions.",
+                     "A heavily fortified multi-story station housing law enforcement, detective bureaus, forensics labs, and high-security holding cells.",
+                     "Active", "Critical", "badge", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Police, LawEnforcement, Crime, Precinct"),
+
+                    ("Viper Crime Syndicate", "Crime Syndicate", "Organizations", 
+                     "Underworld criminal cartel controlling harbor docks, illegal gambling, and black markets.",
+                     "Operating from hidden VIP lounges and industrial warehouses, the Viper Syndicate controls major illicit operations across districts.",
+                     "Active", "Critical", "skull", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80", "Syndicate, Underworld, Cartel, Mafia"),
+
+                    ("Central District Courthouse", "Courthouse", "Locations", 
+                     "Historic judicial building where high-profile crime trials and prosecutions occur.",
+                     "A grand stone courthouse with classical pillars, surrounded by bail bond agencies and defense attorney offices.",
+                     "Active", "Major", "landmark", "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=800&auto=format&fit=crop&q=80", "Justice, Legal, Trials, Courthouse"),
+
+                    ("Harbor Dock 14 Safe House", "Safe House", "Locations", 
+                     "Covert emergency refuge used by undercover detectives and high-value informants.",
+                     "Disguised as a decaying shipping office, equipped with reinforced steel doors, encrypted comms, and a secret canal escape route.",
+                     "Active", "Minor", "home", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80", "Safehouse, Covert, Hideout, Undercover"),
+
+                    ("Nightshade Street Syndicate", "Gang", "Organizations", 
+                     "Aggressive street syndicate controlling the Eastside turf and black-market arms trades.",
+                     "Known for tactical gear and dark street attire, operating out of underground combat clubs and alleyways.",
+                     "Active", "Major", "users", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Gang, Street, Turf, Eastside")
+                },
+                ["Fantasy"] = new()
+                {
+                    ("Citadel of Aethelgard", "Kingdom", "Locations",
+                     "Ancient royal stronghold sitting atop the High Peaks of the realm.",
+                     "Impenetrable fortress of white stone and banners, ruling over five vassal provinces.",
+                     "Active", "Critical", "crown", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80", "Citadel, Castle, Royal, HighFantasy"),
+
+                    ("Sunfire Capital City", "City", "Locations",
+                     "Bustling trade metropolis with marble plazas and grand alchemy bazaars.",
+                     "The vibrant heart of kingdom trade, commerce, and diplomatic emissaries.",
+                     "Active", "Major", "building-2", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80", "Capital, City, Bazaars, Trade"),
+
+                    ("Order of Arcane Mages", "Guild", "Organizations",
+                     "Prestigious council governing elemental magic and ancient spell archives.",
+                     "A guild of sorcerers and scholars researching elemental runes and ancient seals.",
+                     "Active", "Major", "award", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Mages, Magic, Guild, Arcane"),
+
+                    ("House Sterling Dynasty", "Dynasty", "People Groups",
+                     "Hereditary noble bloodline ruling over the eastern valleys for centuries.",
+                     "Renowned for diplomatic wisdom and formidable knightly guards.",
+                     "Active", "Major", "tree-pine", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Dynasty, Nobles, Royalty, Bloodline"),
+
+                    ("The Sun Temple", "Faith", "Cultures",
+                     "Holy sanctuary devoted to divine light, solar rites, and ancient prophecies.",
+                     "A towering cathedral decorated with stained-glass solar windows and sacred altars.",
+                     "Active", "Minor", "sparkles", "https://images.unsplash.com/photo-1519817650390-64a93db51149?w=800&auto=format&fit=crop&q=80", "Temple, Faith, Divine, Sacred")
+                },
+                ["Sci-Fi"] = new()
+                {
+                    ("Astra Prime Orbital Hub", "Space Station", "Locations",
+                     "Intergalactic orbital station connecting trade ships and star fleets.",
+                     "A sprawling artificial ring station offering docking bays, market decks, and atmospheric domes.",
+                     "Active", "Critical", "orbit", "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80", "SpaceStation, Orbit, SciFi, Trading"),
+
+                    ("Nexus-9 Mineral Planet", "Planet", "Locations",
+                     "Off-world desert planet rich in rare plasma crystals and terraforming rigs.",
+                     "Arid planet covered in glowing crystal ravines and deep subterranean colonies.",
+                     "Active", "Major", "globe", "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80", "Planet, Mining, Crystals, OuterRim"),
+
+                    ("Vanguard Outer-Rim Faction", "Faction", "People Groups",
+                     "Coalition of independent pilots fighting for outer-system freedom.",
+                     "Organized rebel group operating agile fighter fleets across deep space sectors.",
+                     "Active", "Major", "users", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Faction, Rebels, Pilots, Vanguard"),
+
+                    ("Zeta-5 Alien Species", "Alien Species", "Species",
+                     "Ancient telepathic species with bioluminescent crystalline skin.",
+                     "Intelligent alien species capable of psychic communication and grav-manipulation.",
+                     "Active", "Major", "bot", "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80", "Aliens, Telepathic, Species, SciFi"),
+
+                    ("OmniCorp Cybernetics", "Corporation", "Organizations",
+                     "Megacorporation manufacturing advanced neural AI and cybernetic gear.",
+                     "Dominant corporate titan controlling tech patents, security drones, and synth research.",
+                     "Active", "Critical", "briefcase", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Corporate, Cybernetics, AI, Tech")
+                },
+                ["Contemporary"] = new()
+                {
+                    ("Metropolitan Central City", "City", "Locations",
+                     "Vibrant modern city featuring financial towers, parks, and culture districts.",
+                     "A bustling metropolis housing millions, central transport hubs, and media networks.",
+                     "Active", "Critical", "building-2", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80", "City, Metro, Urban, Contemporary"),
+
+                    ("Financial High-Rise District", "District", "Locations",
+                     "Commercial hub of stock exchanges, corporate towers, and tech incubators.",
+                     "Skyscrapers gleaming above busy avenues, bustling with executives and traders.",
+                     "Active", "Major", "map-pin", "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80", "District, Finance, Business"),
+
+                    ("Federal Intelligence Agency", "Agency", "Organizations",
+                     "Government agency conducting covert operations and national security cases.",
+                     "High-tech headquarters equipped with surveillance rooms and tactical field offices.",
+                     "Active", "Major", "badge", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Agency, Intelligence, Government")
+                },
+                ["Historical"] = new()
+                {
+                    ("Sovereign Imperium Realm", "Empire", "Locations",
+                     "Expansive historical empire covering vast valleys, provinces, and trade ports.",
+                     "A mighty historical empire governed by imperial decrees and standing armies.",
+                     "Active", "Critical", "crown", "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=800&auto=format&fit=crop&q=80", "Empire, Imperium, Historical, Sovereign"),
+
+                    ("Valerius Imperial Dynasty", "Dynasty", "People Groups",
+                     "Hereditary imperial lineage known for conquest and legal codices.",
+                     "A centuries-old royal bloodline maintaining order through iron discipline.",
+                     "Active", "Major", "tree-pine", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Dynasty, Imperial, History"),
+
+                    ("Royal Imperial Guard", "Military", "Organizations",
+                     "Elite military regiment protecting imperial borders and royal palaces.",
+                     "Disciplined legion clad in traditional armor, guarding the Emperor and Senate.",
+                     "Active", "Major", "shield", "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800&auto=format&fit=crop&q=80", "Military, Guard, Army, Empire")
+                }
+            };
+
+            int addedCount = 0;
+            if (starterEntitiesMap.TryGetValue(template.Genre, out var entitiesToSeed))
+            {
+                foreach (var se in entitiesToSeed)
+                {
+                    bool exists = await _context.WorldEntities
+                        .AnyAsync(e => e.StoryId == storyId && e.Name == se.Name && e.ActiveStatus);
+                    if (!exists)
+                    {
+                        var matchingType = allTypes.FirstOrDefault(t => t.Name.Equals(se.TypeName, StringComparison.OrdinalIgnoreCase))
+                                        ?? allTypes.FirstOrDefault(t => t.Category.Equals(se.Category, StringComparison.OrdinalIgnoreCase))
+                                        ?? allTypes.First();
+
+                        var newEntity = new WorldEntity
+                        {
+                            Id = Guid.NewGuid(),
+                            StoryId = storyId,
+                            EntityTypeId = matchingType.Id,
+                            Name = se.Name,
+                            Summary = se.Summary,
+                            Description = se.Description,
+                            Status = se.Status,
+                            Importance = se.Importance,
+                            Icon = se.Icon,
+                            CoverImage = se.CoverImage,
+                            Tags = se.Tags,
+                            CreatedDate = DateTime.UtcNow,
+                            UpdatedDate = DateTime.UtcNow,
+                            CreatedBy = user.UserName,
+                            ActiveStatus = true
+                        };
+
+                        _context.WorldEntities.Add(newEntity);
+                        addedCount++;
+                    }
+                }
+
+                if (addedCount > 0)
+                {
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            TempData["Success"] = $"✨ \"{template.Name}\" template applied! {addedCount} world entities created for your story.";
+            return RedirectToAction(nameof(Index), new { storyId });
+        }
+
+
         // POST: WorldBuilding/ToggleFavorite
         [HttpPost]
         public async Task<IActionResult> ToggleFavorite(Guid id)

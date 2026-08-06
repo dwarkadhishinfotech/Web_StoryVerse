@@ -1,163 +1,1201 @@
+@model StoryVerse.Web.Models.TimelineStudioViewModel
 @{
-    var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
-    ViewData["Title"] = $"Timeline - {story?.Title}";
+    ViewData["Title"] = "Timeline Studio - StoryVerse";
+    var isTimelineEmpty = Model.TotalEventsCount == 0;
 }
 
-<div class="w-full pb-5 relative z-10 font-sans text-slate-800">
-    <!-- Header Section -->
-    <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+<style>
+    .timeline-header-title {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 1.85rem;
+        color: #0F172A;
+    }
+
+    .timeline-feather-icon {
+        width: 24px;
+        height: 24px;
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 6px;
+    }
+
+    /* Metric Cards */
+    .timeline-stat-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .timeline-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .timeline-stat-icon-wrapper {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .timeline-stat-number {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: #0F172A;
+    }
+    .timeline-stat-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748B;
+    }
+
+    /* Tab Switcher */
+    .timeline-nav-tabs {
+        border-bottom: 1px solid #E2E8F0;
+        gap: 1.5rem;
+        padding-bottom: 2px;
+    }
+    .timeline-tab-link {
+        color: #64748B;
+        font-weight: 600;
+        font-size: 0.92rem;
+        padding: 10px 18px;
+        border-bottom: 3px solid transparent;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+    .timeline-tab-link:hover {
+        color: #13A8A6;
+        background-color: rgba(19, 168, 166, 0.04);
+        border-radius: 8px 8px 0 0;
+    }
+    .timeline-tab-link.active {
+        color: #13A8A6;
+        border-bottom-color: #13A8A6;
+        font-weight: 700;
+    }
+
+    /* Vertical Timeline */
+    .timeline-track-wrapper {
+        position: relative;
+        padding-left: 110px;
+    }
+    .timeline-track-line {
+        position: absolute;
+        left: 145px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #CBD5E1;
+        z-index: 1;
+    }
+    .timeline-node-item {
+        position: relative;
+        margin-bottom: 24px;
+    }
+    .timeline-node-date {
+        position: absolute;
+        left: -110px;
+        top: 14px;
+        width: 90px;
+        text-align: right;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748B;
+        text-transform: uppercase;
+        line-height: 1.2;
+    }
+    .timeline-node-dot {
+        position: absolute;
+        left: 30px;
+        top: 20px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #13A8A6;
+        border: 2px solid #FFFFFF;
+        box-shadow: 0 0 0 2px rgba(19, 168, 166, 0.3);
+        z-index: 2;
+    }
+    .timeline-event-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-left: 55px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .timeline-event-card:hover {
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        border-color: #CBD5E1;
+    }
+    .category-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    /* Right Sidebar Cards */
+    .timeline-side-panel {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .mini-calendar-day {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 500;
+        border-radius: 50%;
+        color: #475569;
+        margin: 0 auto;
+    }
+    .mini-calendar-day.active-day {
+        background-color: #13A8A6;
+        color: #FFFFFF;
+        font-weight: 700;
+    }
+    .mini-calendar-day.event-day::after {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 4px;
+        background: #13A8A6;
+        border-radius: 50%;
+        margin-top: 2px;
+    }
+
+    /* Empty State Hero */
+    .empty-hero-card {
+        background: linear-gradient(180deg, #FFFFFF 0%, #FAF5ED 100%);
+        border: 1px solid #EAE3D2;
+        border-radius: 16px;
+        padding: 48px 24px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+    .empty-quick-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: block;
+    }
+    .empty-quick-card:hover {
+        transform: translateY(-2px);
+        border-color: #13A8A6;
+        box-shadow: 0 4px 12px rgba(19, 168, 166, 0.1);
+    }
+
+    /* Top Action Header Controls */
+    .timeline-controls-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .timeline-control-btn {
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.85rem;
+        border-radius: 8px;
+        border: 1px solid #E2E8F0 !important;
+        background-color: #FFFFFF;
+        transition: all 0.2s ease;
+        line-height: 1;
+    }
+    .timeline-control-btn:hover {
+        border-color: #CBD5E1 !important;
+        background-color: #F8FAFC;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+    .timeline-icon-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #E2E8F0 !important;
+        background-color: #FFFFFF;
+        color: #64748B;
+        transition: all 0.2s ease;
+        padding: 0;
+        flex-shrink: 0;
+    }
+    .timeline-icon-btn:hover {
+        color: #13A8A6;
+        border-color: #CBD5E1 !important;
+        background-color: #F8FAFC;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+    .timeline-create-btn {
+        height: 38px;
+        background-color: #13A8A6;
+        color: #FFFFFF;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: none;
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+        padding: 0 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background-color 0.2s ease;
+        line-height: 1;
+    }
+    .timeline-create-btn:hover {
+        background-color: #0F8A88;
+        color: #FFFFFF;
+    }
+    .timeline-create-toggle {
+        height: 38px;
+        background-color: #0F8A88;
+        color: #FFFFFF;
+        border: none;
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+        padding: 0 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+    }
+    .timeline-create-toggle:hover {
+        background-color: #0D7674;
+        color: #FFFFFF;
+    }
+    .timeline-search-input {
+        height: 38px;
+        font-size: 0.85rem;
+        border-color: #E2E8F0 !important;
+        border-radius: 8px;
+        padding-left: 14px;
+        padding-right: 36px;
+        background-color: #FFFFFF;
+    }
+    .timeline-search-input:focus {
+        border-color: #13A8A6 !important;
+        box-shadow: 0 0 0 3px rgba(19, 168, 166, 0.15);
+    }
+
+    /* Example Events Card Styling */
+    .example-event-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .example-event-card:hover {
+        border-color: #13A8A6 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(19, 168, 166, 0.08);
+    }
+    .example-event-card:hover .example-event-cal-icon {
+        color: #13A8A6 !important;
+    }
+</style>
+
+<div class="container-fluid p-0">
+    <!-- Top Action Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 mt-1 gap-3">
         <div>
-            <h2 class="font-serif fw-bold text-slate-900 mb-1" style="font-size: 28px; color: var(--forest-green-dark);">
-                Timeline <span class="text-warning fs-4">✦</span>
-            </h2>
-            <p class="text-secondary mb-0" style="font-size: 0.875rem;">Visualize the chronological flow of your story events.</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h1 class="timeline-header-title mb-0" style="font-size: 1.85rem;">Timeline Studio</h1>
+                <img src="/images/dashboard/quill_ink.png" class="timeline-feather-icon" alt="Feather" onerror="this.src='/images/CompanyLogo/favicon-32x32.png'" />
+            </div>
+            <p class="text-secondary mb-0" style="font-size: 0.88rem;">Every unforgettable story is remembered through unforgettable moments.</p>
         </div>
 
-        <div class="d-flex gap-2">
-            <a href="@Url.Action("Details", "Stories", new { id = story?.Id })" class="btn btn-outline-secondary rounded-pill px-4 py-2 d-flex align-items-center hover-lift-subtle" style="font-size: 0.85rem; font-weight: 700; border-color: var(--parchment-border) !important;">
-                <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Story Overview
+        <div class="timeline-controls-group">
+            <!-- Story Selector Dropdown (Peacock Theme) -->
+            <div class="dropdown">
+                <button class="btn timeline-control-btn dropdown-toggle px-3 text-slate-800 font-sans fw-semibold shadow-xs gap-2" 
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i data-lucide="book-open" style="width: 16px; height: 16px; color: #13A8A6;"></i>
+                    <span>Story: <strong style="color: #0F766E;">@Model.StoryTitle</strong></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2" style="font-size: 0.85rem; min-width: 200px;">
+                    <li class="px-3 py-1 text-uppercase fw-bold text-muted" style="font-size: 10px; letter-spacing: 0.05em;">Select Story</li>
+                    @foreach (var s in Model.Stories)
+                    {
+                        <li>
+                            <a class="dropdown-item py-2 px-3 d-flex align-items-center justify-content-between @(s.Id == Model.SelectedStoryId ? "active fw-bold" : "")" 
+                               style="@(s.Id == Model.SelectedStoryId ? "background-color: #13A8A6; color: #ffffff;" : "")"
+                               href="@Url.Action("Index", "Timeline", new { storyId = s.Id, activeTab = Model.ActiveTab, viewMode = Model.ViewMode })">
+                                <span>@s.Title</span>
+                                @if (s.Id == Model.SelectedStoryId)
+                                {
+                                    <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                                }
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- Global Timeline Search Input -->
+            <form method="get" action="@Url.Action("Index", "Timeline")" class="position-relative" style="width: 220px;">
+                <input type="hidden" name="storyId" value="@Model.SelectedStoryId" />
+                <input type="hidden" name="activeTab" value="@Model.ActiveTab" />
+                <input type="hidden" name="viewMode" value="@Model.ViewMode" />
+                <input type="text" name="search" value="@Model.SearchQuery" class="form-control timeline-search-input shadow-xs" 
+                       placeholder="Search timeline... ⌘K" />
+                <button type="submit" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted pe-3 p-0 border-0 d-flex align-items-center" style="height: 38px;">
+                    <i data-lucide="search" style="width: 15px; height: 15px; color: #64748B;"></i>
+                </button>
+            </form>
+
+            <!-- Create Timeline Button -->
+            <a href="@Url.Action("Create", "Timeline", new { storyId = Model.SelectedStoryId })" class="btn btn-outline-teal rounded-3 font-semibold shadow-xs d-inline-flex align-items-center gap-1" style="height: 38px; font-size: 0.85rem;">
+                <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i>
+                <span>Add New Timeline</span>
             </a>
 
-            <button class="btn text-white rounded-pill px-4 py-2 d-flex align-items-center shadow-sm hover-lift-subtle" 
-                    style="background: var(--peacock-gradient); font-size: 0.85rem; font-weight: 700; border: none;"
-                    data-bs-toggle="modal" data-bs-target="#addEventModal">
-                <i data-lucide="plus" class="me-1.5" style="width: 16px; height: 16px;"></i> Add Event
+            <!-- Create Event Split Button -->
+            <div class="btn-group shadow-xs">
+                <button type="button" class="btn timeline-create-btn" onclick="openCreateEventModal()">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    <span>Create Timeline Event</span>
+                </button>
+                <button type="button" class="btn timeline-create-toggle dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2" style="font-size: 0.85rem; min-width: 180px;">
+                    <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="@Url.Action("Create", "Timeline", new { storyId = Model.SelectedStoryId })"><i data-lucide="git-branch" class="me-2" style="width: 16px; color: #13A8A6;"></i>New Timeline Wizard</a></li>
+                    <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="javascript:void(0)" onclick="openCreateEventModal()"><i data-lucide="plus-circle" class="me-2" style="width: 16px; color: #13A8A6;"></i>New Event</a></li>
+                    <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="javascript:void(0)" onclick="openCreateArcModal()"><i data-lucide="flag" class="me-2" style="width: 16px; color: #EF4444;"></i>New Story Arc</a></li>
+                </ul>
+            </div>
+
+            <!-- Theme & Notification Icons -->
+            <button type="button" class="btn timeline-icon-btn shadow-xs" title="Notifications">
+                <i data-lucide="bell" style="width: 17px; height: 17px;"></i>
+            </button>
+            <button type="button" class="btn timeline-icon-btn shadow-xs" title="Toggle Theme">
+                <i data-lucide="sun" style="width: 17px; height: 17px;"></i>
             </button>
         </div>
     </div>
 
-    <!-- Stats Summary Grid -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Total Events</span>
-                <h3 class="fw-bold text-slate-800 mb-0 font-serif">8</h3>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-xs mb-3" role="alert">
+            <i data-lucide="check-circle" class="me-2" style="width: 18px; height: 18px;"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Timelines from Database Bar -->
+    @if (Model.Timelines != null && Model.Timelines.Any())
+    {
+        <div class="p-3 mb-4 bg-white border rounded-3 shadow-xs">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-slate-800" style="font-size: 0.9rem;">
+                    <i data-lucide="git-branch" class="text-teal-600 me-1" style="width: 16px; height: 16px;"></i>
+                    Story Timelines (@Model.Timelines.Count)
+                </span>
+                <a href="@Url.Action("Create", "Timeline", new { storyId = Model.SelectedStoryId })" class="btn btn-sm btn-link text-teal-600 p-0 text-decoration-none fw-semibold" style="font-size: 0.8rem;">
+                    + Create Another Timeline
+                </a>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var t in Model.Timelines)
+                {
+                    <div class="p-2 px-3 border rounded-3 d-flex align-items-center gap-2 bg-slate-50 hover-shadow transition-all">
+                        <span style="width: 10px; height: 10px; border-radius: 50%; background-color: @(t.Color == "Blue" ? "#2563EB" : t.Color == "Purple" ? "#7C3AED" : t.Color == "Red" ? "#DC2626" : "#13A8A6");"></span>
+                        <div>
+                            <span class="fw-bold text-slate-800" style="font-size: 0.85rem;">@t.Name</span>
+                            <span class="badge bg-slate-200 text-slate-700 ms-1" style="font-size: 0.68rem;">@t.TimelineType</span>
+                        </div>
+                        <div class="ms-2 d-flex align-items-center gap-1">
+                            <a href="@Url.Action("Edit", "Timeline", new { id = t.Id })" class="btn btn-light btn-xs p-1 text-slate-600 rounded" title="Edit Timeline">
+                                <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
+                            </a>
+                            <button type="button" class="btn btn-light btn-xs p-1 text-danger rounded" onclick="deleteTimelineItem('@t.Id')" title="Delete Timeline">
+                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Narrative Arcs</span>
-                <h3 class="fw-bold text-slate-800 mb-0 font-serif">3</h3>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Timeline Span</span>
-                <h3 class="fw-bold text-slate-800 mb-0 font-serif">4 Years</h3>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <span class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 10px; letter-spacing: 0.05em;">Active Arc</span>
-                <h3 class="fw-bold text-slate-800 mb-0 font-serif" style="color: var(--forest-green);">Rising Action</h3>
-            </div>
-        </div>
+    }
+
+    <!-- Navigation Tabs Bar -->
+    <div class="d-flex align-items-center timeline-nav-tabs mb-4 pb-1">
+        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, activeTab = "TimelineView" })" class="timeline-tab-link @(Model.ActiveTab == "TimelineView" ? "active" : "")">
+            <i data-lucide="layout-list" style="width: 16px; height: 16px;"></i> Timeline View
+        </a>
+        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, activeTab = "CalendarView" })" class="timeline-tab-link @(Model.ActiveTab == "CalendarView" ? "active" : "")">
+            <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> Calendar View
+        </a>
+        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, activeTab = "ArcView" })" class="timeline-tab-link @(Model.ActiveTab == "ArcView" ? "active" : "")">
+            <i data-lucide="git-branch" style="width: 16px; height: 16px;"></i> Arc View
+        </a>
+        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, activeTab = "CharacterView" })" class="timeline-tab-link @(Model.ActiveTab == "CharacterView" ? "active" : "")">
+            <i data-lucide="users" style="width: 16px; height: 16px;"></i> Character View
+        </a>
+        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, activeTab = "LocationView" })" class="timeline-tab-link @(Model.ActiveTab == "LocationView" ? "active" : "")">
+            <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> Location View
+        </a>
+        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, activeTab = "InvestigationBoard" })" class="timeline-tab-link @(Model.ActiveTab == "InvestigationBoard" ? "active" : "")">
+            <i data-lucide="trello" style="width: 16px; height: 16px;"></i> Investigation Board
+            <span class="badge bg-info text-white font-sans ms-1" style="font-size: 10px; font-weight: 700;">New</span>
+        </a>
     </div>
 
-    <!-- Timeline Workspace -->
-    <div class="row g-4">
-        <!-- Event List Chronological -->
-        <div class="col-lg-8">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <h5 class="font-serif fw-bold text-peacock-dark mb-4">Chronological Stream</h5>
-                
-                <div class="position-relative ps-4 border-start border-2" style="border-color: var(--parchment-border) !important; margin-left: 20px;">
-                    <!-- Event 1 -->
-                    <div class="position-relative mb-5">
-                        <div class="position-absolute rounded-circle bg-white border border-4 border-teal-500" style="width: 16px; height: 16px; left: -29px; top: 4px;"></div>
-                        <div class="bg-white p-4 rounded-4 border shadow-xs">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="badge bg-teal-subtle text-teal-700 px-2.5 py-1.5 rounded text-uppercase" style="font-size: 9px; font-weight: 700;">Prologue</span>
-                                <span class="text-muted small font-monospace">Year 1, Spring</span>
-                            </div>
-                            <h6 class="fw-bold text-slate-800 font-serif">The Royal Banquet Discovery</h6>
-                            <p class="text-secondary mb-0 small">Kaelen stumbles upon the secret treaty plans hidden beneath the ambassador's desk during the autumn gala banquet.</p>
-                        </div>
+    @if (isTimelineEmpty)
+    {
+        <!-- ==================== IMAGE 2: EMPTY STATE LAYOUT ==================== -->
+        <div class="row g-4 mb-4">
+            <!-- Main Empty State Hero Card -->
+            <div class="col-lg-8">
+                <div class="empty-hero-card mb-4">
+                    <div class="mb-3 d-flex justify-content-center">
+                        <img src="/images/empty-states/book-feather-new.png" alt="Timeline Book" style="max-height: 220px; object-fit: contain;" onerror="this.src='/images/dashboard/welcome_hero.png'" />
                     </div>
 
-                    <!-- Event 2 -->
-                    <div class="position-relative mb-5">
-                        <div class="position-absolute rounded-circle bg-white border border-4 border-primary" style="width: 16px; height: 16px; left: -29px; top: 4px;"></div>
-                        <div class="bg-white p-4 rounded-4 border shadow-xs">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded text-uppercase" style="font-size: 9px; font-weight: 700;">Inciting Incident</span>
-                                <span class="text-muted small font-monospace">Year 1, Summer</span>
-                            </div>
-                            <h6 class="fw-bold text-slate-800 font-serif">The Crow's Call Message</h6>
-                            <p class="text-secondary mb-0 small">A coded message arrives at midnight via a black-feathered courier hawk, warning of the council's treachery.</p>
+                    <h2 class="font-serif fw-bold text-dark mb-2" style="font-size: 1.65rem;">Your timeline is waiting to be written</h2>
+                    <p class="text-secondary mx-auto mb-4" style="max-width: 520px; font-size: 0.92rem;">
+                        Capture the important moments, define your story's history, and connect characters, places, and events.
+                    </p>
+
+                    <button class="btn text-white fw-bold px-4 py-2.5 rounded-3 mb-3" style="background-color: #13A8A6; font-size: 0.9rem;" onclick="openCreateEventModal()">
+                        <i data-lucide="plus" class="me-1" style="width: 18px; height: 18px;"></i> Create Your First Timeline Event
+                    </button>
+
+                    <div class="text-muted small">
+                        or import from existing timeline <a href="javascript:void(0)" onclick="alert('Import options ready.')" class="text-decoration-none fw-semibold" style="color: #13A8A6;">Import Timeline <i data-lucide="external-link" style="width: 14px; height: 14px;"></i></a>
+                    </div>
+                </div>
+
+                <!-- Get Started Quickly Grid -->
+                <div class="bg-white p-4 rounded-4 border shadow-xs">
+                    <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Get started quickly</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4 col-6">
+                            <a href="javascript:void(0)" onclick="openCreateEventModal()" class="empty-quick-card">
+                                <div class="p-2 rounded-3 bg-light text-teal d-inline-block mb-2">
+                                    <i data-lucide="calendar-plus" style="width: 20px; height: 20px; color: #13A8A6;"></i>
+                                </div>
+                                <div class="fw-bold text-dark small">Create Event</div>
+                                <div class="text-muted" style="font-size: 11px;">Add a new moment to your story</div>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <a href="javascript:void(0)" onclick="openCreateArcModal()" class="empty-quick-card">
+                                <div class="p-2 rounded-3 bg-light text-danger d-inline-block mb-2">
+                                    <i data-lucide="flag" style="width: 20px; height: 20px; color: #EF4444;"></i>
+                                </div>
+                                <div class="fw-bold text-dark small">Create Arc</div>
+                                <div class="text-muted" style="font-size: 11px;">Build the structure of your story</div>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <a href="@Url.Action("Index", "Characters", new { storyId = Model.SelectedStoryId })" class="empty-quick-card">
+                                <div class="p-2 rounded-3 bg-light text-primary d-inline-block mb-2">
+                                    <i data-lucide="user-plus" style="width: 20px; height: 20px; color: #3B82F6;"></i>
+                                </div>
+                                <div class="fw-bold text-dark small">Add Character</div>
+                                <div class="text-muted" style="font-size: 11px;">Connect characters to your timeline</div>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <a href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId })" class="empty-quick-card">
+                                <div class="p-2 rounded-3 bg-light text-warning d-inline-block mb-2">
+                                    <i data-lucide="map-pin" style="width: 20px; height: 20px; color: #F59E0B;"></i>
+                                </div>
+                                <div class="fw-bold text-dark small">Add Location</div>
+                                <div class="text-muted" style="font-size: 11px;">Link places to important events</div>
+                            </a>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <a href="javascript:void(0)" onclick="alert('Import feature ready.')" class="empty-quick-card">
+                                <div class="p-2 rounded-3 bg-light text-secondary d-inline-block mb-2">
+                                    <i data-lucide="upload-cloud" style="width: 20px; height: 20px; color: #64748B;"></i>
+                                </div>
+                                <div class="fw-bold text-dark small">Import Timeline</div>
+                                <div class="text-muted" style="font-size: 11px;">Bring in timeline from another tool</div>
+                            </a>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Event 3 -->
-                    <div class="position-relative mb-2">
-                        <div class="position-absolute rounded-circle bg-white border border-4 border-warning" style="width: 16px; height: 16px; left: -29px; top: 4px;"></div>
-                        <div class="bg-white p-4 rounded-4 border shadow-xs">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="badge bg-warning-subtle text-warning-emphasis px-2.5 py-1.5 rounded text-uppercase" style="font-size: 9px; font-weight: 700;">Rising Action</span>
-                                <span class="text-muted small font-monospace">Year 2, Winter</span>
+            <!-- Right Sidebar Panel (Empty State) -->
+            <div class="col-lg-4">
+                <div class="timeline-side-panel mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i data-lucide="lightbulb" style="width: 18px; height: 18px; color: #F59E0B;"></i>
+                        <h6 class="fw-bold text-dark mb-0 font-sans" style="font-size: 0.92rem;">Timeline Tips</h6>
+                    </div>
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-3" style="font-size: 0.83rem;">
+                        <li class="d-flex align-items-start gap-2">
+                            <i data-lucide="check-circle-2" class="text-teal flex-shrink-0 mt-0.5" style="width: 16px; color: #13A8A6;"></i>
+                            <span class="text-secondary">Start with key events that shape your story.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i data-lucide="check-circle-2" class="text-teal flex-shrink-0 mt-0.5" style="width: 16px; color: #13A8A6;"></i>
+                            <span class="text-secondary">Use story arcs to organize your plot structure.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i data-lucide="check-circle-2" class="text-teal flex-shrink-0 mt-0.5" style="width: 16px; color: #13A8A6;"></i>
+                            <span class="text-secondary">Connect characters and locations to enrich your timeline.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i data-lucide="check-circle-2" class="text-teal flex-shrink-0 mt-0.5" style="width: 16px; color: #13A8A6;"></i>
+                            <span class="text-secondary">Add dependencies between events to maintain story flow.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Example Events Widget -->
+                <div class="timeline-side-panel mb-4 shadow-xs">
+                    <div class="d-flex align-items-center justify-content-between mb-3.5 pb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="p-1.5 rounded-2 d-flex align-items-center justify-content-center" style="background-color: rgba(19, 168, 166, 0.1);">
+                                <i data-lucide="bookmark" style="width: 16px; height: 16px; color: #13A8A6;"></i>
                             </div>
-                            <h6 class="fw-bold text-slate-800 font-serif">Betrayal at High Peak Pass</h6>
-                            <p class="text-secondary mb-0 small">Amara leads the vanguard into an ambush in the narrow high passes, forcing them to retreat to the low valleys.</p>
+                            <h6 class="fw-bold text-dark mb-0 font-serif" style="font-size: 0.95rem;">Example Events</h6>
                         </div>
+                        <a href="javascript:void(0)" class="text-decoration-none small fw-semibold" style="color: #13A8A6; font-size: 0.8rem;">View All</a>
+                    </div>
+                    <div class="d-flex flex-column gap-3">
+                        <!-- Event Item 1 -->
+                        <div class="example-event-card">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #EFF6FF; color: #2563EB;">
+                                    <i data-lucide="users" style="width: 17px; height: 17px;"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-slate-800 font-sans" style="font-size: 0.85rem; line-height: 1.25;">The First Meeting</div>
+                                    <div class="text-secondary mt-0.5" style="font-size: 0.75rem;">May 21, 2025</div>
+                                </div>
+                            </div>
+                            <i data-lucide="calendar" class="example-event-cal-icon" style="width: 15px; height: 15px; color: #CBD5E1; transition: color 0.2s;"></i>
+                        </div>
+
+                        <!-- Event Item 2 -->
+                        <div class="example-event-card">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #FEF2F2; color: #EF4444;">
+                                    <i data-lucide="flag" style="width: 17px; height: 17px;"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-slate-800 font-sans" style="font-size: 0.85rem; line-height: 1.25;">The Dark Secret</div>
+                                    <div class="text-secondary mt-0.5" style="font-size: 0.75rem;">May 23, 2025</div>
+                                </div>
+                            </div>
+                            <i data-lucide="calendar" class="example-event-cal-icon" style="width: 15px; height: 15px; color: #CBD5E1; transition: color 0.2s;"></i>
+                        </div>
+
+                        <!-- Event Item 3 -->
+                        <div class="example-event-card">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #F5F3FF; color: #8B5CF6;">
+                                    <i data-lucide="zap" style="width: 17px; height: 17px;"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-slate-800 font-sans" style="font-size: 0.85rem; line-height: 1.25;">The Turning Point</div>
+                                    <div class="text-secondary mt-0.5" style="font-size: 0.75rem;">May 28, 2025</div>
+                                </div>
+                            </div>
+                            <i data-lucide="calendar" class="example-event-cal-icon" style="width: 15px; height: 15px; color: #CBD5E1; transition: color 0.2s;"></i>
+                        </div>
+
+                        <!-- Event Item 4 -->
+                        <div class="example-event-card">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #FFFBEB; color: #D97706;">
+                                    <i data-lucide="shield" style="width: 17px; height: 17px;"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-slate-800 font-sans" style="font-size: 0.85rem; line-height: 1.25;">The Final Showdown</div>
+                                    <div class="text-secondary mt-0.5" style="font-size: 0.75rem;">Jun 02, 2025</div>
+                                </div>
+                            </div>
+                            <i data-lucide="calendar" class="example-event-cal-icon" style="width: 15px; height: 15px; color: #CBD5E1; transition: color 0.2s;"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inspiration Quote Card -->
+                <div class="p-4 rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, #FAF5ED 0%, #F3EAD8 100%); border: 1px solid #EAE3D2;">
+                    <i data-lucide="quote" style="width: 28px; height: 28px; color: #C5A880; opacity: 0.5;" class="mb-2 d-block"></i>
+                    <p class="font-serif fst-italic text-dark mb-2" style="font-size: 0.88rem; line-height: 1.5;">
+                        "Stories are the whispers of time, telling the tale of moments that change everything."
+                    </p>
+                    <span class="fw-bold text-uppercase text-secondary" style="font-size: 10px; letter-spacing: 0.1em;">— StoryVerse</span>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- ==================== IMAGE 1: ACTIVE TIMELINE STUDIO LAYOUT ==================== -->
+        <!-- Top 6 Metric Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="timeline-stat-card">
+                    <div class="timeline-stat-icon-wrapper" style="background-color: #E6F4EA; color: #13A8A6;">
+                        <i data-lucide="calendar" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div>
+                        <div class="timeline-stat-label">Total Events</div>
+                        <div class="timeline-stat-number">@Model.TotalEventsCount</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="timeline-stat-card">
+                    <div class="timeline-stat-icon-wrapper" style="background-color: #E8F0FE; color: #3B82F6;">
+                        <i data-lucide="clock" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div>
+                        <div class="timeline-stat-label">Upcoming Events</div>
+                        <div class="timeline-stat-number">@Model.UpcomingEventsCount</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="timeline-stat-card">
+                    <div class="timeline-stat-icon-wrapper" style="background-color: #FEF7E0; color: #D97706;">
+                        <i data-lucide="hourglass" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div>
+                        <div class="timeline-stat-label">Historical Events</div>
+                        <div class="timeline-stat-number">@Model.HistoricalEventsCount</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="timeline-stat-card">
+                    <div class="timeline-stat-icon-wrapper" style="background-color: #FCE8E6; color: #EF4444;">
+                        <i data-lucide="flag" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div>
+                        <div class="timeline-stat-label">Story Arcs</div>
+                        <div class="timeline-stat-number">@Model.StoryArcsCount</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="timeline-stat-card">
+                    <div class="timeline-stat-icon-wrapper" style="background-color: #F3E8FD; color: #8B5CF6;">
+                        <i data-lucide="users" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div>
+                        <div class="timeline-stat-label">Characters Involved</div>
+                        <div class="timeline-stat-number">@Model.CharactersInvolvedCount</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="timeline-stat-card">
+                    <div class="timeline-stat-icon-wrapper" style="background-color: #E6F4EA; color: #10B981;">
+                        <i data-lucide="map-pin" style="width: 22px; height: 22px;"></i>
+                    </div>
+                    <div>
+                        <div class="timeline-stat-label">Locations Involved</div>
+                        <div class="timeline-stat-number">@Model.LocationsInvolvedCount</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Sidebar panels -->
-        <div class="col-lg-4">
-            <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <h5 class="font-serif fw-bold text-peacock mb-3">Narrative Arcs</h5>
-                <div class="d-flex flex-column gap-3">
-                    <div class="p-3 bg-white border rounded-4 shadow-xs">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold text-slate-800 small">Arc 1: The Secret Treaty</span>
-                            <span class="badge bg-success-subtle text-success border font-bold" style="font-size: 9px;">Completed</span>
+        <div class="row g-4">
+            <!-- Main Left Content Stream -->
+            <div class="col-lg-8">
+                <!-- Filters & Toolbar -->
+                <div class="bg-white p-3 rounded-4 border mb-4 shadow-xs d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <!-- Category Filter Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-light border rounded-3 dropdown-toggle btn-sm font-sans fw-semibold" type="button" data-bs-toggle="dropdown">
+                                <i data-lucide="filter" style="width: 14px;" class="me-1"></i> @Model.SelectedCategory
+                            </button>
+                            <ul class="dropdown-menu shadow-sm border-0">
+                                <li><a class="dropdown-item" href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, category = "All Events" })">All Events</a></li>
+                                <li><a class="dropdown-item" href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, category = "Birth" })">Birth</a></li>
+                                <li><a class="dropdown-item" href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, category = "Meeting" })">Meeting</a></li>
+                                <li><a class="dropdown-item" href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, category = "Career" })">Career</a></li>
+                                <li><a class="dropdown-item" href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, category = "Investigation" })">Investigation</a></li>
+                                <li><a class="dropdown-item" href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, category = "Incident" })">Incident</a></li>
+                            </ul>
                         </div>
-                        <p class="text-secondary small mb-0">Initial discovery of political schemes within the inner circles.</p>
+
+                        <!-- Date Range Pill -->
+                        <div class="border rounded-3 px-3 py-1 bg-light text-secondary small fw-medium d-flex align-items-center gap-2">
+                            <i data-lucide="calendar" style="width: 14px;"></i>
+                            <span>01 Jan 2020 – 31 Dec 2026</span>
+                        </div>
                     </div>
 
-                    <div class="p-3 bg-white border rounded-4 shadow-xs">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold text-slate-800 small">Arc 2: High Pass Journey</span>
-                            <span class="badge bg-teal-subtle text-teal-700 border font-bold" style="font-size: 9px;">In Progress</span>
+                    <!-- View Mode Buttons -->
+                    <div class="d-flex align-items-center gap-1">
+                        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, viewMode = "Vertical" })" class="btn btn-sm @(Model.ViewMode == "Vertical" ? "btn-teal text-white fw-bold" : "btn-light border text-secondary") rounded-2">Vertical</a>
+                        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, viewMode = "Horizontal" })" class="btn btn-sm @(Model.ViewMode == "Horizontal" ? "btn-teal text-white fw-bold" : "btn-light border text-secondary") rounded-2">Horizontal</a>
+                        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, viewMode = "List" })" class="btn btn-sm @(Model.ViewMode == "List" ? "btn-teal text-white fw-bold" : "btn-light border text-secondary") rounded-2">List</a>
+                        <a href="@Url.Action("Index", "Timeline", new { storyId = Model.SelectedStoryId, viewMode = "Graph" })" class="btn btn-sm @(Model.ViewMode == "Graph" ? "btn-teal text-white fw-bold" : "btn-light border text-secondary") rounded-2">Graph</a>
+                        <button class="btn btn-light btn-sm border rounded-2 ms-1" title="Settings"><i data-lucide="settings" style="width: 14px;"></i></button>
+                    </div>
+                </div>
+
+                <!-- Vertical Timeline Track -->
+                <div class="timeline-track-wrapper">
+                    <div class="timeline-track-line"></div>
+
+                    @foreach (var evt in Model.Events)
+                    {
+                        <div class="timeline-node-item">
+                            <!-- Left Date -->
+                            <div class="timeline-node-date">
+                                <div>@evt.DateYear</div>
+                                <div class="text-secondary fw-semibold">@evt.DateMonthDay</div>
+                            </div>
+
+                            <!-- Timeline Dot -->
+                            <div class="timeline-node-dot" style="background-color: @evt.Color;"></div>
+
+                            <!-- Event Card -->
+                            <div class="timeline-event-card" style="background-color: @(evt.Color)10; border-left: 4px solid @evt.Color;">
+                                <div class="d-flex align-items-start justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <!-- Icon Circle -->
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background-color: #FFFFFF; color: @evt.Color; border: 1px solid #E2E8F0;">
+                                            <i data-lucide="@evt.Icon" style="width: 18px; height: 18px;"></i>
+                                        </div>
+
+                                        <div>
+                                            <h6 class="fw-bold text-dark mb-0 font-serif" style="font-size: 1.05rem;">@evt.Title</h6>
+                                            @if (!string.IsNullOrEmpty(evt.LocationName))
+                                            {
+                                                <div class="text-muted small d-flex align-items-center gap-1 mt-0.5">
+                                                    <i data-lucide="map-pin" style="width: 12px; height: 12px; color: #64748B;"></i>
+                                                    <span>@evt.LocationName</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="category-badge" style="background-color: #FFFFFF; color: @evt.Color; border: 1px solid @(evt.Color)40;">
+                                            @evt.Category
+                                        </span>
+
+                                        <button class="btn btn-link text-secondary p-0 ms-1" onclick="toggleBookmark('@evt.Id')">
+                                            <i data-lucide="bookmark" style="width: 16px; height: 16px; fill: @(evt.IsBookmarked ? "#13A8A6" : "none"); color: #13A8A6;"></i>
+                                        </button>
+
+                                        <div class="dropdown">
+                                            <button class="btn btn-link text-secondary p-0" data-bs-toggle="dropdown">
+                                                <i data-lucide="more-vertical" style="width: 16px; height: 16px;"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
+                                                <li><a class="dropdown-item small" href="javascript:void(0)" onclick="openEventDetails('@evt.Id')"><i data-lucide="eye" class="me-2" style="width: 14px;"></i>View Details</a></li>
+                                                <li><a class="dropdown-item small text-danger" href="javascript:void(0)" onclick="deleteEvent('@evt.Id')"><i data-lucide="trash-2" class="me-2" style="width: 14px;"></i>Delete</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(evt.Summary))
+                                {
+                                    <p class="text-secondary small mb-3" style="line-height: 1.5;">@evt.Summary</p>
+                                }
+
+                                <!-- Footer: Characters Attached -->
+                                @if (evt.Characters.Any())
+                                {
+                                    <div class="d-flex align-items-center gap-1 mt-2">
+                                        @foreach (var c in evt.Characters.Take(3))
+                                        {
+                                            <div class="rounded-circle bg-teal text-white fw-bold d-flex align-items-center justify-content-center border border-white" style="width: 26px; height: 26px; font-size: 10px; margin-right: -6px;" title="@c.Name">
+                                                @(!string.IsNullOrEmpty(c.Name) ? c.Name[0].ToString().ToUpper() : "C")
+                                            </div>
+                                        }
+                                        @if (evt.Characters.Count > 3)
+                                        {
+                                            <span class="badge bg-light text-secondary border rounded-pill ms-2" style="font-size: 10px;">+@(evt.Characters.Count - 3)</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
                         </div>
-                        <p class="text-secondary small mb-0">Survival and escape of Kaelen and the refugees through the mountain peaks.</p>
+                    }
+                </div>
+
+                <!-- Pagination Footer -->
+                <div class="d-flex align-items-center justify-content-between mt-4 pt-2">
+                    <span class="text-muted small">Showing 1 to @Model.Events.Count of @Model.TotalEventsCount events</span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0 gap-1">
+                            <li class="page-item disabled"><a class="page-link border-0" href="#">‹</a></li>
+                            <li class="page-item active"><a class="page-link rounded-2 fw-bold" style="background-color: #13A8A6; border-color: #13A8A6;" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link border-0 text-dark" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link border-0 text-dark" href="#">3</a></li>
+                            <li class="page-item"><a class="page-link border-0 text-dark" href="#">›</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Right Sidebar Panel (Active State) -->
+            <div class="col-lg-4">
+                <!-- Mini Calendar Widget -->
+                <div class="timeline-side-panel mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i data-lucide="calendar" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                            <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem;">Calendar</h6>
+                        </div>
+                        <span class="fw-bold text-dark small">May 2025</span>
+                    </div>
+
+                    <div class="row text-center text-uppercase text-muted mb-2 font-sans" style="font-size: 9px; font-weight: 700;">
+                        <div class="col">MON</div><div class="col">TUE</div><div class="col">WED</div><div class="col">THU</div><div class="col">FRI</div><div class="col">SAT</div><div class="col">SUN</div>
+                    </div>
+
+                    <div class="row text-center g-1 font-sans">
+                        <div class="col"><div class="mini-calendar-day text-muted">28</div></div>
+                        <div class="col"><div class="mini-calendar-day text-muted">29</div></div>
+                        <div class="col"><div class="mini-calendar-day text-muted">30</div></div>
+                        <div class="col"><div class="mini-calendar-day">1</div></div>
+                        <div class="col"><div class="mini-calendar-day">2</div></div>
+                        <div class="col"><div class="mini-calendar-day">3</div></div>
+                        <div class="col"><div class="mini-calendar-day">4</div></div>
+
+                        <div class="col"><div class="mini-calendar-day">5</div></div>
+                        <div class="col"><div class="mini-calendar-day">6</div></div>
+                        <div class="col"><div class="mini-calendar-day">7</div></div>
+                        <div class="col"><div class="mini-calendar-day">8</div></div>
+                        <div class="col"><div class="mini-calendar-day">9</div></div>
+                        <div class="col"><div class="mini-calendar-day">10</div></div>
+                        <div class="col"><div class="mini-calendar-day">11</div></div>
+
+                        <div class="col"><div class="mini-calendar-day">12</div></div>
+                        <div class="col"><div class="mini-calendar-day">13</div></div>
+                        <div class="col"><div class="mini-calendar-day">14</div></div>
+                        <div class="col"><div class="mini-calendar-day">15</div></div>
+                        <div class="col"><div class="mini-calendar-day">16</div></div>
+                        <div class="col"><div class="mini-calendar-day">17</div></div>
+                        <div class="col"><div class="mini-calendar-day active-day">18</div></div>
+
+                        <div class="col"><div class="mini-calendar-day event-day">19</div></div>
+                        <div class="col"><div class="mini-calendar-day">20</div></div>
+                        <div class="col"><div class="mini-calendar-day event-day">21</div></div>
+                        <div class="col"><div class="mini-calendar-day">22</div></div>
+                        <div class="col"><div class="mini-calendar-day event-day">23</div></div>
+                        <div class="col"><div class="mini-calendar-day">24</div></div>
+                        <div class="col"><div class="mini-calendar-day event-day">25</div></div>
+                    </div>
+                </div>
+
+                <!-- Story Arcs Widget -->
+                <div class="timeline-side-panel mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i data-lucide="git-commit" style="width: 18px; height: 18px; color: #EF4444;"></i>
+                            <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem;">Story Arcs</h6>
+                        </div>
+                        <a href="@Url.Action("Index", "Timeline", new { activeTab = "ArcView" })" class="text-muted small text-decoration-none fw-semibold">View All</a>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        @if (Model.StoryArcs.Any())
+                        {
+                            @foreach (var arc in Model.StoryArcs)
+                            {
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="rounded-circle" style="width: 8px; height: 8px; background-color: @arc.Color;"></span>
+                                            <span class="fw-semibold text-dark small">@arc.Title</span>
+                                        </div>
+                                        <span class="text-muted small font-mono">@arc.ProgressPercent%</span>
+                                    </div>
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar" role="progressbar" style="width: @arc.ProgressPercent%; background-color: @arc.Color;" aria-valuenow="@arc.ProgressPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted small italic">No story arcs configured yet.</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Upcoming Events Widget -->
+                <div class="timeline-side-panel">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i data-lucide="clock" style="width: 18px; height: 18px; color: #3B82F6;"></i>
+                            <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem;">Upcoming Events</h6>
+                        </div>
+                        <span class="text-muted small cursor-pointer">View All</span>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2.5">
+                        @if (Model.UpcomingEvents.Any())
+                        {
+                            @foreach (var u in Model.UpcomingEvents)
+                            {
+                                <div class="p-2.5 rounded-3 border bg-light d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="fw-semibold text-dark small">@u.Title</div>
+                                        <div class="text-muted" style="font-size: 11px;">@u.StoryDate</div>
+                                    </div>
+                                    <i data-lucide="bookmark" style="width: 16px; color: #94A3B8;"></i>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted small">No upcoming scheduled events.</div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 </div>
 
-<!-- Add Event Modal -->
-<div class="modal fade" id="addEventModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="p-4">
-                <h4 class="font-serif fw-bold text-slate-800 mb-2">Add Timeline Event</h4>
-                <p class="text-secondary small mb-4">Introduce a new milestone event or scene reference to the story flow.</p>
-                
-                <form onsubmit="event.preventDefault(); bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Event Title</label>
-                        <input type="text" class="form-control rounded-3" placeholder="e.g. Battle of Red Valley" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Time / Period</label>
-                        <input type="text" class="form-control rounded-3" placeholder="e.g. Year 2, Spring" required />
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold small text-uppercase text-slate-500">Brief Description</label>
-                        <textarea class="form-control rounded-3" rows="3" placeholder="Describe what happens..."></textarea>
-                    </div>
+<!-- ==================== EVENT WIZARD MODAL (10 STEPS) ==================== -->
+<div class="modal fade" id="eventWizardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom px-4 py-3 bg-light">
+                <h5 class="modal-title font-serif fw-bold text-dark">Create Timeline Event (Wizard)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="eventWizardForm">
+                    <input type="hidden" name="StoryId" value="@Model.SelectedStoryId" />
                     
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">1. Event Title</label>
+                        <input type="text" id="wizardTitle" class="form-control rounded-3" placeholder="e.g. Sameer Meets Riya" required />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase">2. Category</label>
+                            <select id="wizardCategory" class="form-select rounded-3">
+                                <option value="Birth">Birth</option>
+                                <option value="Meeting">Meeting</option>
+                                <option value="Career">Career</option>
+                                <option value="Investigation">Investigation</option>
+                                <option value="Incident">Incident</option>
+                                <option value="Battle">Battle</option>
+                                <option value="Discovery">Discovery</option>
+                                <option value="Flashback">Flashback</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase">3. Story Date</label>
+                            <input type="text" id="wizardStoryDate" class="form-control rounded-3" placeholder="e.g. 14 Feb 2020" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">4. Location</label>
+                        <input type="text" id="wizardLocation" class="form-control rounded-3" placeholder="e.g. Silverbrook University" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">5. Summary / Details</label>
+                        <textarea id="wizardSummary" class="form-control rounded-3" rows="3" placeholder="A chance meeting in the library changes everything..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase">6. Assign Characters</label>
+                        <select id="wizardCharacters" class="form-select rounded-3" multiple style="height: 100px;">
+                            @foreach (var c in Model.Characters)
+                            {
+                                <option value="@c.Id">@c.Name (@c.Role)</option>
+                            }
+                        </select>
+                    </div>
+
                     <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn text-white rounded-pill px-4 fw-bold" style="background: var(--peacock-gradient); border: none;">Save Event</button>
+                        <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn text-white fw-bold px-4 rounded-3" style="background-color: #13A8A6;" onclick="submitEventWizard()">Save Timeline Event</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ==================== STORY ARC MODAL ==================== -->
+<div class="modal fade" id="storyArcModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom px-4 py-3">
+                <h5 class="modal-title font-serif fw-bold text-dark">Create Story Arc</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="storyArcForm">
+                    <input type="hidden" name="StoryId" value="@Model.SelectedStoryId" />
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Arc Title</label>
+                        <input type="text" id="arcTitle" class="form-control rounded-3" placeholder="e.g. Romance Arc" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Arc Type</label>
+                        <select id="arcType" class="form-select rounded-3">
+                            <option value="Main Story">Main Story</option>
+                            <option value="Character Arc">Character Arc</option>
+                            <option value="Romance Arc">Romance Arc</option>
+                            <option value="Mystery Arc">Mystery Arc</option>
+                            <option value="Crime Investigation">Crime Investigation</option>
+                            <option value="Redemption Arc">Redemption Arc</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small">Target Progress (%)</label>
+                        <input type="number" id="arcProgress" class="form-control rounded-3" min="0" max="100" value="50" />
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn text-white fw-bold px-4 rounded-3" style="background-color: #13A8A6;" onclick="submitStoryArc()">Save Arc</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openCreateEventModal() {
+            var modal = new bootstrap.Modal(document.getElementById('eventWizardModal'));
+            modal.show();
+        }
+
+        function openCreateArcModal() {
+            var modal = new bootstrap.Modal(document.getElementById('storyArcModal'));
+            modal.show();
+        }
+
+        function submitEventWizard() {
+            var title = $('#wizardTitle').val();
+            if (!title) { alert('Title is required'); return; }
+
+            var selectedCharEls = $('#wizardCharacters').val() || [];
+
+            var payload = {
+                storyId: '@Model.SelectedStoryId',
+                title: title,
+                category: $('#wizardCategory').val(),
+                storyDate: $('#wizardStoryDate').val(),
+                locationName: $('#wizardLocation').val(),
+                summary: $('#wizardSummary').val(),
+                selectedCharacterIds: selectedCharEls
+            };
+
+            $.ajax({
+                url: '@Url.Action("CreateEvent", "Timeline")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (res) {
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+
+        function submitStoryArc() {
+            var title = $('#arcTitle').val();
+            if (!title) { alert('Title is required'); return; }
+
+            var payload = {
+                storyId: '@Model.SelectedStoryId',
+                title: title,
+                arcType: $('#arcType').val(),
+                targetCompletionPercent: parseInt($('#arcProgress').val()) || 50
+            };
+
+            $.ajax({
+                url: '@Url.Action("CreateStoryArc", "Timeline")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (res) {
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+
+        function toggleBookmark(id) {
+            $.post('@Url.Action("ToggleBookmark", "Timeline")', { id: id }, function(res) {
+                if (res.success) location.reload();
+            });
+        }
+
+        function deleteEvent(id) {
+            if (confirm('Delete this event?')) {
+                $.post('@Url.Action("DeleteEvent", "Timeline")', { id: id }, function(res) {
+                    if (res.success) location.reload();
+                });
+            }
+        }
+
+        function deleteTimelineItem(id) {
+            if (confirm('Are you sure you want to delete this timeline?')) {
+                $.post('@Url.Action("DeleteTimeline", "Timeline")', { id: id }, function(res) {
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert(res.message || 'Error deleting timeline.');
+                    }
+                });
+            }
+        }
+    </script>
+}

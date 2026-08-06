@@ -147,13 +147,25 @@
                 <a href="@Url.Action("Index", "WorldBuilding")" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small" data-bs-toggle="modal" data-bs-target="#templatesModal">Templates</a>
             </div>
         </div>
+        <div>
+            <a href="@Url.Action("Index", "Timeline")" title="Timeline" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(controller == "Timeline" ? "active" : "")" data-bs-toggle="collapse" data-bs-target="#timelineSubmenu" aria-expanded="@(controller == "Timeline" ? "true" : "false")">
+                <div class="d-flex align-items-center gap-3">
+                    <i data-lucide="clock" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                    <span class="sidebar-text-label" style="font-size: 0.85rem;">Timeline</span>
+                </div>
+                <i data-lucide="chevron-down" class="sidebar-text-label" style="width: 14px; height: 14px;"></i>
+            </a>
+            <div class="collapse @(controller == "Timeline" ? "show" : "") ms-3 ps-3 border-start border-white border-opacity-10 my-1 sidebar-text-label" id="timelineSubmenu">
+                <a href="@Url.Action("Index", "Timeline")" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Timeline Dashboard</a>
+                <a href="@Url.Action("Index", "Timeline", new { activeTab = "TimelineView", viewMode = "Vertical" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Events</a>
+                <a href="@Url.Action("Index", "Timeline", new { activeTab = "CalendarView" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Calendar</a>
+                <a href="@Url.Action("Index", "Timeline", new { activeTab = "ArcView" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Story Arcs</a>
+                <a href="@Url.Action("Index", "Timeline", new { activeTab = "TimelineView", viewMode = "Graph" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small">Timeline Views</a>
+            </div>
+        </div>
         <a href="@Url.Action("Index", "Chapters")" title="Chapters" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Chapters" ? "active" : "")">
             <i data-lucide="file-text" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
             <span class="sidebar-text-label" style="font-size: 0.85rem;">Chapters</span>
-        </a>
-        <a href="@Url.Action("Index", "Timeline")" title="Timeline" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Timeline" ? "active" : "")">
-            <i data-lucide="clock" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
-            <span class="sidebar-text-label" style="font-size: 0.85rem;">Timeline</span>
         </a>
         <a href="@Url.Action("Index", "Research")" title="Research" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Research" ? "active" : "")">
             <i data-lucide="search" style="width: 18px; height: 18px; flex-shrink: 0;"></i>

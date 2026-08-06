@@ -526,5 +526,21 @@
     margin-left: 6px;
 }
 
-
+/* Colorful Tag Pills (WorldBuilding drawer & shared) */
+.colorful-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border: 1px solid;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transition: filter 0.15s ease, transform 0.15s ease;
+}
+.colorful-tag-pill:hover {
+    filter: brightness(0.95);
+    transform: translateY(-1px);
+}
 

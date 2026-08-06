@@ -1,0 +1,1199 @@
+@model StoryVerse.Web.Models.TimelineFormViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit Timeline - StoryVerse" : "Create New Timeline - StoryVerse";
+}
+
+<style>
+    /* Wizard Header */
+    .wizard-title-font {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        color: #0F172A;
+    }
+    
+    /* Stepper Styling */
+    .stepper-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        padding: 1.5rem 1rem;
+        margin-bottom: 2rem;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .stepper-progress-line {
+        position: absolute;
+        top: 40px;
+        left: 8%;
+        right: 8%;
+        height: 2px;
+        background: #E2E8F0;
+        z-index: 1;
+    }
+    .stepper-progress-active {
+        position: absolute;
+        top: 40px;
+        left: 8%;
+        height: 2px;
+        background: #13A8A6;
+        z-index: 2;
+        transition: width 0.3s ease;
+    }
+    .step-item {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        background: #FFFFFF;
+        padding: 0 10px;
+    }
+    .step-bubble {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #F1F5F9;
+        color: #64748B;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 6px;
+        border: 2px solid #E2E8F0;
+        transition: all 0.25s ease;
+        font-size: 0.9rem;
+    }
+    .step-item.active .step-bubble {
+        background: #0D9488;
+        color: #FFFFFF;
+        border-color: #0D9488;
+        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+    }
+    .step-item.completed .step-bubble {
+        background: #D1FAE5;
+        color: #059669;
+        border-color: #10B981;
+    }
+    .step-label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #64748B;
+        margin-bottom: 2px;
+    }
+    .step-item.active .step-label {
+        color: #0F172A;
+    }
+    .step-subtext {
+        font-size: 0.72rem;
+        color: #94A3B8;
+    }
+
+    /* Form Section Cards */
+    .wizard-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .form-label-custom {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #1E293B;
+        margin-bottom: 6px;
+    }
+    .form-label-custom span.req {
+        color: #EF4444;
+    }
+
+    /* Color Swatch Circles */
+    .color-swatch-picker {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .color-circle-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .color-circle-btn:hover {
+        transform: scale(1.1);
+    }
+    .color-circle-btn.selected {
+        box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #0D9488;
+    }
+
+    /* Type Card Grid */
+    .type-card {
+        background: #FFFFFF;
+        border: 2px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        text-align: center;
+        height: 100%;
+    }
+    .type-card:hover {
+        border-color: #99F6E4;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.06);
+    }
+    .type-card.selected {
+        border-color: #0D9488;
+        background: rgba(13, 148, 136, 0.03);
+    }
+    .type-card-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #0D9488;
+        color: white;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+    .type-card.selected .type-card-badge {
+        display: flex;
+    }
+
+    /* Theme Dropdown */
+    .theme-dropdown-wrapper {
+        position: relative;
+    }
+    .theme-dropdown-trigger {
+        background: #FFFFFF;
+        border: 1px solid #CBD5E1;
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: border-color 0.15s ease;
+    }
+    .theme-dropdown-trigger:hover {
+        border-color: #0D9488;
+    }
+    .theme-dropdown-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        z-index: 100;
+        max-height: 280px;
+        overflow-y: auto;
+    }
+    .theme-dropdown-wrapper.open .theme-dropdown-menu {
+        display: block;
+    }
+    .theme-dropdown-option {
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        border-bottom: 1px solid #F1F5F9;
+    }
+    .theme-dropdown-option:last-child {
+        border-bottom: none;
+    }
+    .theme-dropdown-option:hover {
+        background: #F8FAFC;
+    }
+    .theme-dropdown-option.active-option {
+        background: #CCFBF1;
+    }
+    .theme-dropdown-option .option-title {
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #0F172A;
+    }
+    .theme-dropdown-option .option-desc {
+        font-size: 0.76rem;
+        color: #64748B;
+        margin-top: 2px;
+    }
+
+    /* Toggle Switches */
+    .form-switch-custom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+    .form-switch-custom .switch-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1E293B;
+    }
+    .form-switch-custom .switch-subtext {
+        font-size: 0.74rem;
+        color: #64748B;
+    }
+
+    /* Drag & Drop File Upload Box */
+    .file-upload-zone {
+        border: 2px dashed #CBD5E1;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        background: #F8FAFC;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .file-upload-zone:hover {
+        border-color: #0D9488;
+        background: #F0FDFA;
+    }
+
+    /* Right Sidebar Cards */
+    .sidebar-widget {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .sidebar-widget-title {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #0F172A;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.82rem;
+        padding: 8px 0;
+        border-bottom: 1px dashed #F1F5F9;
+    }
+    .summary-row:last-child {
+        border-bottom: none;
+    }
+    .summary-label {
+        color: #64748B;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .summary-val {
+        color: #0F172A;
+        font-weight: 700;
+    }
+
+    .tip-bullet {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 0.8rem;
+        color: #475569;
+        margin-bottom: 10px;
+    }
+    .tip-bullet i {
+        color: #0D9488;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+</style>
+
+<div class="container-fluid px-4 py-3">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="wizard-title-font h3 mb-1">
+                @(Model.IsEdit ? "Edit Timeline" : "Create New Timeline") 🪶
+            </h1>
+            <p class="text-secondary small mb-0">Build the chronological backbone of your story.</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Index", "Timeline", new { storyId = Model.StoryId })" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i data-lucide="arrow-left" style="width: 14px; height: 14px;" class="me-1"></i> Back to Timelines
+            </a>
+        </div>
+    </div>
+
+    <!-- Stepper Navigation -->
+    <div class="stepper-container">
+        <div class="stepper-progress-line"></div>
+        <div class="stepper-progress-active" id="stepperProgressBar" style="width: 0%;"></div>
+
+        <div class="step-item active" id="stepNavItem1" onclick="jumpToStep(1)">
+            <div class="step-bubble" id="stepBubble1">1</div>
+            <div class="step-label">Basic Information</div>
+            <div class="step-subtext">Set up timeline details</div>
+        </div>
+        <div class="step-item" id="stepNavItem2" onclick="jumpToStep(2)">
+            <div class="step-bubble" id="stepBubble2">2</div>
+            <div class="step-label">Timeline Type</div>
+            <div class="step-subtext">Choose timeline style</div>
+        </div>
+        <div class="step-item" id="stepNavItem3" onclick="jumpToStep(3)">
+            <div class="step-bubble" id="stepBubble3">3</div>
+            <div class="step-label">Settings</div>
+            <div class="step-subtext">Configure preferences</div>
+        </div>
+        <div class="step-item" id="stepNavItem4" onclick="jumpToStep(4)">
+            <div class="step-bubble" id="stepBubble4">4</div>
+            <div class="step-label">Story Arcs (Optional)</div>
+            <div class="step-subtext">Link story arcs</div>
+        </div>
+        <div class="step-item" id="stepNavItem5" onclick="jumpToStep(5)">
+            <div class="step-bubble" id="stepBubble5">5</div>
+            <div class="step-label">Review</div>
+            <div class="step-subtext">Confirm & create</div>
+        </div>
+    </div>
+
+    <form id="timelineWizardForm" action="@(Model.IsEdit ? Url.Action("Edit", "Timeline", new { id = Model.TimelineId }) : Url.Action("Create", "Timeline"))" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="StoryId" id="inputStoryId" />
+        <input type="hidden" asp-for="Color" id="inputColor" />
+        <input type="hidden" asp-for="TimelineType" id="inputTimelineType" />
+        <input type="hidden" asp-for="DateFormat" id="inputDateFormat" />
+        <input type="hidden" asp-for="TimeFormat" id="inputTimeFormat" />
+        <input type="hidden" asp-for="CalendarStartDay" id="inputCalendarStartDay" />
+        <input type="hidden" asp-for="TimeZone" id="inputTimeZone" />
+        <input type="hidden" asp-for="DefaultTimelineView" id="inputDefaultTimelineView" />
+        <input type="hidden" asp-for="EventGrouping" id="inputEventGrouping" />
+
+        <div class="row">
+            <!-- Left Main Wizard Area -->
+            <div class="col-lg-8">
+                <!-- STEP 1: Basic Information -->
+                <div class="wizard-card wizard-step-panel" id="stepPanel1">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <i data-lucide="hourglass" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                        <div>
+                            <h5 class="fw-bold text-slate-800 mb-0">Basic Information</h5>
+                            <span class="text-muted" style="font-size: 0.78rem;">Provide the essential details for your new timeline.</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label-custom">Timeline Name <span class="req">*</span></label>
+                            <div class="position-relative">
+                                <input type="text" asp-for="Name" class="form-control rounded-3" id="timelineNameInput" placeholder="e.g. Main Timeline" maxlength="100" oninput="updateCharCount('timelineNameInput', 'nameCount', 100); updateSummary();" required />
+                                <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="font-size: 0.72rem;" id="nameCount">0/100</span>
+                            </div>
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label-custom">Description</label>
+                            <div class="position-relative">
+                                <textarea asp-for="Description" class="form-control rounded-3" id="timelineDescInput" rows="3" placeholder="Describe the purpose of this timeline..." maxlength="500" oninput="updateCharCount('timelineDescInput', 'descCount', 500); updateSummary();"></textarea>
+                                <span class="position-absolute end-0 bottom-0 mb-2 me-3 text-muted" style="font-size: 0.72rem;" id="descCount">0/500</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Story <span class="req">*</span></label>
+                            <div class="theme-dropdown-wrapper" id="ddStoryWrapper">
+                                <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddStoryWrapper')">
+                                    <span id="ddStoryText" class="fw-medium text-slate-800">
+                                        <i data-lucide="book-open" class="me-1 text-teal-600" style="width: 16px; height: 16px;"></i>
+                                        @Model.StoryTitle
+                                    </span>
+                                    <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                </div>
+                                <div class="theme-dropdown-menu">
+                                    <div class="options-list">
+                                        @foreach (var s in Model.Stories)
+                                        {
+                                            <div class="theme-dropdown-option @(s.Id == Model.StoryId ? "active-option" : "")" onclick="selectStoryOption('@s.Id', '@s.Title')">
+                                                <div class="option-title">📖 @s.Title</div>
+                                                <div class="option-desc">Select as active story context</div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Timeline Color</label>
+                            <div class="color-swatch-picker pt-1">
+                                <div class="color-circle-btn selected" style="background-color: #13A8A6;" data-color="Teal" onclick="selectColorSwatch(this, 'Teal')"></div>
+                                <div class="color-circle-btn" style="background-color: #2563EB;" data-color="Blue" onclick="selectColorSwatch(this, 'Blue')"></div>
+                                <div class="color-circle-btn" style="background-color: #7C3AED;" data-color="Purple" onclick="selectColorSwatch(this, 'Purple')"></div>
+                                <div class="color-circle-btn" style="background-color: #DB2777;" data-color="Magenta" onclick="selectColorSwatch(this, 'Magenta')"></div>
+                                <div class="color-circle-btn" style="background-color: #DC2626;" data-color="Red" onclick="selectColorSwatch(this, 'Red')"></div>
+                                <div class="color-circle-btn" style="background-color: #EA580C;" data-color="Orange" onclick="selectColorSwatch(this, 'Orange')"></div>
+                                <div class="color-circle-btn" style="background-color: #CA8A04;" data-color="Yellow" onclick="selectColorSwatch(this, 'Yellow')"></div>
+                                <div class="color-circle-btn" style="background-color: #475569;" data-color="Slate" onclick="selectColorSwatch(this, 'Slate')"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Start Date <span class="text-muted fw-normal">(Optional)</span></label>
+                            <input type="date" asp-for="StartDate" class="form-control rounded-3" id="startDateInput" onchange="updateSummary()" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label-custom">End Date <span class="text-muted fw-normal">(Optional)</span></label>
+                            <input type="date" asp-for="EndDate" class="form-control rounded-3" id="endDateInput" onchange="updateSummary()" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label-custom">Tags <span class="text-muted fw-normal">(Optional)</span></label>
+                            <input type="text" asp-for="Tags" class="form-control rounded-3" id="tagsInput" placeholder="Add tags to organize your timeline (e.g. Main, Prequel, War)" />
+                            <span class="text-muted" style="font-size: 0.74rem;">Separate tags with commas or press enter.</span>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label-custom">Cover / Banner Image <span class="text-muted fw-normal">(Optional)</span></label>
+                            <div class="file-upload-zone" onclick="document.getElementById('bannerFileInput').click()">
+                                <i data-lucide="upload-cloud" style="width: 32px; height: 32px;" class="text-teal-600 mb-2"></i>
+                                <h6 class="fw-bold mb-1 text-slate-700">Click to upload cover image</h6>
+                                <p class="text-muted small mb-0">PNG, JPG or WEBP up to 5MB</p>
+                                <input type="file" asp-for="BannerFile" id="bannerFileInput" class="d-none" accept="image/*" onchange="handleFileSelect(this)" />
+                            </div>
+                            <div id="filePreviewContainer" class="mt-2 d-none">
+                                <div class="alert alert-info py-2 px-3 d-flex align-items-center justify-content-between mb-0" style="border-radius: 10px;">
+                                    <span id="fileNameDisplay" class="fw-semibold small"></span>
+                                    <button type="button" class="btn-close btn-sm" onclick="clearFileSelect()"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
+                        <div class="text-muted small d-flex align-items-center gap-1">
+                            <i data-lucide="info" style="width: 16px; height: 16px;" class="text-teal-600"></i> You can create timeline events after your timeline is created.
+                        </div>
+                        <button type="button" class="btn btn-teal rounded-pill px-4" onclick="jumpToStep(2)">
+                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Choose Timeline Type -->
+                <div class="wizard-card wizard-step-panel d-none" id="stepPanel2">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <i data-lucide="hourglass" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                        <div>
+                            <h5 class="fw-bold text-slate-800 mb-0">Choose Timeline Type</h5>
+                            <span class="text-muted" style="font-size: 0.78rem;">Select the timeline style that best fits your story needs. You can change this later.</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="type-card selected" data-type="Chronological Timeline" onclick="selectTypeCard(this, 'Chronological Timeline')">
+                                <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                                <div class="my-2"><i data-lucide="git-commit" style="width: 36px; height: 36px;" class="text-teal-600"></i></div>
+                                <h6 class="fw-bold text-slate-800 mb-1">Chronological Timeline</h6>
+                                <p class="text-muted small mb-0">Classic vertical timeline in chronological order.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="type-card" data-type="Calendar Timeline" onclick="selectTypeCard(this, 'Calendar Timeline')">
+                                <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                                <div class="my-2"><i data-lucide="calendar" style="width: 36px; height: 36px;" class="text-blue-600"></i></div>
+                                <h6 class="fw-bold text-slate-800 mb-1">Calendar Timeline</h6>
+                                <p class="text-muted small mb-0">View events in calendar format (day, week, month).</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="type-card" data-type="Story Arc Timeline" onclick="selectTypeCard(this, 'Story Arc Timeline')">
+                                <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                                <div class="my-2"><i data-lucide="trending-up" style="width: 36px; height: 36px;" class="text-purple-600"></i></div>
+                                <h6 class="fw-bold text-slate-800 mb-1">Story Arc Timeline</h6>
+                                <p class="text-muted small mb-0">Organize events according to your story arc and plot points.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="type-card" data-type="Character Timeline" onclick="selectTypeCard(this, 'Character Timeline')">
+                                <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                                <div class="my-2"><i data-lucide="users" style="width: 36px; height: 36px;" class="text-pink-600"></i></div>
+                                <h6 class="fw-bold text-slate-800 mb-1">Character Timeline</h6>
+                                <p class="text-muted small mb-0">Track events from a specific character's perspective.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="type-card" data-type="World Timeline" onclick="selectTypeCard(this, 'World Timeline')">
+                                <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                                <div class="my-2"><i data-lucide="globe" style="width: 36px; height: 36px;" class="text-emerald-600"></i></div>
+                                <h6 class="fw-bold text-slate-800 mb-1">World Timeline</h6>
+                                <p class="text-muted small mb-0">Focus on world history, kingdoms, wars, and major events.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="type-card" data-type="Investigation Board" onclick="selectTypeCard(this, 'Investigation Board')">
+                                <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                                <div class="my-2"><i data-lucide="layout" style="width: 36px; height: 36px;" class="text-amber-600"></i></div>
+                                <h6 class="fw-bold text-slate-800 mb-1">Investigation Board</h6>
+                                <p class="text-muted small mb-0">Perfect for crime, mystery and investigation based stories.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="type-card" data-type="Relationship Timeline" onclick="selectTypeCard(this, 'Relationship Timeline')">
+                                <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                                <div class="my-2"><i data-lucide="heart" style="width: 36px; height: 36px;" class="text-rose-600"></i></div>
+                                <h6 class="fw-bold text-slate-800 mb-1">Relationship Timeline</h6>
+                                <p class="text-muted small mb-0">Track relationships and how they evolve over time.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="type-card" data-type="Custom Timeline" onclick="selectTypeCard(this, 'Custom Timeline')">
+                                <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                                <div class="my-2"><i data-lucide="sliders" style="width: 36px; height: 36px;" class="text-slate-600"></i></div>
+                                <h6 class="fw-bold text-slate-800 mb-1">Custom Timeline</h6>
+                                <p class="text-muted small mb-0">Create a custom timeline suited to your story.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="jumpToStep(1)">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous Step
+                        </button>
+                        <button type="button" class="btn btn-teal rounded-pill px-4" onclick="jumpToStep(3)">
+                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Settings -->
+                <div class="wizard-card wizard-step-panel d-none" id="stepPanel3">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <i data-lucide="settings" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                        <div>
+                            <h5 class="fw-bold text-slate-800 mb-0">Timeline Settings</h5>
+                            <span class="text-muted" style="font-size: 0.78rem;">Configure how your timeline will work and appear.</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Date & Time Settings -->
+                        <div class="col-md-4">
+                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2">Date & Time Settings</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label-custom">Date Format</label>
+                                <div class="theme-dropdown-wrapper" id="ddDateFormatWrapper">
+                                    <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddDateFormatWrapper')">
+                                        <span id="ddDateFormatText" class="fw-medium text-slate-800">DD MMM YYYY (31 Dec 2025)</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option active-option" onclick="selectDropdownVal('ddDateFormatWrapper', 'inputDateFormat', 'DD MMM YYYY (31 Dec 2025)')">
+                                            <div class="option-title">DD MMM YYYY</div>
+                                            <div class="option-desc">e.g. 31 Dec 2025</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddDateFormatWrapper', 'inputDateFormat', 'YYYY-MM-DD (2025-12-31)')">
+                                            <div class="option-title">YYYY-MM-DD</div>
+                                            <div class="option-desc">ISO Standard</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddDateFormatWrapper', 'inputDateFormat', 'MM/DD/YYYY (12/31/2025)')">
+                                            <div class="option-title">MM/DD/YYYY</div>
+                                            <div class="option-desc">US Standard</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label-custom">Time Format</label>
+                                <div class="theme-dropdown-wrapper" id="ddTimeFormatWrapper">
+                                    <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddTimeFormatWrapper')">
+                                        <span id="ddTimeFormatText" class="fw-medium text-slate-800">12 Hour (AM/PM)</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option active-option" onclick="selectDropdownVal('ddTimeFormatWrapper', 'inputTimeFormat', '12 Hour (AM/PM)')">
+                                            <div class="option-title">12 Hour (AM/PM)</div>
+                                            <div class="option-desc">Standard 12h clock</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddTimeFormatWrapper', 'inputTimeFormat', '24 Hour')">
+                                            <div class="option-title">24 Hour</div>
+                                            <div class="option-desc">Military/24h time</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label-custom">Default Time</label>
+                                <input type="time" asp-for="DefaultTime" class="form-control rounded-3" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label-custom">Calendar Start Day</label>
+                                <div class="theme-dropdown-wrapper" id="ddStartDayWrapper">
+                                    <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddStartDayWrapper')">
+                                        <span id="ddStartDayText" class="fw-medium text-slate-800">Monday</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option active-option" onclick="selectDropdownVal('ddStartDayWrapper', 'inputCalendarStartDay', 'Monday')">
+                                            <div class="option-title">Monday</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddStartDayWrapper', 'inputCalendarStartDay', 'Sunday')">
+                                            <div class="option-title">Sunday</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label-custom">Time Zone</label>
+                                <div class="theme-dropdown-wrapper" id="ddTimeZoneWrapper">
+                                    <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddTimeZoneWrapper')">
+                                        <span id="ddTimeZoneText" class="fw-medium text-slate-800">(GMT+05:30) Asia/Kolkata</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option active-option" onclick="selectDropdownVal('ddTimeZoneWrapper', 'inputTimeZone', '(GMT+05:30) Asia/Kolkata')">
+                                            <div class="option-title">(GMT+05:30) Asia/Kolkata</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddTimeZoneWrapper', 'inputTimeZone', '(GMT+00:00) UTC')">
+                                            <div class="option-title">(GMT+00:00) UTC</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddTimeZoneWrapper', 'inputTimeZone', '(GMT-05:00) Eastern Time')">
+                                            <div class="option-title">(GMT-05:00) Eastern Time</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Display Settings -->
+                        <div class="col-md-4">
+                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2">Display Settings</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label-custom">Default Timeline View</label>
+                                <div class="theme-dropdown-wrapper" id="ddDefaultViewWrapper">
+                                    <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddDefaultViewWrapper')">
+                                        <span id="ddDefaultViewText" class="fw-medium text-slate-800">Chronological Timeline</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option active-option" onclick="selectDropdownVal('ddDefaultViewWrapper', 'inputDefaultTimelineView', 'Chronological Timeline')">
+                                            <div class="option-title">Chronological Timeline</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddDefaultViewWrapper', 'inputDefaultTimelineView', 'Calendar Timeline')">
+                                            <div class="option-title">Calendar Timeline</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label-custom">Event Grouping</label>
+                                <div class="theme-dropdown-wrapper" id="ddGroupingWrapper">
+                                    <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddGroupingWrapper')">
+                                        <span id="ddGroupingText" class="fw-medium text-slate-800">Group by Date</span>
+                                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
+                                    </div>
+                                    <div class="theme-dropdown-menu">
+                                        <div class="theme-dropdown-option active-option" onclick="selectDropdownVal('ddGroupingWrapper', 'inputEventGrouping', 'Group by Date')">
+                                            <div class="option-title">Group by Date</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddGroupingWrapper', 'inputEventGrouping', 'Group by Category')">
+                                            <div class="option-title">Group by Category</div>
+                                        </div>
+                                        <div class="theme-dropdown-option" onclick="selectDropdownVal('ddGroupingWrapper', 'inputEventGrouping', 'No Grouping')">
+                                            <div class="option-title">No Grouping</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Show Time on Timeline</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="ShowTimeOnTimeline" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Show Event Icons</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="ShowEventIcons" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Show Event Descriptions</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="ShowEventDescriptions" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Compact Mode</div>
+                                    <div class="switch-subtext">Show more events in less space</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="CompactMode" />
+                            </div>
+                        </div>
+
+                        <!-- Behavior Settings -->
+                        <div class="col-md-4">
+                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2">Behavior Settings</h6>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Allow Overlapping Events</div>
+                                    <div class="switch-subtext">Events can occur at the same time</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="AllowOverlappingEvents" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Enable Timeline Dependencies</div>
+                                    <div class="switch-subtext">Link events with cause & effect</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="EnableTimelineDependencies" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Auto-sort New Events</div>
+                                    <div class="switch-subtext">Place new events in correct order</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="AutoSortNewEvents" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Enable Reminders</div>
+                                    <div class="switch-subtext">Get notified about upcoming events</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="EnableReminders" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Lock Timeline Dates</div>
+                                    <div class="switch-subtext">Prevent accidental date changes</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="LockTimelineDates" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Show Future Events</div>
+                                    <div class="switch-subtext">Display events in the future</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="ShowFutureEvents" />
+                            </div>
+
+                            <div class="form-switch-custom">
+                                <div>
+                                    <div class="switch-label">Show Completed Events</div>
+                                    <div class="switch-subtext">Display past events</div>
+                                </div>
+                                <input class="form-check-input" type="checkbox" asp-for="ShowCompletedEvents" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="jumpToStep(2)">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous Step
+                        </button>
+                        <button type="button" class="btn btn-teal rounded-pill px-4" onclick="jumpToStep(4)">
+                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Story Arcs (Optional) -->
+                <div class="wizard-card wizard-step-panel d-none" id="stepPanel4">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <i data-lucide="flag" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                        <div>
+                            <h5 class="fw-bold text-slate-800 mb-0">Link Story Arcs (Optional)</h5>
+                            <span class="text-muted" style="font-size: 0.78rem;">Connect existing story arcs to organize your timeline events. You can link arcs now or add them later.</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3" style="font-size: 0.82rem;">
+                        <i data-lucide="sparkles" class="text-teal-600" style="width: 16px; height: 16px;"></i>
+                        Story arcs help you organize events by plotlines, character journeys, themes, or subplots.
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text bg-white border-end-0"><i data-lucide="search" style="width: 14px; height: 14px;"></i></span>
+                                <input type="text" class="form-control border-start-0" placeholder="Search story arcs..." oninput="filterArcCards(this.value)" />
+                            </div>
+
+                            <div class="arc-options-list" id="arcOptionsContainer">
+                                @if (Model.AvailableStoryArcs.Any())
+                                {
+                                    @foreach (var arc in Model.AvailableStoryArcs)
+                                    {
+                                        <div class="p-3 border rounded-3 mb-2 d-flex align-items-center justify-content-between arc-item-card" data-title="@arc.Title">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <input type="checkbox" name="SelectedStoryArcIds" value="@arc.Id" class="form-check-input arc-checkbox" @(arc.IsSelected ? "checked" : "") onchange="updateSelectedArcsUI()" />
+                                                <div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="fw-bold text-slate-800" style="font-size: 0.9rem;">@arc.Title</span>
+                                                        <span class="badge bg-slate-100 text-slate-700 border" style="font-size: 0.7rem;">@arc.ArcType</span>
+                                                    </div>
+                                                    <p class="text-muted mb-0" style="font-size: 0.78rem;">@(arc.Description ?? "Story arc plotline")</p>
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="fw-bold text-teal-600" style="font-size: 0.8rem;">@arc.ProgressPercent%</span>
+                                                <div class="progress" style="height: 4px; width: 60px;">
+                                                    <div class="progress-bar bg-teal-500" style="width: @arc.ProgressPercent%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-center py-4 text-muted">
+                                        <p class="mb-0">No story arcs found for this story. You can create them anytime later.</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="p-3 bg-slate-50 border rounded-3">
+                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.85rem;">Selected Arcs (<span id="selectedArcCount">0</span>)</h6>
+                                <div id="selectedArcTags" class="d-flex flex-wrap gap-1">
+                                    <span class="text-muted small italic">No arcs selected</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="jumpToStep(3)">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous Step
+                        </button>
+                        <button type="button" class="btn btn-teal rounded-pill px-4" onclick="jumpToStep(5)">
+                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 5: Review -->
+                <div class="wizard-card wizard-step-panel d-none" id="stepPanel5">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <i data-lucide="check-circle" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                            <div>
+                                <h5 class="fw-bold text-slate-800 mb-0">Review Your Timeline</h5>
+                                <span class="text-muted" style="font-size: 0.78rem;">Please review all details before creating your timeline. You can go back and edit any step.</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="jumpToStep(1)">
+                            <i data-lucide="edit" style="width: 14px; height: 14px;" class="me-1"></i> Edit Any Step
+                        </button>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="p-3 bg-slate-50 border rounded-3 h-100">
+                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.82rem;">Basic Information</h6>
+                                <div class="mb-1"><span class="text-muted small">Name:</span> <strong id="reviewName" class="text-slate-800">Main Timeline</strong></div>
+                                <div class="mb-1"><span class="text-muted small">Story:</span> <span id="reviewStory" class="text-slate-800">@Model.StoryTitle</span></div>
+                                <div class="mb-1"><span class="text-muted small">Color:</span> <span id="reviewColor" class="badge bg-teal-600">Teal</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="p-3 bg-slate-50 border rounded-3 h-100">
+                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.82rem;">Timeline Type</h6>
+                                <div class="mb-1"><span class="text-muted small">Type:</span> <strong id="reviewType" class="text-teal-700">Chronological Timeline</strong></div>
+                                <div class="mb-1"><span class="text-muted small">View Style:</span> <span>Vertical</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="p-3 bg-slate-50 border rounded-3 h-100">
+                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.82rem;">Date & Time Settings</h6>
+                                <div class="mb-1"><span class="text-muted small">Format:</span> <span id="reviewDateFormat">DD MMM YYYY</span></div>
+                                <div class="mb-1"><span class="text-muted small">Time:</span> <span id="reviewTimeFormat">12 Hour (AM/PM)</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="p-3 bg-slate-50 border rounded-3 h-100">
+                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.82rem;">Display Preferences</h6>
+                                <div class="mb-1"><span class="text-muted small">Show Time:</span> <span class="badge bg-emerald-100 text-emerald-800">Yes</span></div>
+                                <div class="mb-1"><span class="text-muted small">Show Icons:</span> <span class="badge bg-emerald-100 text-emerald-800">Yes</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-teal-50 border border-teal-200 rounded-3 mb-4">
+                        <h6 class="fw-bold text-teal-900 mb-2" style="font-size: 0.88rem;">What Happens Next?</h6>
+                        <ul class="mb-0 text-teal-800 small ps-3">
+                            <li>Once your timeline is created, you can start adding events.</li>
+                            <li>Link characters, locations, chapters, and research notes to events.</li>
+                            <li>Visualize your timeline in Chronological, Calendar, or Board views.</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="jumpToStep(4)">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous Step
+                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-teal rounded-pill px-4 py-2 fw-bold">
+                                <i data-lucide="check" style="width: 16px; height: 16px;" class="me-1"></i>
+                                @(Model.IsEdit ? "Save Changes" : "Create Timeline")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar Panel -->
+            <div class="col-lg-4">
+                <!-- Timeline Summary -->
+                <div class="sidebar-widget">
+                    <div class="sidebar-widget-title mb-3">
+                        <i data-lucide="book-open" class="text-teal-600" style="width: 18px; height: 18px;"></i>
+                        Timeline Summary
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i data-lucide="bookmark" style="width: 14px; height: 14px;"></i> Story</span>
+                        <span class="summary-val" id="sumStoryText">@Model.StoryTitle</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i data-lucide="git-commit" style="width: 14px; height: 14px;"></i> Timeline Type</span>
+                        <span class="summary-val text-teal-600" id="sumTypeText">Chronological Timeline</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Start Date</span>
+                        <span class="summary-val" id="sumStartDateText">Not set</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i data-lucide="calendar" style="width: 14px; height: 14px;"></i> End Date</span>
+                        <span class="summary-val" id="sumEndDateText">Not set</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i data-lucide="flag" style="width: 14px; height: 14px;"></i> Story Arcs</span>
+                        <span class="summary-val" id="sumArcsText">0 arcs linked</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i data-lucide="palette" style="width: 14px; height: 14px;"></i> Color</span>
+                        <span class="summary-val d-flex align-items-center gap-1" id="sumColorText">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background-color: #13A8A6; display: inline-block;"></span> Teal
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Timeline Tips -->
+                <div class="sidebar-widget">
+                    <div class="sidebar-widget-title mb-3">
+                        <i data-lucide="lightbulb" class="text-amber-500" style="width: 18px; height: 18px;"></i>
+                        Timeline Tips
+                    </div>
+                    <div class="tip-bullet">
+                        <i data-lucide="check-circle"></i>
+                        <span>Give your timeline a clear, meaningful name.</span>
+                    </div>
+                    <div class="tip-bullet">
+                        <i data-lucide="check-circle"></i>
+                        <span>Add a description to remember its purpose.</span>
+                    </div>
+                    <div class="tip-bullet">
+                        <i data-lucide="check-circle"></i>
+                        <span>You can link story arcs in step 4.</span>
+                    </div>
+                    <div class="tip-bullet">
+                        <i data-lucide="check-circle"></i>
+                        <span>Timeline events can be added anytime after creation.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        let currentStep = 1;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            updateSummary();
+            updateSelectedArcsUI();
+        });
+
+        function jumpToStep(step) {
+            currentStep = step;
+            for (let i = 1; i <= 5; i++) {
+                const panel = document.getElementById('stepPanel' + i);
+                const navItem = document.getElementById('stepNavItem' + i);
+                const bubble = document.getElementById('stepBubble' + i);
+
+                if (i === step) {
+                    panel.classList.remove('d-none');
+                    navItem.classList.add('active');
+                    navItem.classList.remove('completed');
+                } else if (i < step) {
+                    panel.classList.add('d-none');
+                    navItem.classList.remove('active');
+                    navItem.classList.add('completed');
+                    bubble.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i>';
+                } else {
+                    panel.classList.add('d-none');
+                    navItem.classList.remove('active', 'completed');
+                    bubble.innerText = i;
+                }
+            }
+            const percent = ((step - 1) / 4) * 100;
+            document.getElementById('stepperProgressBar').style.width = percent + '%';
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function updateCharCount(inputId, counterId, maxLen) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(counterId);
+            if (input && counter) {
+                counter.innerText = input.value.length + '/' + maxLen;
+            }
+        }
+
+        function selectColorSwatch(element, colorName) {
+            document.querySelectorAll('.color-circle-btn').forEach(btn => btn.classList.remove('selected'));
+            element.classList.add('selected');
+            document.getElementById('inputColor').value = colorName;
+            document.getElementById('sumColorText').innerHTML = `<span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${element.style.backgroundColor}; display: inline-block;"></span> ${colorName}`;
+            document.getElementById('reviewColor').innerText = colorName;
+        }
+
+        function selectTypeCard(element, typeName) {
+            document.querySelectorAll('.type-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+            document.getElementById('inputTimelineType').value = typeName;
+            document.getElementById('sumTypeText').innerText = typeName;
+            document.getElementById('reviewType').innerText = typeName;
+        }
+
+        function toggleDropdown(wrapperId) {
+            const wrapper = document.getElementById(wrapperId);
+            document.querySelectorAll('.theme-dropdown-wrapper').forEach(w => {
+                if (w !== wrapper) w.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+        }
+
+        function selectDropdownVal(wrapperId, inputId, val) {
+            document.getElementById(inputId).value = val;
+            const textElem = document.getElementById(wrapperId.replace('Wrapper', 'Text'));
+            if (textElem) textElem.innerText = val;
+            document.getElementById(wrapperId).classList.remove('open');
+        }
+
+        function selectStoryOption(storyId, storyTitle) {
+            document.getElementById('inputStoryId').value = storyId;
+            document.getElementById('ddStoryText').innerHTML = `<i data-lucide="book-open" class="me-1 text-teal-600" style="width: 16px; height: 16px;"></i> ${storyTitle}`;
+            document.getElementById('sumStoryText').innerText = storyTitle;
+            document.getElementById('reviewStory').innerText = storyTitle;
+            document.getElementById('ddStoryWrapper').classList.remove('open');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function updateSummary() {
+            const name = document.getElementById('timelineNameInput').value;
+            const startDate = document.getElementById('startDateInput').value;
+            const endDate = document.getElementById('endDateInput').value;
+
+            document.getElementById('reviewName').innerText = name || 'Main Timeline';
+            document.getElementById('sumStartDateText').innerText = startDate || 'Not set';
+            document.getElementById('sumEndDateText').innerText = endDate || 'Not set';
+        }
+
+        function updateSelectedArcsUI() {
+            const checkboxes = document.querySelectorAll('.arc-checkbox:checked');
+            const tagContainer = document.getElementById('selectedArcTags');
+            const countElem = document.getElementById('selectedArcCount');
+            countElem.innerText = checkboxes.length;
+            document.getElementById('sumArcsText').innerText = checkboxes.length + ' arcs linked';
+
+            if (checkboxes.length === 0) {
+                tagContainer.innerHTML = '<span class="text-muted small italic">No arcs selected</span>';
+                return;
+            }
+
+            let html = '';
+            checkboxes.forEach(cb => {
+                const card = cb.closest('.arc-item-card');
+                const title = card.getAttribute('data-title');
+                html += `<span class="badge bg-teal-100 text-teal-800 border border-teal-200 py-1 px-2 me-1 mb-1 d-inline-flex align-items-center gap-1">${title}</span>`;
+            });
+            tagContainer.innerHTML = html;
+        }
+
+        function filterArcCards(query) {
+            const q = query.toLowerCase().trim();
+            document.querySelectorAll('.arc-item-card').forEach(card => {
+                const title = card.getAttribute('data-title').toLowerCase();
+                if (!q || title.includes(q)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                document.getElementById('fileNameDisplay').innerText = 'Selected file: ' + fileName;
+                document.getElementById('filePreviewContainer').classList.remove('d-none');
+            }
+        }
+
+        function clearFileSelect() {
+            const input = document.getElementById('bannerFileInput');
+            input.value = '';
+            document.getElementById('filePreviewContainer').classList.add('d-none');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.theme-dropdown-wrapper')) {
+                document.querySelectorAll('.theme-dropdown-wrapper').forEach(w => w.classList.remove('open'));
+            }
+        });
+    </script>
+}

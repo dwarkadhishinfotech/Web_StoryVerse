@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StoryVerse.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using StoryVerse.Infrastructure.Data;
 namespace StoryVerse.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260806101020_AddTimelineStudioAndRelationships")]
+    partial class AddTimelineStudioAndRelationships
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1131,120 +1134,6 @@ namespace StoryVerse.Infrastructure.Migrations
                     b.ToTable("DI_TRN_StoryArcEvents", (string)null);
                 });
 
-            modelBuilder.Entity("StoryVerse.Core.Entities.StoryTimeline", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("AllowOverlappingEvents")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AutoSortNewEvents")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("CalendarStartDay")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("CompactMode")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("CoverImageUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DateFormat")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DefaultTime")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DefaultTimelineView")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("EnableReminders")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("EnableTimelineDependencies")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("EventGrouping")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("LockTimelineDates")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("ShowCompletedEvents")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("ShowEventDescriptions")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("ShowEventIcons")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("ShowFutureEvents")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("ShowTimeOnTimeline")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("StoryId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Tags")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TimeFormat")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TimeZone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TimelineType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StoryId");
-
-                    b.ToTable("DI_TRN_StoryTimelines", (string)null);
-                });
-
             modelBuilder.Entity("StoryVerse.Core.Entities.TimelineCharacter", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1395,27 +1284,6 @@ namespace StoryVerse.Infrastructure.Migrations
                     b.HasIndex("TargetEventId");
 
                     b.ToTable("DI_TRN_TimelineRelationships", (string)null);
-                });
-
-            modelBuilder.Entity("StoryVerse.Core.Entities.TimelineStoryArc", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("StoryArcId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("StoryTimelineId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StoryArcId");
-
-                    b.HasIndex("StoryTimelineId");
-
-                    b.ToTable("DI_TRN_TimelineStoryArcs", (string)null);
                 });
 
             modelBuilder.Entity("StoryVerse.Core.Entities.TimelineWorldEntity", b =>
@@ -2258,17 +2126,6 @@ namespace StoryVerse.Infrastructure.Migrations
                     b.Navigation("TimelineEvent");
                 });
 
-            modelBuilder.Entity("StoryVerse.Core.Entities.StoryTimeline", b =>
-                {
-                    b.HasOne("StoryVerse.Core.Entities.Story", "Story")
-                        .WithMany("StoryTimelines")
-                        .HasForeignKey("StoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Story");
-                });
-
             modelBuilder.Entity("StoryVerse.Core.Entities.TimelineCharacter", b =>
                 {
                     b.HasOne("StoryVerse.Core.Entities.Character", "Character")
@@ -2335,25 +2192,6 @@ namespace StoryVerse.Infrastructure.Migrations
                     b.Navigation("SourceEvent");
 
                     b.Navigation("TargetEvent");
-                });
-
-            modelBuilder.Entity("StoryVerse.Core.Entities.TimelineStoryArc", b =>
-                {
-                    b.HasOne("StoryVerse.Core.Entities.StoryArc", "StoryArc")
-                        .WithMany()
-                        .HasForeignKey("StoryArcId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("StoryVerse.Core.Entities.StoryTimeline", "StoryTimeline")
-                        .WithMany("LinkedStoryArcs")
-                        .HasForeignKey("StoryTimelineId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StoryArc");
-
-                    b.Navigation("StoryTimeline");
                 });
 
             modelBuilder.Entity("StoryVerse.Core.Entities.TimelineWorldEntity", b =>
@@ -2560,19 +2398,12 @@ namespace StoryVerse.Infrastructure.Migrations
 
                     b.Navigation("StoryArcs");
 
-                    b.Navigation("StoryTimelines");
-
                     b.Navigation("TimelineEvents");
                 });
 
             modelBuilder.Entity("StoryVerse.Core.Entities.StoryArc", b =>
                 {
                     b.Navigation("ArcEvents");
-                });
-
-            modelBuilder.Entity("StoryVerse.Core.Entities.StoryTimeline", b =>
-                {
-                    b.Navigation("LinkedStoryArcs");
                 });
 
             modelBuilder.Entity("StoryVerse.Core.Entities.TimelineEvent", b =>

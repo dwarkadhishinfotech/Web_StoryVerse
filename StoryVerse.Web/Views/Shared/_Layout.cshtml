@@ -69,12 +69,12 @@
     </style>
 </head>
 <body class="text-slate-800 font-sans" style="margin: 0; padding: 0; overflow-x: hidden; background-color: #FAF5ED;">
-    <div class="d-flex" style="height: 100vh; width: 100%; overflow: hidden; background: transparent;">
+    <div class="d-flex" style="height: 100vh; width: 100%; background: transparent; position: relative;">
         <!-- Sidebar -->
         <partial name="_Sidebar" />
 
         <!-- Main Content Wrapper -->
-        <main class="flex-grow-1 position-relative d-flex flex-column" style="overflow-y: auto; overflow-x: hidden; z-index: 10; background: transparent; min-width: 0;">
+        <main class="flex-grow-1 d-flex flex-column" style="overflow-y: auto; overflow-x: hidden; background: transparent; min-width: 0; position: relative;">
             <div class="flex-grow-1" style="padding: 1.5rem 2.5rem;">
                 <!-- Top Navbar -->
                 <partial name="_TopNavbar" />
@@ -96,6 +96,30 @@
     <script>
       lucide.createIcons();
     </script>
+
+    <!-- Fix: Bootstrap modal backdrop cleanup -->
+    <style>
+        /* Ensure modal backdrop always stacks above everything */
+        .modal-backdrop { z-index: 1050 !important; }
+        .modal         { z-index: 1055 !important; }
+    </style>
+    <script>
+        // Robustly clean up any stale Bootstrap modal state on close
+        document.addEventListener('DOMContentLoaded', function () {
+            document.body.addEventListener('hidden.bs.modal', function () {
+                // Safety net: remove any lingering backdrops
+                setTimeout(function () {
+                    document.querySelectorAll('.modal-backdrop').forEach(function (el) { el.remove(); });
+                    if (!document.querySelector('.modal.show')) {
+                        document.body.classList.remove('modal-open');
+                        document.body.style.removeProperty('overflow');
+                        document.body.style.removeProperty('padding-right');
+                    }
+                }, 50);
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

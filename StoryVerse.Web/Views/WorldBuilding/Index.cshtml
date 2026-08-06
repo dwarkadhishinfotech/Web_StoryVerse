@@ -52,6 +52,7 @@
             padding: 6px !important;
             background: #ffffff !important;
             z-index: 1060 !important;
+            min-width: 180px !important;
         }
 
         .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
@@ -74,11 +75,271 @@
         }
 
         .select2-results__option {
-            padding: 8px 12px !important;
+            padding: 7px 10px !important;
             font-size: 0.825rem !important;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
             border-radius: 6px;
             transition: all 0.15s ease;
+            white-space: nowrap !important;
+        }
+
+        /* Select2 custom option layout */
+        .sv-s2-opt {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.825rem;
+            white-space: nowrap;
+        }
+        /* Fixed-width icon slot — keeps text aligned whether icon exists or not */
+        .sv-s2-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            min-width: 18px;
+            height: 18px;
+            font-size: 13px;
+            color: #13A8A6;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        /* Empty icon placeholder keeps alignment when there's no icon */
+        .sv-s2-icon-empty {
+            display: inline-flex;
+            width: 18px;
+            min-width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        /* ── View switcher active state ── */
+        #btnGridView.active, #btnListView.active {
+            background: linear-gradient(135deg, #1E439B 0%, #13A8A6 100%) !important;
+            color: #fff !important;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(19,168,166,0.25);
+        }
+
+        /* ── List view row ── */
+        .sv-list-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #fff;
+            border: 1px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+        }
+        .sv-list-row:hover {
+            border-color: #BAE6FD;
+            box-shadow: 0 4px 14px rgba(19,168,166,0.1);
+            transform: translateX(3px);
+        }
+
+        /* Thumbnail */
+        .sv-list-thumb {
+            position: relative;
+            width: 68px;
+            height: 52px;
+            border-radius: 10px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #0A1128;
+        }
+        .sv-list-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .sv-list-icon {
+            position: absolute;
+            bottom: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid #fff;
+            color: #334155;
+        }
+
+        /* Info column */
+        .sv-list-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .sv-list-type-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 1px 8px;
+            border-radius: 20px;
+            background: #EDE9FE;
+            color: #6D28D9;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+        .sv-list-type-badge--dim {
+            background: #F1F5F9;
+            color: #64748B;
+        }
+        .sv-list-summary {
+            font-size: 0.775rem;
+            color: #64748B;
+            margin: 4px 0 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        /* Meta column */
+        .sv-list-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            font-size: 0.72rem;
+            color: #94A3B8;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .sv-list-time {
+            font-size: 0.7rem;
+            color: #CBD5E1;
+        }
+
+        /* ── Template cards in modal ── */
+        .sv-tmpl-card {
+            position: relative;
+            background: #fff;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 16px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease;
+        }
+        .sv-tmpl-card:hover {
+            border-color: #13A8A6;
+            box-shadow: 0 4px 16px rgba(19,168,166,0.12);
+            transform: translateY(-2px);
+        }
+        .sv-tmpl-card.selected {
+            border-color: #13A8A6;
+            background: linear-gradient(135deg, rgba(19,168,166,0.04) 0%, rgba(30,67,155,0.03) 100%);
+            box-shadow: 0 0 0 3px rgba(19,168,166,0.15), 0 4px 20px rgba(19,168,166,0.1);
+        }
+        .sv-tmpl-check {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            color: #13A8A6;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .sv-tmpl-card.selected .sv-tmpl-check {
+            opacity: 1;
+        }
+        .sv-tmpl-icon-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(19,168,166,0.1), rgba(30,67,155,0.08));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #13A8A6;
+            flex-shrink: 0;
+        }
+        .sv-genre-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: #EDE9FE;
+            color: #6D28D9;
+        }
+        .sv-subtypes {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #13A8A6;
+        }
+
+        /* ── Premium Category Navigation Tabs ── */
+        .sv-category-tabs-container {
+            position: relative;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        .sv-category-tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            margin-bottom: -1px;
+            padding: 0;
+            list-style: none;
+        }
+        .sv-category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .sv-cat-tab {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #64748B !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            text-decoration: none !important;
+            cursor: pointer;
+        }
+        .sv-cat-tab i, .sv-cat-tab svg {
+            width: 16px;
+            height: 16px;
+            color: #94A3B8;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .sv-cat-tab:hover {
+            color: #0F172A !important;
+            background: rgba(19, 168, 166, 0.05) !important;
+        }
+        .sv-cat-tab:hover i, .sv-cat-tab:hover svg {
+            color: #13A8A6;
+            transform: translateY(-1px);
+        }
+        .sv-cat-tab.active {
+            color: #0F766E !important;
+            font-weight: 600 !important;
+            background: transparent !important;
+        }
+        .sv-cat-tab.active i, .sv-cat-tab.active svg {
+            color: #13A8A6;
+        }
+        .sv-cat-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #1E439B, #13A8A6);
+            border-radius: 3px 3px 0 0;
+            box-shadow: 0 2px 6px rgba(19, 168, 166, 0.3);
         }
     </style>
 }
@@ -138,57 +399,68 @@
     </div>
 
     <!-- Category Filter Tabs -->
-    <div class="border-bottom mb-4">
-        <ul class="nav nav-tabs border-0 gap-4" style="font-size: 0.875rem; font-weight: 500;">
+    <div class="sv-category-tabs-container mb-4">
+        <ul class="sv-category-tabs">
             <li class="nav-item">
-                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "All Entities" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                <a class="sv-cat-tab @(activeCategory == "All Entities" ? "active" : "")"
                    href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "All Entities" })">
-                    <i data-lucide="layout-grid" class="me-1.5" style="width: 16px; height: 16px;"></i> All Entities
+                    <i data-lucide="layout-grid"></i> All Entities
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Locations" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                <a class="sv-cat-tab @(activeCategory == "Locations" ? "active" : "")"
                    href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Locations" })">
-                    <i data-lucide="map-pin" class="me-1.5" style="width: 16px; height: 16px;"></i> Locations
+                    <i data-lucide="map-pin"></i> Locations
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Organizations" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                <a class="sv-cat-tab @(activeCategory == "Organizations" ? "active" : "")"
                    href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Organizations" })">
-                    <i data-lucide="landmark" class="me-1.5" style="width: 16px; height: 16px;"></i> Organizations
+                    <i data-lucide="landmark"></i> Organizations
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "People Groups" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                <a class="sv-cat-tab @(activeCategory == "People Groups" ? "active" : "")"
                    href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "People Groups" })">
-                    <i data-lucide="users" class="me-1.5" style="width: 16px; height: 16px;"></i> People Groups
+                    <i data-lucide="users"></i> People Groups
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Cultures" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                <a class="sv-cat-tab @(activeCategory == "Cultures" ? "active" : "")"
                    href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Cultures" })">
-                    <i data-lucide="crown" class="me-1.5" style="width: 16px; height: 16px;"></i> Cultures
+                    <i data-lucide="crown"></i> Cultures
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Religions" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                <a class="sv-cat-tab @(activeCategory == "Religions" ? "active" : "")"
                    href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Religions" })">
-                    <i data-lucide="star" class="me-1.5" style="width: 16px; height: 16px;"></i> Religions
+                    <i data-lucide="star"></i> Religions
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link border-0 pb-3 px-1 @(activeCategory == "Species" ? "active border-bottom border-3 border-teal fw-bold text-peacock-teal" : "text-secondary")"
+                <a class="sv-cat-tab @(activeCategory == "Species" ? "active" : "")"
                    href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Species" })">
-                    <i data-lucide="paw-print" class="me-1.5" style="width: 16px; height: 16px;"></i> Species
+                    <i data-lucide="paw-print"></i> Species
                 </a>
             </li>
             <li class="nav-item dropdown">
-                <a class="nav-link border-0 pb-3 px-1 text-secondary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="sv-cat-tab dropdown-toggle @(activeCategory == "Historical Events" || activeCategory == "Other" ? "active" : "")" 
+                   href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     More
                 </a>
-                <ul class="dropdown-menu shadow-md border-0 rounded-3" style="font-size: 0.85rem;">
-                    <li><a class="dropdown-item" href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Historical Events" })">Historical Events</a></li>
-                    <li><a class="dropdown-item" href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Other" })">Other Categories</a></li>
+                <ul class="dropdown-menu shadow-md border-0 rounded-3 py-1" style="font-size: 0.85rem;">
+                    <li>
+                        <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 @(activeCategory == "Historical Events" ? "fw-bold text-peacock-teal bg-teal-subtle" : "")" 
+                           href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Historical Events" })">
+                            <i data-lucide="history" style="width: 14px; height: 14px;"></i> Historical Events
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2 px-3 d-flex align-items-center gap-2 @(activeCategory == "Other" ? "fw-bold text-peacock-teal bg-teal-subtle" : "")" 
+                           href="@Url.Action("Index", "WorldBuilding", new { storyId = Model.SelectedStoryId, category = "Other" })">
+                            <i data-lucide="folder" style="width: 14px; height: 14px;"></i> Other Categories
+                        </a>
+                    </li>
                 </ul>
             </li>
         </ul>
@@ -321,7 +593,8 @@
                         {
                             foreach (var tmpl in Model.SuggestedTemplates.Take(5))
                             {
-                                <div class="d-flex align-items-center gap-3 cursor-pointer hover-lift-subtle p-1.5 rounded-3">
+                                <div class="d-flex align-items-center gap-3 cursor-pointer hover-lift-subtle p-1.5 rounded-3"
+                                     onclick="openAndSelectTemplate('@tmpl.Id')">
                                     <div class="rounded-circle bg-light p-2 text-peacock-teal d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
                                         <i data-lucide="@tmpl.Icon" style="width: 20px; height: 20px;"></i>
                                     </div>
@@ -427,10 +700,10 @@
         <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
             <!-- View Switcher -->
             <div class="btn-group bg-white p-1 rounded-3 border shadow-xs" style="border-color: #E2E8F0 !important;">
-                <button type="button" class="btn btn-sm btn-white fw-semibold rounded-2 active" style="font-size: 0.8rem;">
+                <button type="button" id="btnGridView" class="btn btn-sm btn-white fw-semibold rounded-2 active" style="font-size: 0.8rem;" onclick="setView('grid')">
                     <i data-lucide="layout-grid" style="width: 14px; height: 14px;" class="me-1"></i> Grid View
                 </button>
-                <button type="button" class="btn btn-sm btn-white text-secondary rounded-2" style="font-size: 0.8rem;">
+                <button type="button" id="btnListView" class="btn btn-sm btn-white text-secondary rounded-2" style="font-size: 0.8rem;" onclick="setView('list')">
                     <i data-lucide="list" style="width: 14px; height: 14px;" class="me-1"></i> List View
                 </button>
             </div>
@@ -478,7 +751,8 @@
         <div class="row g-4">
             <!-- Entities Grid -->
             <div class="@(Model.SelectedEntityDetail != null ? "col-lg-7 col-xl-8" : "col-12")">
-                <div class="row g-3">
+                <!-- ── GRID VIEW ── -->
+                <div id="view-grid" class="row g-3">
                     @foreach (var item in Model.Entities)
                     {
                         <div class="col-md-6 col-xl-3">
@@ -527,17 +801,173 @@
                     }
                 </div>
 
-                <!-- Footer Pagination -->
-                <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top text-muted" style="font-size: 0.8rem;">
-                    <span>Showing 1 to @Model.Entities.Count of @Model.TotalEntities entities</span>
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled"><a class="page-link border-0" href="#"><i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i></a></li>
-                        <li class="page-item active"><a class="page-link rounded-circle text-white bg-teal" style="background: #13A8A6; border: none;" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link border-0 text-slate-700" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link border-0 text-slate-700" href="#">3</a></li>
-                        <li class="page-item"><a class="page-link border-0" href="#"><i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i></a></li>
-                    </ul>
+                <!-- ── LIST VIEW ── -->
+                <div id="view-list" class="d-none">
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var item in Model.Entities)
+                        {
+                            <div class="sv-list-row" onclick="loadEntityDetail('@item.Id')">
+                                <!-- Thumbnail -->
+                                <div class="sv-list-thumb">
+                                    <img src="@item.CoverImage" alt="@item.Name" onerror="this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80'" />
+                                    <div class="sv-list-icon">
+                                        <i data-lucide="@item.Icon" style="width: 14px; height: 14px;"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Main Info -->
+                                <div class="sv-list-info">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fw-bold text-slate-900 font-serif" style="font-size: 0.9rem;">@item.Name</span>
+                                        <i data-lucide="star" class="@(item.IsFavorite ? "text-warning fill-warning" : "text-muted opacity-30")" style="width: 12px; height: 12px; flex-shrink:0;"></i>
+                                    </div>
+                                    <span class="sv-list-type-badge">@item.Category</span>
+                                    <span class="sv-list-type-badge sv-list-type-badge--dim">@item.TypeName</span>
+                                    <p class="sv-list-summary">@(string.IsNullOrWhiteSpace(item.Summary) ? "No summary provided." : item.Summary)</p>
+                                </div>
+
+                                <!-- Meta -->
+                                <div class="sv-list-meta">
+                                    <span title="Characters"><i data-lucide="user" style="width: 12px; height: 12px;"></i> @item.ConnectedCharactersCount</span>
+                                    <span title="Events"><i data-lucide="book-open" style="width: 12px; height: 12px;"></i> @item.ConnectedTimelineEventsCount</span>
+                                    <span class="sv-list-time">@item.UpdatedAgo</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
+
+                <!-- Footer Pagination -->
+                <div class="sv-pagination-bar d-flex align-items-center justify-content-between mt-4 pt-3">
+                    <!-- Results summary -->
+                    <div class="sv-pagination-info d-flex align-items-center gap-2">
+                        <span class="sv-pagination-dot"></span>
+                        <span>Showing <strong>1</strong> – <strong>@Model.Entities.Count</strong> of <strong>@Model.TotalEntities</strong> entities</span>
+                    </div>
+
+                    <!-- Page buttons -->
+                    <nav aria-label="Entity pagination">
+                        <ul class="sv-pager mb-0">
+                            <li class="sv-pager-item disabled">
+                                <a class="sv-pager-btn sv-pager-arrow" href="#" aria-label="Previous" tabindex="-1">
+                                    <i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
+                                </a>
+                            </li>
+                            <li class="sv-pager-item active">
+                                <a class="sv-pager-btn sv-pager-active" href="#">1</a>
+                            </li>
+                            <li class="sv-pager-item">
+                                <a class="sv-pager-btn" href="#">2</a>
+                            </li>
+                            <li class="sv-pager-item">
+                                <a class="sv-pager-btn" href="#">3</a>
+                            </li>
+                            <li class="sv-pager-item">
+                                <a class="sv-pager-btn sv-pager-arrow" href="#" aria-label="Next">
+                                    <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <style>
+                    .sv-pagination-bar {
+                        border-top: 1px solid #EEF0F4;
+                        padding-top: 14px;
+                        font-size: 0.8rem;
+                        color: #64748B;
+                    }
+                    .sv-pagination-info {
+                        font-size: 0.8rem;
+                        color: #64748B;
+                    }
+                    .sv-pagination-info strong {
+                        color: #1E293B;
+                        font-weight: 600;
+                    }
+                    .sv-pagination-dot {
+                        width: 6px;
+                        height: 6px;
+                        border-radius: 50%;
+                        background: linear-gradient(135deg, #1E439B, #13A8A6);
+                        flex-shrink: 0;
+                    }
+
+                    /* Pager list */
+                    .sv-pager {
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                        list-style: none;
+                        padding: 0;
+                        margin: 0;
+                    }
+                    .sv-pager-item { display: flex; }
+
+                    /* Base button */
+                    .sv-pager-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 34px;
+                        height: 34px;
+                        padding: 0 6px;
+                        border-radius: 10px;
+                        border: 1px solid #E2E8F0;
+                        background: #FFFFFF;
+                        color: #475569;
+                        font-size: 0.78rem;
+                        font-weight: 600;
+                        text-decoration: none;
+                        transition: all 0.18s ease;
+                        cursor: pointer;
+                        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+                    }
+                    .sv-pager-btn:hover {
+                        background: #F1F5F9;
+                        border-color: #CBD5E1;
+                        color: #1E293B;
+                        transform: translateY(-1px);
+                        box-shadow: 0 3px 8px rgba(0,0,0,0.07);
+                    }
+
+                    /* Active page */
+                    .sv-pager-btn.sv-pager-active,
+                    .sv-pager-item.active .sv-pager-btn {
+                        background: linear-gradient(135deg, #1E439B 0%, #13A8A6 100%);
+                        border-color: transparent;
+                        color: #FFFFFF;
+                        box-shadow: 0 4px 12px rgba(19, 168, 166, 0.35);
+                        transform: translateY(-1px);
+                    }
+                    .sv-pager-btn.sv-pager-active:hover,
+                    .sv-pager-item.active .sv-pager-btn:hover {
+                        opacity: 0.92;
+                        transform: translateY(-2px);
+                    }
+
+                    /* Arrow nav buttons */
+                    .sv-pager-btn.sv-pager-arrow {
+                        color: #94A3B8;
+                        border-color: #E8EDF3;
+                        background: #F8FAFC;
+                    }
+                    .sv-pager-btn.sv-pager-arrow:hover {
+                        color: #13A8A6;
+                        border-color: #BAE6FD;
+                        background: #F0FDFA;
+                    }
+
+                    /* Disabled state */
+                    .sv-pager-item.disabled .sv-pager-btn {
+                        opacity: 0.4;
+                        cursor: not-allowed;
+                        pointer-events: none;
+                        transform: none !important;
+                        box-shadow: none !important;
+                    }
+                </style>
             </div>
 
             <!-- Slide-Out Entity Profile Panel (Image 2 Drawer) -->
@@ -674,32 +1104,65 @@
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="p-4 bg-white">
                 <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
-                    <h5 class="font-serif fw-bold text-slate-900 mb-0">Explore Genre Templates</h5>
+                    <div>
+                        <h5 class="font-serif fw-bold text-slate-900 mb-0">Explore Genre Templates</h5>
+                        <small class="text-muted">Pick a template to instantly set up entity types for your story</small>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="row g-3">
+
+                <!-- Template Cards Grid -->
+                <div class="row g-3" id="templateCardGrid">
                     @if (Model.SuggestedTemplates != null)
                     {
                         foreach (var tmpl in Model.SuggestedTemplates)
                         {
                             <div class="col-md-6">
-                                <div class="card border rounded-3 p-3 hover-lift-subtle" style="border-color: #E2E8F0 !important;">
+                                <div class="sv-tmpl-card" 
+                                     data-template-id="@tmpl.Id"
+                                     data-template-name="@tmpl.Name"
+                                     onclick="selectTemplate(this)">
+                                    <!-- Selected checkmark -->
+                                    <span class="sv-tmpl-check"><i data-lucide="check-circle" style="width:16px;height:16px;"></i></span>
                                     <div class="d-flex align-items-center gap-3 mb-2">
-                                        <div class="rounded-circle bg-light p-2.5 text-peacock-teal">
+                                        <div class="sv-tmpl-icon-wrap">
                                             <i data-lucide="@tmpl.Icon" style="width: 20px; height: 20px;"></i>
                                         </div>
                                         <div>
                                             <h6 class="fw-bold mb-0 text-slate-800">@tmpl.Name</h6>
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 10px;">Genre: @tmpl.Genre</span>
+                                            <span class="sv-genre-badge">@tmpl.Genre</span>
                                         </div>
                                     </div>
                                     <p class="text-muted small mb-2">@tmpl.Description</p>
-                                    <small class="text-peacock-teal fw-semibold">Subtypes: @tmpl.SubTypesSummary</small>
+                                    <small class="sv-subtypes">Subtypes: @tmpl.SubTypesSummary</small>
                                 </div>
                             </div>
                         }
                     }
                 </div>
+
+                <!-- Confirmation bar (hidden until a card is selected) -->
+                <div id="tmplConfirmBar" class="d-none mt-3 pt-3 border-top d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="fw-semibold text-slate-800" id="tmplConfirmName" style="font-size:0.9rem;"></span>
+                        <small class="text-muted d-block" style="font-size:0.77rem;">This will add the template's entity types to your story world.</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="clearTemplateSelection()">Cancel</button>
+                        <button type="button" class="btn btn-sm text-white rounded-pill px-4 fw-semibold" 
+                                style="background: linear-gradient(135deg,#1E439B,#13A8A6); border:none;"
+                                onclick="submitTemplate()">
+                            <i data-lucide="sparkles" style="width:13px;height:13px;" class="me-1"></i> Apply Template
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hidden apply form -->
+                <form id="applyTemplateForm" method="post" action="@Url.Action("ApplyTemplate", "WorldBuilding")" style="display:none;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="templateId" id="applyTemplateId" value="" />
+                    <input type="hidden" name="storyId" value="@Model.SelectedStoryId" />
+                </form>
             </div>
         </div>
     </div>
@@ -708,14 +1171,38 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+
+            // Icon map: lucide icon name → simple unicode/SVG substitute shown in dropdown
+            var iconMap = {
+                'layers':        '⊞',
+                'activity':      '⚡',
+                'check-circle':  '✓',
+                'file-edit':     '✎',
+                'archive':       '⊟',
+                'clock':         '⏱',
+                'sort-asc':      '↑',
+                'sort-desc':     '↓',
+                'history':       '↺',
+                'crown':         '♛',
+                'map-pin':       '⌖',
+                'globe':         '○',
+                'landmark':      '⌂',
+                'users':         '⊛',
+                'castle':        '⊞',
+                'flag':          '⚑',
+                'home':          '⌂',
+            };
+
             function formatSelect2Option(opt) {
-                if (!opt.id) return opt.text;
+                var text = opt.text || '';
+                if (!text) return $('<span></span>');
                 var $el = $(opt.element);
-                var icon = $el.data('icon') || '';
-                if (icon) {
-                    return $('<span class="d-flex align-items-center gap-2"><i data-lucide="' + icon + '" style="width:14px;height:14px;color:#13A8A6;"></i><span>' + opt.text + '</span></span>');
-                }
-                return opt.text;
+                var icon = $el ? ($el.data('icon') || '') : '';
+                var sym = (icon && iconMap[icon]) ? iconMap[icon] : '';
+                var iconHtml = sym
+                    ? '<span class="sv-s2-icon">' + sym + '</span>'
+                    : '<span class="sv-s2-icon-empty"></span>';
+                return $('<span class="sv-s2-opt">' + iconHtml + '<span>' + text + '</span></span>');
             }
 
             $('.select2-filter').select2({
@@ -723,10 +1210,6 @@
                 templateSelection: formatSelect2Option,
                 minimumResultsForSearch: 8,
                 width: '100%'
-            }).on('select2:open', function() {
-                setTimeout(function() {
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                }, 10);
             });
 
             $('#filterTypeSelect').on('change', function() {
@@ -759,6 +1242,79 @@
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
         });
+
+        /* ── Template selection ── */
+        function selectTemplate(el) {
+            // Deselect all
+            document.querySelectorAll('.sv-tmpl-card').forEach(function(c) { c.classList.remove('selected'); });
+            // Select clicked
+            el.classList.add('selected');
+            var name = el.getAttribute('data-template-name');
+            var id   = el.getAttribute('data-template-id');
+            // Show confirm bar
+            var bar = document.getElementById('tmplConfirmBar');
+            document.getElementById('tmplConfirmName').textContent = '"' + name + '" selected';
+            document.getElementById('applyTemplateId').value = id;
+            bar.classList.remove('d-none');
+            if (window.lucide) lucide.createIcons();
+        }
+        function clearTemplateSelection() {
+            document.querySelectorAll('.sv-tmpl-card').forEach(function(c) { c.classList.remove('selected'); });
+            document.getElementById('tmplConfirmBar').classList.add('d-none');
+            document.getElementById('applyTemplateId').value = '';
+        }
+        function submitTemplate() {
+            var id = document.getElementById('applyTemplateId').value;
+            if (!id) return;
+            document.getElementById('applyTemplateForm').submit();
+        }
+        function openAndSelectTemplate(tmplId) {
+            var modalEl = document.getElementById('templatesModal');
+            if (!modalEl) return;
+            var bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            bsModal.show();
+            setTimeout(function() {
+                var card = document.querySelector('.sv-tmpl-card[data-template-id="' + tmplId + '"]');
+                if (card) selectTemplate(card);
+            }, 200);
+        }
+        // Reset on modal close
+        document.getElementById('templatesModal').addEventListener('hidden.bs.modal', function () {
+            clearTemplateSelection();
+        });
+        function setView(mode) {
+            var grid = document.getElementById('view-grid');
+            var list = document.getElementById('view-list');
+            var btnGrid = document.getElementById('btnGridView');
+            var btnList = document.getElementById('btnListView');
+            if (!grid || !list) return;
+
+            if (mode === 'list') {
+                grid.classList.add('d-none');
+                list.classList.remove('d-none');
+                btnList.classList.add('active');
+                btnList.classList.remove('text-secondary');
+                btnGrid.classList.remove('active');
+                btnGrid.classList.add('text-secondary');
+            } else {
+                list.classList.add('d-none');
+                grid.classList.remove('d-none');
+                btnGrid.classList.add('active');
+                btnGrid.classList.remove('text-secondary');
+                btnList.classList.remove('active');
+                btnList.classList.add('text-secondary');
+            }
+            try { localStorage.setItem('wb_view', mode); } catch(e) {}
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Restore saved view on load
+        (function() {
+            try {
+                var saved = localStorage.getItem('wb_view');
+                if (saved === 'list') setView('list');
+            } catch(e) {}
+        })();
 
         function loadEntityDetail(id) {
             fetch('/WorldBuilding/GetEntityDetails/' + id)

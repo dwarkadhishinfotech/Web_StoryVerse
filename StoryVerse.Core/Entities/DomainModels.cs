@@ -17,6 +17,13 @@ namespace StoryVerse.Core.Entities
         public int CurrentWordCount { get; set; }
         public string Status { get; set; } = "Draft"; // Draft, InProgress, Published
         
+        // Future Architecture Readiness (Series, Universes, Branching, Sequels)
+        public Guid? SeriesId { get; set; }
+        public Guid? UniverseId { get; set; }
+        public Guid? ParentStoryId { get; set; }
+        public bool IsBranch { get; set; } = false;
+        public string? BranchName { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
@@ -25,6 +32,11 @@ namespace StoryVerse.Core.Entities
         public ICollection<Chapter> Chapters { get; set; } = new List<Chapter>();
         public ICollection<Character> Characters { get; set; } = new List<Character>();
         public ICollection<Location> Locations { get; set; } = new List<Location>();
+        public ICollection<TimelineEvent> TimelineEvents { get; set; } = new List<TimelineEvent>();
+        public ICollection<StoryArc> StoryArcs { get; set; } = new List<StoryArc>();
+        public ICollection<StoryTimeline> StoryTimelines { get; set; } = new List<StoryTimeline>();
+        public ICollection<ResearchNote> ResearchNotes { get; set; } = new List<ResearchNote>();
+        public ICollection<Asset> Assets { get; set; } = new List<Asset>();
     }
 
     public class Chapter

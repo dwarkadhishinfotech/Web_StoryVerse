@@ -118,19 +118,32 @@
                     <!-- Tags -->
                     <div class="mt-4">
                         <label class="form-label fw-bold text-uppercase text-slate-400 mb-2" style="font-size: 10px; letter-spacing: 0.05em;">Tags</label>
-                        <div class="d-flex flex-wrap gap-1.5 align-items-center">
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            @{
+                                var tagPalette = new[]
+                                {
+                                    ("#EDE9FE", "#6D28D9", "#C4B5FD"), // violet
+                                    ("#CCFBF1", "#0F766E", "#99F6E4"), // teal
+                                    ("#FFE4E6", "#BE123C", "#FECDD3"), // rose
+                                    ("#FEF3C7", "#B45309", "#FDE68A"), // amber
+                                    ("#E0F2FE", "#0369A1", "#BAE6FD"), // sky
+                                    ("#D1FAE5", "#065F46", "#6EE7B7"), // emerald
+                                };
+                                int tagIdx = 0;
+                            }
                             @if (Model.Tags != null && Model.Tags.Any())
                             {
                                 foreach (var tag in Model.Tags)
                                 {
-                                    <span class="badge rounded-pill bg-light text-slate-700 border px-3 py-1.5" style="font-size: 0.75rem; border-color: #E2E8F0 !important;">
+                                    var (bg, fg, border) = tagPalette[tagIdx++ % tagPalette.Length];
+                                    <span class="colorful-tag-pill" style="background:@bg; color:@fg; border-color:@border;">
                                         @tag
                                     </span>
                                 }
                             }
                             else
                             {
-                                <span class="badge rounded-pill bg-light text-slate-700 border px-3 py-1.5" style="font-size: 0.75rem; border-color: #E2E8F0 !important;">
+                                <span class="colorful-tag-pill" style="background:#EDE9FE; color:#6D28D9; border-color:#C4B5FD;">
                                     #@Model.Category
                                 </span>
                             }
