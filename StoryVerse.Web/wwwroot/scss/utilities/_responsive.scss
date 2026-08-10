@@ -16,6 +16,16 @@ html, body {
     overflow: hidden !important;
 }
 
+/* Allow scrolling on Auth Pages (Login & Register) */
+html.auth-page, body.auth-page,
+html:has(.auth-layout-container), body:has(.auth-layout-container) {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
 .sv-app-container {
     height: 100vh;
     height: 100dvh;

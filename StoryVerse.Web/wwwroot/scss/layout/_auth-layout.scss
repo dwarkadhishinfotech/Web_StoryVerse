@@ -1,12 +1,17 @@
 .auth-layout-container {
     min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-color: transparent;
     display: flex;
     justify-content: center;
+    align-items: center;
     position: relative;
+    padding: 2rem 1rem;
+    overflow-y: auto;
     background-image: url('/backgrounds/peacock-bg.png'); // Placeholder
 
     .overlay-glass {
