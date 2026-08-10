@@ -121,7 +121,7 @@ public class AccountController : Controller
     {
         await _signInManager.SignOutAsync();
         _logger.LogInformation("User logged out.");
-        return RedirectToAction("Index", "Home", new { area = "" });
+        return LocalRedirect("/login");
     }
 
     [HttpGet]

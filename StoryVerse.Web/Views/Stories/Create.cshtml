@@ -75,30 +75,6 @@
         box-shadow: 0 0 0 0.2rem rgba(13, 148, 136, 0.1);
     }
     
-    /* Select2 Theme Overrides */
-    .select2-container--default .select2-selection--single {
-        height: auto;
-        padding: 10px 14px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        font-size: 13.5px;
-        display: flex;
-        align-items: center;
-        background-color: white;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 100%;
-        top: 0;
-        right: 12px;
-    }
-    .select2-container--default.select2-container--open .select2-selection--single {
-        border-color: #0d9488;
-        box-shadow: 0 0 0 0.2rem rgba(13, 148, 136, 0.1);
-    }
-    .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
-        background-color: #f0fdfa;
-        color: #0f172a;
-    }
     .genre-card:hover {
         border-color: #94a3b8 !important;
     }
@@ -160,11 +136,13 @@
                 <a href="#" class="btn btn-teal top-action-btn d-flex align-items-center text-decoration-none">
                     <i data-lucide="pen-tool" class="me-2" style="width: 16px; height: 16px;"></i> Continue Writing
                 </a>
-                <button class="icon-circle-btn">
+                <button class="icon-circle-btn position-relative" disabled title="Notifications (Coming Soon)" style="opacity: 0.65; cursor: not-allowed;">
                     <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                    <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
                 </button>
-                <button class="icon-circle-btn">
+                <button class="icon-circle-btn position-relative" disabled title="Toggle Theme (Coming Soon)" style="opacity: 0.65; cursor: not-allowed;">
                     <i data-lucide="moon" style="width: 18px; height: 18px;"></i>
+                    <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
                 </button>
             </div>
         </div>
@@ -201,6 +179,17 @@
 
                 <form id="storyForm" method="post" action="@Url.Action("Create", "Stories")" enctype="multipart/form-data" novalidate>
                     @Html.AntiForgeryToken()
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show mb-4 shadow-sm" role="alert" style="border-radius: 10px; border-left: 4px solid #ef4444;">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i data-lucide="alert-circle" style="width: 18px; height: 18px; color: #ef4444;"></i>
+                                <h6 class="fw-bold mb-0 text-danger" style="font-size: 14px;">Please fix the following errors before creating your story:</h6>
+                            </div>
+                            <div asp-validation-summary="All" class="text-danger small mb-0 ps-3"></div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
                     <!-- Step 1: Basic Details -->
                     <div id="step-1" class="step-content">
                         <div class="mb-2 d-flex align-items-center gap-2">
@@ -214,7 +203,7 @@
                                 <label class="form-label fw-bold mb-2 d-flex justify-content-between" style="font-size: 13px; color: #0f172a;">
                                     <span>Story Title <span class="text-danger">*</span></span>
                                 </label>
-                                <input type="text" class="form-control text-slate-800" name="Title" required placeholder="Enter your story title..." style="font-size: 13.5px; padding: 10px 14px; border-radius: 8px;">
+                                <input type="text" class="form-control text-slate-800" name="Title" value="@Model?.Title" required placeholder="Enter your story title..." style="font-size: 13.5px; padding: 10px 14px; border-radius: 8px;">
                                 <div class="text-end text-muted mt-1.5" style="font-size: 10.5px; font-weight: 600;">0/120</div>
                             </div>
                             <div class="col-md-6">
@@ -328,210 +317,40 @@
                         </div>
                         <p class="text-muted mb-4" style="font-size: 13.5px;">Choose the genre and theme that best represent your story. You can select more than one.</p>
                         
+
                         <div class="mb-4">
                             <label class="form-label fw-bold mb-1 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
-                                Primary Genre <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                Genres <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
                             </label>
-                            <p class="text-muted mb-3" style="font-size: 12px;">Select the main genre of your story</p>
-                            
+                            <p class="text-muted mb-2" style="font-size: 12px;">Select one or more genres — e.g. Mystery + Horror + Romance</p>
+                            <div id="selected-genres-preview" class="d-flex flex-wrap gap-1 mb-3" style="min-height: 24px;"></div>
+
                             <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100" style="cursor: pointer; background-color: #f0fdfa; border: 1px solid #0d9488; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Fantasy" class="d-none" checked>
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
+                                @if (ViewBag.Genres != null)
+                                {
+                                    foreach (var genre in (List<StoryVerse.Core.Entities.Genre>)ViewBag.Genres)
+                                    {
+                                        <div class="col-md-3">
+                                            <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white"
+                                                   style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;"
+                                                   data-genre-name="@genre.Name">
+                                                <input type="checkbox" name="SelectedGenreIds" value="@genre.Id" class="d-none">
+                                                <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                        <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                                        <i data-lucide="@genre.Icon" style="width: 16px; height: 16px;"></i>
+                                                    </div>
+                                                    <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a; line-height: 1.15;">@genre.Name</h6>
+                                                </div>
+                                                <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">@genre.Description</p>
+                                            </label>
                                         </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #ccfbf1; color: #0d9488;">
-                                                <i data-lucide="castle" style="width: 16px; height: 16px;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Fantasy</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Magic, mythical creatures, and imaginary worlds.</p>
-                                    </label>
-                                </div>
-                                
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Science Fiction" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="rocket" style="width: 16px; height: 16px;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Science Fiction</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Futuristic, space, technology, and advanced worlds.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Mystery" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Mystery</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Puzzles, crime, secrets, and investigations.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Romance" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="heart" style="width: 16px; height: 16px; color: #f43f5e;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Romance</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Love, relationships, and emotional journeys.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Thriller" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="theater" style="width: 16px; height: 16px; color: #22c55e;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Thriller</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Suspense, tension, and edge of the seat.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Historical Fiction" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="landmark" style="width: 16px; height: 16px;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a; line-height: 1.1;">Historical Fiction</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Stories set in the past with real or imagined events.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Horror" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="ghost" style="width: 16px; height: 16px; color: #64748b;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Horror</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Dark, eerie, and supernatural themes.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Comedy" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="smile" style="width: 16px; height: 16px; color: #eab308;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Comedy</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Humor, light-hearted and feel-good stories.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Adventure" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="compass" style="width: 16px; height: 16px; color: #22c55e;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Adventure</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Exciting journeys, quests, and daring challenges.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Drama" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="clapperboard" style="width: 16px; height: 16px;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Drama</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">Character-driven stories with emotional depth.</p>
-                                    </label>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="genre-card w-100 position-relative p-3 rounded-3 h-100 bg-white" style="cursor: pointer; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                                        <input type="radio" name="Genre" value="Other" class="d-none">
-                                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 d-none">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
-                                                <i data-lucide="check" style="width: 11px; height: 11px;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex align-items-center mb-2">
-                                            <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
-                                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                                            </div>
-                                            <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a;">Other</h6>
-                                        </div>
-                                        <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">My genre is not listed here.</p>
-                                    </label>
-                                </div>
+                                    }
+                                }
                             </div>
                         </div>
 
@@ -931,9 +750,9 @@
                                         <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 14.5px;">Genre & Theme</h6>
                                     </div>
                                     <div class="d-flex flex-column gap-3" style="font-size: 12.5px;">
-                                        <div class="row align-items-center">
-                                            <div class="col-5 text-muted fw-medium">Primary Genre</div>
-                                            <div class="col-7 text-slate-800" id="review-primary-genre"></div>
+                                        <div class="row align-items-start">
+                                            <div class="col-5 text-muted fw-medium">Genres</div>
+                                            <div class="col-7" id="review-primary-genre"></div>
                                         </div>
                                         <div class="row pt-1 pb-1">
                                             <div class="col-5 text-muted fw-medium pt-1">Themes</div>
@@ -1215,20 +1034,28 @@
                 width: '100%'
             });
             
-            // Genre Selection
-            $('.genre-card input[type="radio"]').on('change', function() {
-                $('.genre-card').css({
-                    'background-color': '#ffffff',
-                    'border-color': '#e2e8f0'
+            // Genre Multi-Selection
+            function updateSelectedGenresPreview() {
+                var selected = [];
+                $('.genre-card input[type="checkbox"]:checked').each(function() {
+                    // value is now an integer ID — read the display name from the parent label's data attribute
+                    selected.push($(this).closest('label[data-genre-name]').data('genre-name'));
                 });
-                $('.genre-card .check-icon').addClass('d-none');
-                $('.genre-card .icon-container').css({
-                    'background-color': '#f1f5f9',
-                    'color': '#64748b'
-                });
+                var $preview = $('#selected-genres-preview');
+                if (selected.length === 0) {
+                    $preview.html('<span class="text-muted" style="font-size: 12px; font-style: italic;">No genres selected yet — click the cards above to pick one or more.</span>');
+                } else {
+                    var html = selected.map(function(g, i) {
+                        var sep = i < selected.length - 1 ? '<span style="color:#94a3b8;font-size:12px;">+</span>' : '';
+                        return '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill fw-semibold" style="background:#0d9488;color:white;font-size:12px;">' + g + '</span>' + sep;
+                    }).join('');
+                    $preview.html('<div class="d-flex flex-wrap align-items-center gap-1">' + html + '</div>');
+                }
+            }
 
+            $('.genre-card input[type="checkbox"]').on('change', function() {
+                var $card = $(this).closest('.genre-card');
                 if ($(this).is(':checked')) {
-                    var $card = $(this).closest('.genre-card');
                     $card.css({
                         'background-color': '#f0fdfa',
                         'border-color': '#0d9488'
@@ -1238,8 +1065,22 @@
                         'background-color': '#ccfbf1',
                         'color': '#0d9488'
                     });
+                } else {
+                    $card.css({
+                        'background-color': '#ffffff',
+                        'border-color': '#e2e8f0'
+                    });
+                    $card.find('.check-icon').addClass('d-none');
+                    $card.find('.icon-container').css({
+                        'background-color': '#f1f5f9',
+                        'color': '#64748b'
+                    });
                 }
+                updateSelectedGenresPreview();
             });
+
+            // Initialize preview
+            updateSelectedGenresPreview();
 
             // Theme Selection
             $('.theme-pill input[type="checkbox"]').on('change', function() {
@@ -1389,8 +1230,19 @@
                 setVal('#review-audience', getText('select[name="TargetAudience"]'));
                 setVal('#review-language', getText('select[name="Language"]'));
                 
-                var primaryGenre = $('input[name="Genre"]:checked').val();
-                setVal('#review-primary-genre', primaryGenre);
+                var selectedGenres = [];
+                $('input[name="SelectedGenreIds"]:checked').each(function() {
+                    selectedGenres.push($(this).closest('label[data-genre-name]').data('genre-name'));
+                });
+                if (selectedGenres.length > 0) {
+                    var genreTagsHtml = '<div class="d-flex flex-wrap gap-1">' +
+                        selectedGenres.map(function(g) {
+                            return '<span class="px-2 py-0.5 rounded-pill fw-medium" style="background:#0d9488;color:white;font-size:11px;">' + g + '</span>';
+                        }).join('') + '</div>';
+                    $('#review-primary-genre').html(genreTagsHtml);
+                } else {
+                    $('#review-primary-genre').html('<span class="text-muted fst-italic">Not set</span>');
+                }
                 
                 var themes = [];
                 $('input[name="Themes"]:checked').each(function() {

@@ -1,3 +1,120 @@
+//using Microsoft.AspNetCore.Identity;
+//using Microsoft.EntityFrameworkCore;
+//using Serilog;
+//using StoryVerse.Core.Entities.Identity;
+//using StoryVerse.Infrastructure.Data;
+
+//var builder = WebApplication.CreateBuilder(args);
+
+//// Configure Serilog
+//Log.Logger = new LoggerConfiguration()
+//    .ReadFrom.Configuration(builder.Configuration)
+//    .Enrich.FromLogContext()
+//    .CreateLogger();
+
+//builder.Host.UseSerilog();
+
+//try
+//{
+//    Log.Information("Starting StoryVerse Web Application");
+
+//    // Add services to the container.
+//    builder.Services.AddControllersWithViews();
+//    builder.Services.AddScoped<StoryVerse.Web.Services.IDropdownService, StoryVerse.Web.Services.DropdownService>();
+
+//    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+//        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+//    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//        options.UseSqlServer(connectionString));
+
+//    builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => 
+//    {
+//        // Password settings
+//        options.Password.RequireDigit = true;
+//        options.Password.RequireLowercase = true;
+//        options.Password.RequireNonAlphanumeric = true;
+//        options.Password.RequireUppercase = true;
+//        options.Password.RequiredLength = 8;
+//        options.Password.RequiredUniqueChars = 1;
+
+//        // Lockout settings
+//        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+//        options.Lockout.MaxFailedAccessAttempts = 5;
+//        options.Lockout.AllowedForNewUsers = true;
+
+//        // User settings
+//        options.User.RequireUniqueEmail = true;
+//        options.SignIn.RequireConfirmedAccount = false; // We can set this to true later when email verification is fully implemented
+//    })
+//    .AddEntityFrameworkStores<ApplicationDbContext>()
+//    .AddDefaultTokenProviders();
+
+//    builder.Services.ConfigureApplicationCookie(options =>
+//    {
+//        options.Cookie.HttpOnly = true;
+//        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+//        options.LoginPath = "/login";
+//        options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+//        options.SlidingExpiration = true;
+//    });
+
+//    var app = builder.Build();
+
+//    // Configure the HTTP request pipeline.
+//    if (!app.Environment.IsDevelopment())
+//    {
+//        app.UseExceptionHandler("/Home/Error");
+//        app.UseHsts();
+//    }
+
+//    //app.UseHttpsRedirection();
+//    app.UseStaticFiles();
+
+//    app.UseRouting();
+
+//    app.UseAuthentication();
+//    app.UseAuthorization();
+
+//    app.MapControllerRoute(
+//        name: "areas",
+//        pattern: "{area:exists}/{controller=Account}/{action=Login}/{id?}");
+
+//    app.MapControllerRoute(
+//        name: "default",
+//        pattern: "{controller=Home}/{action=Index}/{id?}");
+
+//    // Seed Roles and Data
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var services = scope.ServiceProvider;
+//        try
+//        {
+//            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+//            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+//            var context = services.GetRequiredService<ApplicationDbContext>();
+//            //await context.Database.MigrateAsync();
+
+//            await StoryVerse.Infrastructure.Data.DbSeeder.SeedRolesAsync(roleManager);
+//            await StoryVerse.Infrastructure.Data.DbSeeder.SeedDataAsync(context, userManager);
+//        }
+//        catch (Exception ex)
+//        {
+//            Log.Error(ex, "An error occurred while seeding the database.");
+//        }
+//    }
+
+//    app.Run();
+//}
+//catch (Exception ex) when (ex.GetType().Name != "HostAbortedException")
+//{
+//    Log.Fatal(ex, "Application terminated unexpectedly");
+//}
+//finally
+//{
+//    Log.CloseAndFlush();
+//}
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -6,7 +123,10 @@ using StoryVerse.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
+// ============================================================
+// SERILOG
+// ============================================================
+
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -14,103 +134,138 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-try
+
+// ============================================================
+// SERVICES
+// ============================================================
+
+// MVC
+builder.Services.AddControllersWithViews();
+
+// Application Services
+builder.Services.AddScoped<
+    StoryVerse.Web.Services.IDropdownService,
+    StoryVerse.Web.Services.DropdownService>();
+builder.Services.AddScoped<
+    StoryVerse.Web.Services.IQuoteService,
+    StoryVerse.Web.Services.QuoteService>();
+
+
+// ============================================================
+// DATABASE
+// ============================================================
+
+var connectionString = builder.Configuration
+    .GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' not found.");
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+
+// ============================================================
+// ASP.NET CORE IDENTITY
+// ============================================================
+
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    Log.Information("Starting StoryVerse Web Application");
+    // Password settings
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequiredUniqueChars = 1;
 
-    // Add services to the container.
-    builder.Services.AddControllersWithViews();
-    builder.Services.AddScoped<StoryVerse.Web.Services.IDropdownService, StoryVerse.Web.Services.DropdownService>();
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan =
+        TimeSpan.FromMinutes(15);
 
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-        
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(connectionString));
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
 
-    builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => 
-    {
-        // Password settings
-        options.Password.RequireDigit = true;
-        options.Password.RequireLowercase = true;
-        options.Password.RequireNonAlphanumeric = true;
-        options.Password.RequireUppercase = true;
-        options.Password.RequiredLength = 8;
-        options.Password.RequiredUniqueChars = 1;
+    // User settings
+    options.User.RequireUniqueEmail = true;
 
-        // Lockout settings
-        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-        options.Lockout.MaxFailedAccessAttempts = 5;
-        options.Lockout.AllowedForNewUsers = true;
+    // Email confirmation
+    options.SignIn.RequireConfirmedAccount = false;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
-        // User settings
-        options.User.RequireUniqueEmail = true;
-        options.SignIn.RequireConfirmedAccount = false; // We can set this to true later when email verification is fully implemented
-    })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
 
-    builder.Services.ConfigureApplicationCookie(options =>
-    {
-        options.Cookie.HttpOnly = true;
-        options.ExpireTimeSpan = TimeSpan.FromDays(30);
-        options.LoginPath = "/login";
-        options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-        options.SlidingExpiration = true;
-    });
+// ============================================================
+// AUTHENTICATION COOKIE
+// ============================================================
 
-    var app = builder.Build();
-
-    // Configure the HTTP request pipeline.
-    if (!app.Environment.IsDevelopment())
-    {
-        app.UseExceptionHandler("/Home/Error");
-        app.UseHsts();
-    }
-
-    app.UseHttpsRedirection();
-    app.UseStaticFiles();
-
-    app.UseRouting();
-
-    app.UseAuthentication();
-    app.UseAuthorization();
-
-    app.MapControllerRoute(
-        name: "areas",
-        pattern: "{area:exists}/{controller=Account}/{action=Login}/{id?}");
-
-    app.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}");
-
-    // Seed Roles and Data
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        try
-        {
-            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-            var context = services.GetRequiredService<ApplicationDbContext>();
-            await context.Database.MigrateAsync();
-            
-            await StoryVerse.Infrastructure.Data.DbSeeder.SeedRolesAsync(roleManager);
-            await StoryVerse.Infrastructure.Data.DbSeeder.SeedDataAsync(context, userManager);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "An error occurred while seeding the database.");
-        }
-    }
-
-    app.Run();
-}
-catch (Exception ex) when (ex.GetType().Name != "HostAbortedException")
+builder.Services.ConfigureApplicationCookie(options =>
 {
-    Log.Fatal(ex, "Application terminated unexpectedly");
-}
-finally
+    options.Cookie.HttpOnly = true;
+
+    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+
+    options.LoginPath = "/login";
+
+    options.AccessDeniedPath =
+        "/Identity/Account/AccessDenied";
+
+    options.SlidingExpiration = true;
+});
+
+
+// ============================================================
+// BUILD APPLICATION
+// ============================================================
+
+var app = builder.Build();
+
+
+// ============================================================
+// HTTP REQUEST PIPELINE
+// ============================================================
+
+if (!app.Environment.IsDevelopment())
 {
-    Log.CloseAndFlush();
+    app.UseExceptionHandler("/Home/Error");
+
+    // Enable after HTTPS/SSL is configured.
+    // app.UseHsts();
 }
+
+// Enable after HTTPS/SSL is configured.
+// app.UseHttpsRedirection();
+
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthentication();
+
+app.UseAuthorization();
+
+
+// ============================================================
+// ROUTING
+// ============================================================
+
+// Areas
+app.MapControllerRoute(
+    name: "areas",
+    pattern:
+        "{area:exists}/{controller=Account}/{action=Login}/{id?}");
+
+// Default
+app.MapControllerRoute(
+    name: "default",
+    pattern:
+        "{controller=Home}/{action=Index}/{id?}");
+
+
+// ============================================================
+// APPLICATION STARTUP
+// ============================================================
+
+Log.Information("Starting StoryVerse Web Application");
+
+app.Run();

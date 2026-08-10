@@ -52,4 +52,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Remember Me persistence logic
+    const loginForm = document.getElementById('loginForm');
+    const emailInput = document.querySelector('input[name="Email"], #Email');
+    const rememberMeInput = document.querySelector('input[name="RememberMe"], #RememberMe');
+
+    if (emailInput && rememberMeInput) {
+        const savedEmail = localStorage.getItem('storyverse_remembered_email');
+        if (savedEmail) {
+            if (!emailInput.value) {
+                emailInput.value = savedEmail;
+            }
+            rememberMeInput.checked = true;
+        }
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', () => {
+                if (rememberMeInput.checked && emailInput.value.trim() !== '') {
+                    localStorage.setItem('storyverse_remembered_email', emailInput.value.trim());
+                } else {
+                    localStorage.removeItem('storyverse_remembered_email');
+                }
+            });
+        }
+    }
 });

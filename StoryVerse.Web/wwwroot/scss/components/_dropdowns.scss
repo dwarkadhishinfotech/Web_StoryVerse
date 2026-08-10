@@ -1,0 +1,464 @@
+/* ==========================================================================
+   StoryVerse Global Dropdown & Select2 & Menu Design System
+   ========================================================================== */
+
+/* 1. Native HTML <select> & .form-select Beautification */
+select.form-select,
+.form-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    height: auto !important;
+    min-height: 42px !important;
+    padding: 9px 36px 9px 14px !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 16px 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+    cursor: pointer !important;
+
+    &:hover {
+        border-color: #cbd5e1 !important;
+    }
+
+    &:focus {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 3.5px rgba(13, 148, 136, 0.15) !important;
+        outline: 0 !important;
+    }
+
+    &:disabled {
+        background-color: #f8fafc !important;
+        color: #94a3b8 !important;
+        cursor: not-allowed !important;
+        opacity: 0.7 !important;
+    }
+
+    &.is-invalid {
+        border-color: #ef4444 !important;
+        &:focus {
+            box-shadow: 0 0 0 3.5px rgba(239, 68, 68, 0.18) !important;
+        }
+    }
+
+    option {
+        font-weight: 500;
+        color: #0f172a;
+        padding: 8px 12px;
+        background-color: #ffffff;
+    }
+}
+
+.form-select-sm {
+    min-height: 34px !important;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+    font-size: 12.5px !important;
+}
+
+
+/* 2. Select2 Base Container & Selection Trigger */
+.select2-container--default {
+    width: 100% !important;
+
+    .select2-selection--single {
+        height: auto !important;
+        min-height: 42px !important;
+        padding: 8px 36px 8px 14px !important;
+        border-radius: 10px !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: #ffffff !important;
+        font-size: 13.5px !important;
+        display: flex !important;
+        align-items: center !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+        position: relative !important;
+
+        &:hover {
+            border-color: #cbd5e1 !important;
+        }
+
+        .select2-selection__rendered {
+            color: #0f172a !important;
+            font-size: 13.5px !important;
+            font-weight: 500 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            line-height: 1.4 !important;
+            width: 100% !important;
+        }
+
+        .select2-selection__placeholder {
+            color: #94a3b8 !important;
+            font-weight: 400 !important;
+        }
+
+        /* Replace default Select2 arrow with smooth SVG chevron */
+        .select2-selection__arrow {
+            height: 100% !important;
+            top: 0 !important;
+            right: 10px !important;
+            width: 24px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+
+            b {
+                display: none !important;
+            }
+
+            &::after {
+                content: "" !important;
+                display: block !important;
+                width: 16px !important;
+                height: 16px !important;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+                background-repeat: no-repeat !important;
+                background-position: center !important;
+                background-size: contain !important;
+                transition: transform 0.2s ease, background-image 0.2s ease !important;
+            }
+        }
+    }
+
+    /* Open & Focus State */
+    &.select2-container--open .select2-selection--single,
+    &.select2-container--focus .select2-selection--single {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 3.5px rgba(13, 148, 136, 0.15) !important;
+        outline: none !important;
+
+        .select2-selection__arrow::after {
+            transform: rotate(180deg) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        }
+    }
+
+    /* Multiple Select */
+    .select2-selection--multiple {
+        min-height: 42px !important;
+        padding: 4px 8px !important;
+        border-radius: 10px !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: #ffffff !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 4px !important;
+
+        &:hover {
+            border-color: #cbd5e1 !important;
+        }
+
+        .select2-selection__choice {
+            background-color: #f0fdfa !important;
+            border: 1px solid #ccfbf1 !important;
+            color: #0f766e !important;
+            border-radius: 6px !important;
+            padding: 3px 10px 3px 22px !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            position: relative !important;
+            margin: 2px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+
+        .select2-selection__choice__remove {
+            color: #0d9488 !important;
+            border: none !important;
+            background: transparent !important;
+            position: absolute !important;
+            left: 5px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            font-size: 14px !important;
+            line-height: 1 !important;
+            font-weight: 700 !important;
+            transition: color 0.15s ease !important;
+
+            &:hover {
+                color: #ef4444 !important;
+                background: transparent !important;
+            }
+        }
+    }
+
+    &.select2-container--focus .select2-selection--multiple,
+    &.select2-container--open .select2-selection--multiple {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 3.5px rgba(13, 148, 136, 0.15) !important;
+        outline: none !important;
+    }
+}
+
+/* Compact / Filter select variant */
+.select2-filter + .select2-container .select2-selection--single,
+.select2-container--sm .select2-selection--single {
+    min-height: 36px !important;
+    padding: 4px 32px 4px 10px !important;
+    border-radius: 8px !important;
+
+    .select2-selection__rendered {
+        font-size: 12.5px !important;
+        line-height: 1.4 !important;
+    }
+}
+
+
+/* 3. Select2 Dropdown Menu Popup */
+.select2-dropdown {
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 14px 30px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.05) !important;
+    padding: 6px !important;
+    background: #ffffff !important;
+    z-index: 1070 !important;
+    margin-top: 4px !important;
+    overflow: hidden !important;
+    animation: select2DropdownFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes select2DropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* 4. Select2 Search Field inside Dropdown Menu */
+.select2-container--default .select2-search--dropdown {
+    padding: 8px 10px !important;
+    background-color: #f8fafc !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    border-radius: 8px 8px 0 0 !important;
+
+    .select2-search__field {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        padding: 7px 12px 7px 34px !important;
+        font-size: 13px !important;
+        color: #0f172a !important;
+        background-color: #ffffff !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: 10px center !important;
+        background-size: 14px 14px !important;
+        outline: none !important;
+        box-shadow: none !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+
+        &:focus {
+            border-color: #0d9488 !important;
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15) !important;
+            outline: none !important;
+        }
+
+        &::placeholder {
+            color: #94a3b8 !important;
+        }
+    }
+}
+
+
+/* 5. Select2 Results & Options */
+.select2-container--default .select2-results__options {
+    max-height: 260px !important;
+    padding: 4px !important;
+    margin: 0 !important;
+
+    /* Custom thin teal scrollbar */
+    &::-webkit-scrollbar {
+        width: 5px;
+    }
+    &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgba(13, 148, 136, 0.35);
+        border-radius: 4px;
+
+        &:hover {
+            background: rgba(13, 148, 136, 0.65);
+        }
+    }
+}
+
+.select2-results__option {
+    padding: 9px 12px !important;
+    font-size: 13.5px !important;
+    margin-bottom: 2px !important;
+    border-radius: 8px !important;
+    transition: all 0.15s ease !important;
+    color: #334155 !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+/* Option with title & description formatting */
+.select2-option-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .select2-option-title {
+        font-weight: 600;
+        font-size: 13.5px;
+        color: #0f172a;
+        transition: color 0.15s ease;
+    }
+
+    .select2-option-desc {
+        font-size: 11.5px;
+        color: #64748b;
+        font-weight: 400;
+        line-height: 1.35;
+        transition: color 0.15s ease;
+    }
+
+    .select2-option-icon {
+        width: 16px;
+        height: 16px;
+        margin-right: 6px;
+        color: #0d9488;
+    }
+}
+
+/* Highlighted (hover / keyboard nav) option */
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    background-color: #f0fdfa !important;
+    color: #0f766e !important;
+
+    .select2-option-title {
+        color: #0f766e !important;
+    }
+
+    .select2-option-desc {
+        color: #0d9488 !important;
+    }
+}
+
+/* Selected option */
+.select2-container--default .select2-results__option--selected {
+    background-color: #0d9488 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+
+    .select2-option-title {
+        color: #ffffff !important;
+    }
+
+    .select2-option-desc {
+        color: rgba(255, 255, 255, 0.88) !important;
+    }
+
+    i, svg, span {
+        color: #ffffff !important;
+    }
+}
+
+/* Group header */
+.select2-container--default .select2-results__group {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #94a3b8 !important;
+    padding: 8px 12px 4px 12px !important;
+}
+
+/* Disabled option */
+.select2-container--default .select2-results__option[aria-disabled=true] {
+    color: #cbd5e1 !important;
+    cursor: not-allowed !important;
+    background-color: transparent !important;
+
+    .select2-option-title, .select2-option-desc {
+        color: #cbd5e1 !important;
+    }
+}
+
+
+/* 6. Bootstrap Dropdown Menu Beautification */
+.dropdown-menu {
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 14px 30px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.05) !important;
+    padding: 6px !important;
+    background-color: #ffffff !important;
+    z-index: 1065 !important;
+    min-width: 170px !important;
+    animation: dropdownMenuFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropdownMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    border-radius: 6px !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+
+    i, svg {
+        color: #64748b;
+        transition: color 0.15s ease;
+    }
+
+    &:hover, &:focus, &.active {
+        background-color: #f0fdfa !important;
+        color: #0f766e !important;
+
+        i, svg {
+            color: #0d9488 !important;
+        }
+    }
+
+    &.text-danger {
+        color: #ef4444 !important;
+
+        i, svg {
+            color: #ef4444 !important;
+        }
+
+        &:hover, &:focus {
+            background-color: #fef2f2 !important;
+            color: #dc2626 !important;
+        }
+    }
+}
+
+.dropdown-divider {
+    margin: 4px 0 !important;
+    border-color: #f1f5f9 !important;
+}

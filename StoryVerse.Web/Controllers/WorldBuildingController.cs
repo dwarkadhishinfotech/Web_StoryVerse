@@ -379,6 +379,15 @@ namespace StoryVerse.Web.Controllers
                 }
             }
 
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                UserId = user.Id,
+                ActionType = "World Building",
+                Description = $"Created world entity '{entity.Name}'",
+                RelatedEntityName = entity.Name,
+                Timestamp = DateTime.UtcNow
+            });
+
             await _context.SaveChangesAsync();
             TempData["Success"] = $"Entity '{entity.Name}' created successfully.";
             return RedirectToAction(nameof(Index), new { storyId = model.StoryId, selectedEntityId = entity.Id });

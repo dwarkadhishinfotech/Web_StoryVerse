@@ -1,0 +1,300 @@
+<!-- StoryVerse Premium Animated Logout Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content logout-modal-card border-0 position-relative overflow-hidden">
+            
+            <!-- Top Gradient Luxury Border Line -->
+            <div class="logout-card-top-accent"></div>
+
+            <!-- Custom Clean Close X Button -->
+            <button type="button" class="logout-modal-close position-absolute border-0 d-flex align-items-center justify-content-center" data-bs-dismiss="modal" aria-label="Close">
+                <i data-lucide="x" class="logout-close-icon"></i>
+            </button>
+
+            <!-- Decorative Ambient Background Glows & Non-Overlapping Stars -->
+            <div class="logout-card-bg-accent"></div>
+            <span class="logout-sparkle sparkle-1">✦</span>
+            <span class="logout-sparkle sparkle-2">✦</span>
+            <span class="logout-sparkle sparkle-3">✦</span>
+
+            <!-- Modal Header / Icon Section -->
+            <div class="logout-modal-header pt-4 pb-2 px-4 text-center position-relative z-1">
+                <div class="logout-icon-aura mx-auto d-flex align-items-center justify-content-center">
+                    <div class="logout-icon-core d-flex align-items-center justify-content-center">
+                        <i data-lucide="log-out" class="logout-lucide-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="modal-body px-4 pb-4 pt-3 text-center position-relative z-1">
+                <h3 class="fw-bold font-serif mb-2 logout-modal-title" id="logoutModalLabel">
+                    Sign Out of StoryVerse? <span class="logout-title-star">✦</span>
+                </h3>
+                <p class="logout-modal-desc mb-4">
+                    Your drafts, characters, and timelines are saved. We’ll be right here whenever your next chapter begins.
+                </p>
+
+                <!-- Action Buttons Form -->
+                <form id="logoutModalForm" action="/logout" method="post" class="d-flex flex-column gap-2.5">
+                    @Html.AntiForgeryToken()
+                    
+                    <button type="submit" class="btn btn-logout-action btn-logout-confirm text-white fw-bold py-3 rounded-pill d-flex align-items-center justify-content-center gap-2">
+                        <i data-lucide="log-out" class="btn-logout-icon"></i>
+                        <span>Yes, Sign Out</span>
+                    </button>
+
+                    <button type="button" class="btn btn-logout-action btn-logout-stay fw-bold py-3 rounded-pill d-flex align-items-center justify-content-center gap-2" data-bs-dismiss="modal">
+                        <i data-lucide="sparkles" class="btn-logout-icon"></i>
+                        <span>Stay & Keep Writing</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* =========================================================
+       StoryVerse Luxury Animated Logout Modal Styling
+       ========================================================= */
+
+    /* Glassmorphic Darkened Blur Backdrop */
+    #logoutModal + .modal-backdrop,
+    .modal-backdrop.show {
+        background: rgba(10, 17, 40, 0.72) !important;
+        backdrop-filter: blur(12px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+    }
+
+    /* Modal Dialogue Pop & Scale Animation */
+    #logoutModal .modal-dialog {
+        transform: scale(0.88) translateY(15px);
+        opacity: 0;
+        transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out !important;
+    }
+
+    #logoutModal.show .modal-dialog {
+        transform: scale(1) translateY(0) !important;
+        opacity: 1 !important;
+    }
+
+    /* Main Modal Card Container */
+    .logout-modal-card {
+        border-radius: 28px !important;
+        background: linear-gradient(165deg, #FFFFFF 0%, #FAF6F0 60%, #F5EFE6 100%) !important;
+        border: 1px solid rgba(212, 175, 55, 0.3) !important;
+        box-shadow: 
+            0 25px 65px -15px rgba(10, 17, 40, 0.35),
+            0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+            0 0 30px rgba(212, 175, 55, 0.1) !important;
+    }
+
+    /* Top Accent Shimmer Line */
+    .logout-card-top-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #E11D48 0%, #D4AF37 50%, #13A8A6 100%);
+        border-top-left-radius: 28px;
+        border-top-right-radius: 28px;
+        z-index: 12;
+    }
+
+    /* Custom Refined Close Button */
+    .logout-modal-close {
+        top: 18px;
+        right: 18px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.05);
+        color: #64748B;
+        z-index: 15;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .logout-modal-close:hover {
+        background: rgba(225, 29, 72, 0.12);
+        color: #E11D48;
+        transform: rotate(90deg) scale(1.08);
+    }
+
+    .logout-close-icon {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2.2;
+    }
+
+    /* Ambient Decorative Top Accents & Stars */
+    .logout-card-bg-accent {
+        position: absolute;
+        top: -70px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(225, 29, 72, 0.1) 0%, rgba(212, 175, 55, 0.06) 55%, transparent 75%);
+        pointer-events: none;
+    }
+
+    .logout-sparkle {
+        position: absolute;
+        color: #D4AF37;
+        pointer-events: none;
+        animation: sparkleFloat 3.2s infinite ease-in-out alternate;
+    }
+    .sparkle-1 { top: 26px; left: 32px; font-size: 1.1rem; animation-delay: 0s; }
+    .sparkle-2 { top: 70px; right: 28px; font-size: 0.9rem; animation-delay: 1.6s; }
+    .sparkle-3 { top: 125px; left: 24px; font-size: 0.8rem; animation-delay: 0.8s; opacity: 0.6; }
+
+    @@keyframes sparkleFloat {
+        0% { opacity: 0.3; transform: translateY(0) scale(0.85); }
+        100% { opacity: 0.95; transform: translateY(-5px) scale(1.15); }
+    }
+
+    /* Dual Ring Pulsing Icon Aura */
+    .logout-icon-aura {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(254, 226, 226, 0.65);
+        border: 1px solid rgba(225, 29, 72, 0.2);
+        box-shadow: 0 0 20px rgba(225, 29, 72, 0.12);
+        position: relative;
+        animation: auraPulse 2.5s infinite cubic-bezier(0.45, 0, 0.55, 1);
+    }
+
+    .logout-icon-core {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FFFFFF 0%, #FFF1F2 100%);
+        border: 2px solid #FFE4E6;
+        box-shadow: 0 4px 14px rgba(225, 29, 72, 0.18);
+        transition: transform 0.4s ease;
+    }
+
+    .logout-lucide-icon {
+        width: 26px;
+        height: 26px;
+        color: #E11D48;
+        stroke-width: 2.2;
+    }
+
+    #logoutModal.show .logout-icon-core {
+        animation: iconPopIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s forwards;
+    }
+
+    @@keyframes auraPulse {
+        0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.3); }
+        70% { box-shadow: 0 0 0 16px rgba(225, 29, 72, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+    }
+
+    @@keyframes iconPopIn {
+        0% { transform: scale(0.5) rotate(-15deg); }
+        60% { transform: scale(1.15) rotate(6deg); }
+        100% { transform: scale(1) rotate(0deg); }
+    }
+
+    /* Typography Styling */
+    .logout-modal-title {
+        color: #0F172A;
+        font-family: 'Playfair Display', serif !important;
+        font-size: 1.55rem;
+        letter-spacing: -0.01em;
+    }
+
+    .logout-title-star {
+        color: #D4AF37;
+        font-size: 1.25rem;
+        vertical-align: middle;
+        margin-left: 3px;
+    }
+
+    .logout-modal-desc {
+        color: #475569;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.925rem;
+        line-height: 1.55;
+    }
+
+    /* Buttons Styling & Spacing */
+    #logoutModalForm {
+        gap: 12px;
+    }
+
+    .btn-logout-action {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0.01em;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .btn-logout-icon {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2.2;
+        flex-shrink: 0;
+    }
+
+    /* Primary Danger Logout Button */
+    .btn-logout-confirm {
+        background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%) !important;
+        border: none !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 6px 18px -2px rgba(225, 29, 72, 0.38) !important;
+    }
+
+    .btn-logout-confirm:hover {
+        background: linear-gradient(135deg, #F43F5E 0%, #E11D48 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 24px -2px rgba(225, 29, 72, 0.48) !important;
+        color: #FFFFFF !important;
+    }
+
+    .btn-logout-confirm:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 4px 12px -2px rgba(225, 29, 72, 0.38) !important;
+    }
+
+    /* Secondary Stay Signed In Button */
+    .btn-logout-stay {
+        background: #FFFFFF !important;
+        border: 1.5px solid #E2E8F0 !important;
+        color: #334155 !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+    }
+
+    .btn-logout-stay:hover {
+        background: #F8FAFC !important;
+        border-color: #CBD5E1 !important;
+        color: #0F172A !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    .btn-logout-stay:active {
+        transform: translateY(0) !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var logoutModalEl = document.getElementById('logoutModal');
+        if (logoutModalEl) {
+            logoutModalEl.addEventListener('shown.bs.modal', function () {
+                if (window.lucide && window.lucide.createIcons) {
+                    window.lucide.createIcons();
+                }
+            });
+        }
+    });
+</script>
+

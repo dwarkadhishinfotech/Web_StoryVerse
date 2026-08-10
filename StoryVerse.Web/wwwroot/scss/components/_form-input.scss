@@ -69,46 +69,59 @@
 }
 
 .custom-checkbox {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
+    gap: 0.5rem;
+    position: relative;
+    user-select: none;
 
     .form-check-input {
         appearance: none;
-        width: 1rem;
-        height: 1rem;
+        -webkit-appearance: none;
+        width: 1.15rem;
+        height: 1.15rem;
         flex-shrink: 0;
-        border: 1px solid #d1d5db;
-        border-radius: 0.25rem;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 0.375rem;
         background-color: #ffffff;
         cursor: pointer;
-        transition: all 0.2s;
-        margin-top: 0;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        margin: 0;
         position: relative;
+        outline: none;
+
+        &:hover {
+            border-color: #0E9B9A;
+            box-shadow: 0 0 0 3px rgba(14, 155, 154, 0.12);
+        }
+
+        &:focus-visible {
+            border-color: #2B4CB6;
+            box-shadow: 0 0 0 3px rgba(43, 76, 182, 0.25);
+        }
 
         &:checked {
-            background-image: $gradient-primary;
+            background-color: #2B4CB6;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E"), linear-gradient(135deg, #2B4CB6, #0E9B9A);
+            background-size: 0.85rem 0.85rem, cover;
+            background-position: center;
+            background-repeat: no-repeat;
             border-color: transparent;
-
-            &::after {
-                content: '';
-                position: absolute;
-                left: 4px;
-                top: 1px;
-                width: 5px;
-                height: 10px;
-                border: solid white;
-                border-width: 0 2px 2px 0;
-                transform: rotate(45deg);
-            }
+            box-shadow: 0 2px 6px rgba(43, 76, 182, 0.3);
+            transform: scale(1.04);
         }
     }
 
     .form-check-label {
-        font-size: 0.75rem;
-        color: #6B7280;
+        font-size: 0.8125rem;
+        color: #475569;
         font-weight: 500;
         cursor: pointer;
-        margin-left: 0.5rem;
+        margin-left: 0;
+        transition: color 0.15s ease;
+    }
+
+    &:hover .form-check-label {
+        color: #0D1B2A;
     }
 }

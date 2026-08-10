@@ -27,20 +27,21 @@
             background-color: var(--bg-color);
             color: var(--text-dark);
             font-family: 'Inter', sans-serif;
-            overflow: hidden; /* NO SCROLLING */
+            overflow-x: hidden !important;
+            overflow-y: auto;
             width: 100vw;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         .hero-section {
-            height: 100vh;
+            min-height: 100vh;
             width: 100vw;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             position: relative;
-            padding: 1rem;
+            padding: 2rem 1rem;
             z-index: 1;
             box-sizing: border-box;
         }
@@ -105,8 +106,8 @@
         }
 
         .logo-large {
-            width: 260px; /* Reduced to fit better */
-            margin-bottom: 2rem;
+            width: clamp(160px, 20vw, 260px);
+            margin-bottom: 1.5rem;
             filter: drop-shadow(0 10px 15px rgba(0,0,0,0.05));
             transition: transform 0.5s ease, filter 0.5s ease;
         }
@@ -117,10 +118,10 @@
         }
 
         .hero-title {
-            font-size: 4.5rem; /* Reduced to fit better */
+            font-size: clamp(2.2rem, 6vw, 4.5rem);
             font-family: 'Playfair Display', serif;
             line-height: 1.1;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             font-weight: 700;
             letter-spacing: -0.02em;
             color: #102B5E;
@@ -141,9 +142,9 @@
         }
 
         .hero-subtitle {
-            font-size: 1.25rem;
+            font-size: clamp(0.95rem, 2.5vw, 1.25rem);
             color: var(--text-muted);
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
             max-width: 650px;
             margin-left: auto;
             margin-right: auto;
@@ -153,7 +154,7 @@
 
         .btn-group-custom {
             display: flex;
-            gap: 1.5rem;
+            gap: 1.25rem;
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
@@ -165,7 +166,7 @@
             justify-content: center;
             background: linear-gradient(135deg, #13A8A6, #2B4CB6);
             color: white;
-            padding: 1.1rem 2.8rem;
+            padding: 1rem 2.5rem;
             border-radius: 3rem;
             font-weight: 600;
             font-size: 1.125rem;
@@ -212,7 +213,7 @@
             justify-content: center;
             background: rgba(255, 255, 255, 0.6);
             color: var(--text-dark);
-            padding: 1.1rem 2.8rem;
+            padding: 1rem 2.5rem;
             border-radius: 3rem;
             font-weight: 600;
             font-size: 1.125rem;
@@ -256,12 +257,8 @@
         }
 
         @@media (max-width: 768px) {
-            .hero-title { font-size: 3rem; }
-            .hero-subtitle { font-size: 1.1rem; }
             .btn-group-custom { flex-direction: column; width: 100%; }
             .btn-group-custom a { width: 100%; max-width: 300px; }
-            .logo-large { width: 220px; }
-            body, html { overflow-y: auto; } /* Allow scrolling on very small screens if necessary */
         }
     </style>
 </head>

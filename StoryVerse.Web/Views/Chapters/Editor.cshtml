@@ -41,28 +41,39 @@
         }
         .editor-layout {
             display: grid;
-            grid-template-rows: 70px 1fr;
-            height: 100vh;
+            grid-template-rows: auto 1fr;
+            min-height: 100vh;
             width: 100vw;
         }
         .sv-editor-toolbar {
-            background: rgba(253, 251, 247, 0.9);
+            background: rgba(253, 251, 247, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--parchment-border);
             z-index: 1000;
+            padding-top: 10px;
+            padding-bottom: 10px;
         }
         .workspace-split {
             display: grid;
-            grid-template-columns: 1fr 320px;
-            overflow: hidden;
+            grid-template-columns: 1fr;
+            overflow-y: auto;
             height: 100%;
+
+            @@media (min-width: 992px) {
+                grid-template-columns: 1fr 320px;
+                overflow: hidden;
+            }
         }
         .writing-pane {
             overflow-y: auto;
-            padding: 4rem 2rem;
+            padding: 2rem 1rem;
             display: flex;
             justify-content: center;
+
+            @@media (min-width: 768px) {
+                padding: 4rem 2rem;
+            }
         }
         .canvas-container {
             max-width: 800px;
@@ -70,7 +81,7 @@
         }
         .sv-editor-title {
             font-family: 'Playfair Display', serif;
-            font-size: 2.75rem;
+            font-size: clamp(1.75rem, 5vw, 2.75rem);
             font-weight: 700;
             border: none;
             background: transparent;
@@ -89,12 +100,12 @@
         }
         .sv-editor-content {
             font-family: 'Merriweather', serif;
-            font-size: 1.15rem;
+            font-size: clamp(1rem, 2.5vw, 1.15rem);
             line-height: 1.95;
             color: #2D3748;
             outline: none;
-            min-height: 70vh;
-            padding-bottom: 10rem;
+            min-height: 60vh;
+            padding-bottom: 6rem;
         }
         .sv-editor-content p {
             margin-bottom: 1.6rem;
@@ -110,7 +121,7 @@
             border-left: 1px solid var(--parchment-border);
             backdrop-filter: blur(12px);
             display: flex;
-            flex-column: column;
+            flex-direction: column;
             overflow-y: auto;
             padding: 1.5rem;
         }
@@ -152,8 +163,8 @@
 
     <div class="editor-layout">
         <!-- Top Toolbar -->
-        <header class="sv-editor-toolbar px-4 d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
+        <header class="sv-editor-toolbar px-3 px-md-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center me-auto">
                 <a href="@Url.Action("Index", "Chapters", new { storyId = Model.StoryId })" class="btn btn-link p-2 text-secondary hover-lift-subtle rounded-circle bg-light border me-3" title="Back to Chapters">
                     <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
                 </a>
@@ -166,7 +177,7 @@
                 </div>
             </div>
             
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3 flex-wrap">
                 <div class="text-secondary small fw-bold font-monospace bg-white border rounded-3 px-3 py-1.5 shadow-xs">
                     <span id="wordCount">0</span> words • <span id="charCount">0</span> chars
                 </div>

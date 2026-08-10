@@ -97,11 +97,176 @@
         border: 1px solid #ccfbf1; 
     }
     .hover-lift {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.22s cubic-bezier(.25,.8,.25,1), box-shadow 0.22s cubic-bezier(.25,.8,.25,1);
     }
     .hover-lift:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(13,148,136,0.13), 0 4px 12px rgba(0,0,0,0.07);
+    }
+
+    /* ── Story Card ── */
+    .story-card {
+        border-radius: 18px;
+        border: 1px solid #e8edf5;
+        background: #fff;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: transform 0.22s cubic-bezier(.25,.8,.25,1), box-shadow 0.22s cubic-bezier(.25,.8,.25,1);
+    }
+    .story-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 44px rgba(13,148,136,0.13), 0 4px 12px rgba(0,0,0,0.07);
+    }
+    .story-card:hover .story-cover-img {
+        transform: scale(1.05);
+    }
+
+    /* ── Cover Banner ── */
+    .story-cover-wrap {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 3 / 2;
+        overflow: hidden;
+        background: linear-gradient(135deg, #1E439B 0%, #0d9488 100%);
+        flex-shrink: 0;
+    }
+    .story-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s cubic-bezier(.25,.8,.25,1);
+    }
+    /* Gradient overlay at bottom of banner */
+    .story-cover-wrap::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0) 40%,
+            rgba(15,23,42,0.75) 100%
+        );
+        pointer-events: none;
+    }
+
+    /* ── Status Badge ── */
+    .story-status-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 5;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.25);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* ── More Menu ── */
+    .story-more-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 5;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        transition: background 0.15s;
+    }
+    .story-more-btn:hover {
+        background: #fff;
+    }
+
+    /* ── Card Body ── */
+    .story-card-body {
+        padding: 16px 18px 18px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        background: #fff;
+    }
+    .story-title {
+        font-size: 15px;
+        font-weight: 800;
+        font-family: 'Playfair Display', Georgia, serif;
+        color: #0f172a;
+        line-height: 1.3;
+        margin-bottom: 4px;
+        text-decoration: none;
+        display: block;
+        transition: color 0.15s;
+    }
+    .story-title:hover { color: #0d9488; }
+    .story-genre {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 12px;
+        letter-spacing: 0.2px;
+    }
+    .story-progress-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+    }
+    .story-progress-bar-wrap {
+        height: 5px;
+        background: #f1f5f9;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 5px 0 12px;
+    }
+    .story-progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #1E439B, #0d9488);
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+    .story-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 10px;
+        border-top: 1px solid #f1f5f9;
+        margin-top: auto;
+    }
+    .story-date {
+        font-size: 10.5px;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+    .story-avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1E439B, #0d9488);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0.5px;
+    }
+    .story-star {
+        color: #f59e0b;
+        fill: #f59e0b;
+        flex-shrink: 0;
     }
 </style>
 
@@ -109,12 +274,12 @@
     <!-- Header Row -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 gap-3">
         <div>
-            <h1 class="font-serif fw-bold mb-1 d-flex align-items-center gap-2" style="font-size: 34px; color: #1e293b;">
+            <h1 class="font-serif fw-bold mb-1 d-flex align-items-center gap-2" style="font-size: clamp(24px, 4vw, 34px); color: #1e293b;">
                 My Stories 
                 <i data-lucide="book-open" style="width: 26px; height: 26px; color: #334155; stroke-width: 1.5;"></i> 
                 <span style="color: #d97706; font-size: 24px; line-height: 1;">✦</span>
             </h1>
-            <p class="mb-0" style="font-size: 16px; font-style: italic; color: #64748b; font-family: 'Playfair Display', serif;">Your worlds. Your characters. Your imagination.</p>
+            <p class="mb-0" style="font-size: clamp(14px, 2vw, 16px); font-style: italic; color: #64748b; font-family: 'Playfair Display', serif;">Your worlds. Your characters. Your imagination.</p>
         </div>
         <div class="d-flex align-items-center gap-3 flex-wrap">
             <a href="@Url.Action("Create", "Stories")" class="btn btn-outline-teal top-action-btn d-flex align-items-center text-decoration-none shadow-sm" style="border-radius: 24px;">
@@ -136,9 +301,9 @@
             <button class="tab-btn">Archived</button>
         </div>
         <div class="d-flex gap-3 align-items-center flex-wrap">
-            <div class="position-relative">
+            <div class="position-relative flex-grow-1" style="max-width: 260px;">
                 <i data-lucide="search" class="position-absolute" style="left: 14px; top: 11px; width: 16px; height: 16px; color: #94a3b8;"></i>
-                <input type="text" class="form-control search-input" placeholder="Search stories..." style="width: 260px;">
+                <input type="text" class="form-control search-input w-100" placeholder="Search stories...">
             </div>
             <button class="btn btn-light bg-white border rounded-3 px-3 d-flex align-items-center gap-2 fw-semibold text-slate-600 shadow-sm" style="font-size: 14px; height: 40px; border-color: #e2e8f0 !important;">
                 <i data-lucide="filter" style="width: 16px; height: 16px; color: #64748b;"></i> Filter
@@ -150,8 +315,8 @@
     </div>
 
     <!-- Stat Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-6 col-xl-3">
+    <div class="row g-3 g-md-4 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
             <div class="stat-card h-100">
                 <div class="stat-icon" style="background-color: #f0fdfa; color: #0d9488;"><i data-lucide="book-open" stroke-width="1.5" style="width: 24px; height: 24px;"></i></div>
                 <div>
@@ -161,7 +326,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-xl-3">
             <div class="stat-card h-100">
                 <div class="stat-icon" style="background-color: #eff6ff; color: #2563eb;"><i data-lucide="feather" stroke-width="1.5" style="width: 24px; height: 24px;"></i></div>
                 <div>
@@ -171,7 +336,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-xl-3">
             <div class="stat-card h-100">
                 <div class="stat-icon" style="background-color: #fef3c7; color: #d97706;"><i data-lucide="file-text" stroke-width="1.5" style="width: 24px; height: 24px;"></i></div>
                 <div>
@@ -181,7 +346,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 col-xl-3">
+        <div class="col-12 col-sm-6 col-xl-3">
             <div class="stat-card h-100">
                 <div class="stat-icon" style="background-color: #f5f3ff; color: #7c3aed;"><i data-lucide="clock" stroke-width="1.5" style="width: 24px; height: 24px;"></i></div>
                 <div>
@@ -200,7 +365,7 @@
     <!-- Main Content Grid -->
     <div class="row g-4 mb-4">
         <!-- Stories Grid Left Column -->
-        <div class="col-xl-8 col-lg-9">
+        <div class="col-12 col-lg-8 col-xl-8">
             <div class="row g-4">
                 @if (Model.Any())
                 {
@@ -211,29 +376,29 @@
                         else if (story.Status == "Planned") statusBg = "bg-info text-dark";
                         else if (story.Status == "OnHold" || story.Status == "Draft") statusBg = "bg-secondary";
 
-                        <div class="col-md-6">
-                            <div class="card-rounded overflow-hidden h-100 d-flex flex-column hover-lift">
-                                <!-- Cover Image Part -->
-                                <div class="position-relative" style="height: 160px; background-color: #f1f5f9;">
-                                    <img src="@(string.IsNullOrEmpty(story.CoverImageUrl) ? "/images/empty-states/live_preview_book.png" : story.CoverImageUrl)" 
-                                         class="w-100 h-100" style="object-fit: cover;" alt="@story.Title Cover" />
-                                    <!-- Status Badge Overlay -->
-                                    <span class="position-absolute top-0 start-0 m-3 badge rounded-pill @statusBg py-1.5 px-3 fw-bold" style="font-size: 11px;">
-                                        @story.Status
-                                    </span>
-                                    <!-- Action Menu Overlay -->
-                                    <div class="dropdown position-absolute top-0 end-0 m-2">
-                                        <button class="btn btn-white rounded-circle p-1 bg-white border d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px; border-color: #e2e8f0 !important;" data-bs-toggle="dropdown">
-                                            <i data-lucide="more-vertical" style="width: 16px; height: 16px; color: #64748b;"></i>
+                        <div class="col-12 col-sm-6 col-xl-4">
+                            <div class="story-card">
+                                <!-- Cover Banner -->
+                                <div class="story-cover-wrap">
+                                    <img src="@(string.IsNullOrEmpty(story.CoverImageUrl) ? "/images/empty-states/live_preview_book.png" : story.CoverImageUrl)"
+                                         class="story-cover-img" alt="@story.Title Cover" />
+
+                                    <!-- Status Badge -->
+                                    <span class="story-status-badge @statusBg">@story.Status</span>
+
+                                    <!-- More Menu -->
+                                    <div class="dropdown" style="position:absolute;top:10px;right:10px;z-index:5;">
+                                        <button class="story-more-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i data-lucide="more-vertical" style="width:14px;height:14px;color:#334155;"></i>
                                         </button>
-                                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
-                                            <li><a class="dropdown-item fw-semibold text-slate-700" href="@Url.Action("Details", "Stories", new { id = story.Id })"><i data-lucide="eye" class="me-2 text-muted" style="width: 14px; height: 14px;"></i> Overview</a></li>
-                                            <li><a class="dropdown-item fw-semibold text-slate-700" href="@Url.Action("Index", "Chapters", new { storyId = story.Id })"><i data-lucide="file-text" class="me-2 text-muted" style="width: 14px; height: 14px;"></i> Chapters</a></li>
-                                            <li><a class="dropdown-item fw-semibold text-slate-700" href="@Url.Action("Index", "Characters", new { storyId = story.Id })"><i data-lucide="users" class="me-2 text-muted" style="width: 14px; height: 14px;"></i> Characters</a></li>
+                                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3" style="min-width:170px;">
+                                            <li><a class="dropdown-item fw-semibold" href="@Url.Action("Details", "Stories", new { id = story.Id })"><i data-lucide="eye" class="me-2" style="width:14px;height:14px;color:#64748b;"></i>Overview</a></li>
+                                            <li><a class="dropdown-item fw-semibold" href="@Url.Action("Index", "Chapters", new { storyId = story.Id })"><i data-lucide="file-text" class="me-2" style="width:14px;height:14px;color:#64748b;"></i>Chapters</a></li>
+                                            <li><a class="dropdown-item fw-semibold" href="@Url.Action("Index", "Characters", new { storyId = story.Id })"><i data-lucide="users" class="me-2" style="width:14px;height:14px;color:#64748b;"></i>Characters</a></li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <form asp-action="Delete" asp-route-id="@story.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this story?');">
-                                                    <button type="submit" class="dropdown-item text-danger fw-semibold"><i data-lucide="trash-2" class="me-2" style="width: 14px; height: 14px;"></i> Delete</button>
+                                                    <button type="submit" class="dropdown-item text-danger fw-semibold"><i data-lucide="trash-2" class="me-2" style="width:14px;height:14px;"></i>Delete</button>
                                                 </form>
                                             </li>
                                         </ul>
@@ -241,35 +406,29 @@
                                 </div>
 
                                 <!-- Card Body -->
-                                <div class="p-4 d-flex flex-column flex-grow-1 bg-white">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <a href="@Url.Action("Details", "Stories", new { id = story.Id })" class="text-decoration-none">
-                                            <h5 class="fw-bold font-serif text-slate-900 mb-0 hover-text-teal" style="font-size: 19px;">@story.Title</h5>
-                                        </a>
-                                        <i data-lucide="star" style="width: 16px; height: 16px; color: #fbbf24; fill: #fbbf24;"></i>
+                                <div class="story-card-body">
+                                    <!-- Title + Star -->
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                        <a href="@Url.Action("Details", "Stories", new { id = story.Id })" class="story-title">@story.Title</a>
+                                        <i data-lucide="star" class="story-star" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;"></i>
                                     </div>
-                                    <p class="text-secondary mb-3" style="font-size: 12.5px; font-weight: 500;">
-                                        @story.Genre • Fiction
-                                    </p>
 
-                                    <!-- Progress Info -->
-                                    <div class="mt-auto">
-                                        <div class="d-flex justify-content-between text-secondary mb-1.5" style="font-size: 12.5px; font-weight: 600;">
-                                            <span>@story.Chapters.Count / 24 Chapters</span>
-                                            <span class="text-slate-800">@story.CurrentWordCount.ToString("N0") words</span>
-                                        </div>
-                                        <div class="progress mb-4" style="height: 6px; background-color: #f1f5f9; border-radius: 10px;">
-                                            <div class="progress-bar" role="progressbar" style="width: @(story.ProgressPercentage)%; background: linear-gradient(135deg, #1E439B, #13A8A6); border-radius: 10px;" 
-                                                 aria-valuenow="@story.ProgressPercentage" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
+                                    <!-- Genre -->
+                                    <div class="story-genre">@story.Genre &bull; Fiction</div>
 
-                                        <!-- Footer Info -->
-                                        <div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-color: #f1f5f9 !important;">
-                                            <span class="text-muted" style="font-size: 11.5px;">Updated @story.UpdatedAt.ToString("MMMM dd, yyyy")</span>
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-xs" style="width: 28px; height: 28px; background-color: #13a8a6; font-size: 11px;">
-                                                SP
-                                            </div>
-                                        </div>
+                                    <!-- Progress -->
+                                    <div class="d-flex justify-content-between story-progress-label">
+                                        <span>@story.Chapters.Count / 24 Chapters</span>
+                                        <span style="color:#0d9488;">@story.CurrentWordCount.ToString("N0") words</span>
+                                    </div>
+                                    <div class="story-progress-bar-wrap">
+                                        <div class="story-progress-bar-fill" style="width:@(story.ProgressPercentage)%;"></div>
+                                    </div>
+
+                                    <!-- Footer -->
+                                    <div class="story-footer">
+                                        <span class="story-date">Updated @story.UpdatedAt.ToString("MMM d, yyyy")</span>
+                                        <div class="story-avatar">SP</div>
                                     </div>
                                 </div>
                             </div>
@@ -295,7 +454,7 @@
         </div>
 
         <!-- Sidebar Right Column -->
-        <div class="col-xl-4 col-lg-3 d-flex flex-column gap-4">
+        <div class="col-12 col-lg-4 col-xl-4 d-flex flex-column gap-4">
             <!-- Recent Stories -->
             <div class="card-rounded p-4 bg-white">
                 <div class="d-flex justify-content-between align-items-center mb-3">

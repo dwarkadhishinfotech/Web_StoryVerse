@@ -2,10 +2,43 @@
 @inject StoryVerse.Infrastructure.Data.ApplicationDbContext DbContext
 @{
     var user = await UserManager.GetUserAsync(User);
-    var displayName = user?.DisplayName ?? user?.FirstName ?? user?.UserName ?? "Sachi Patel";
     
-    // For exact match to screenshot
-    displayName = "Sachi Patel";
+    string displayName;
+    if (user != null)
+    {
+        if (!string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName))
+        {
+            displayName = $"{user.FirstName} {user.LastName}";
+        }
+        else if (!string.IsNullOrWhiteSpace(user.DisplayName))
+        {
+            displayName = user.DisplayName;
+        }
+        else if (!string.IsNullOrWhiteSpace(user.FirstName))
+        {
+            displayName = user.FirstName;
+        }
+        else if (!string.IsNullOrWhiteSpace(user.UserName))
+        {
+            displayName = user.UserName;
+        }
+        else
+        {
+            displayName = "Writer";
+        }
+    }
+    else
+    {
+        displayName = User.Identity?.Name ?? "Writer";
+    }
+
+    var hour = DateTime.Now.Hour;
+    string greeting = hour switch
+    {
+        >= 5 and < 12 => "Good morning",
+        >= 12 and < 17 => "Good afternoon",
+        _ => "Good evening"
+    };
 
     var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
     var action = ViewContext.RouteData.Values["Action"]?.ToString();
@@ -25,40 +58,53 @@
     }
 }
 
+<!-- Mobile Navigation Bar Header (<992px) -->
+<div class="mobile-nav-header shadow-xs">
+    <div class="d-flex align-items-center gap-2">
+        <img src="/images/CompanyLogo/Logo_Transperent.png" alt="StoryVerse Logo" style="height: 28px; width: auto;" onerror="this.style.display='none'" />
+        <span class="font-serif fw-bold" style="font-size: 1.15rem; color: #1E3A8A;">StoryVerse</span>
+    </div>
+    <button type="button" class="btn btn-light rounded-3 p-2 border d-flex align-items-center justify-content-center" onclick="toggleMobileSidebar()" aria-label="Toggle menu">
+        <i data-lucide="menu" style="width: 20px; height: 20px; color: #1E3A8A;"></i>
+    </button>
+</div>
+
 @if (isDashboard || string.IsNullOrEmpty(controller))
 {
-    <header class="d-flex align-items-center justify-content-between py-4 mb-2" style="background: transparent;">
+    <header class="d-flex flex-column flex-md-row align-items-md-center justify-content-between py-2 py-md-4 mb-2 gap-3" style="background: transparent;">
         <!-- Greeting on Left -->
         <div>
-            <h1 class="font-serif fw-bold mb-2 d-flex align-items-center gap-2" style="font-size: 2.2rem; color: #1E3A8A; font-family: 'Playfair Display', serif;">
-                Good morning, @displayName <span style="color: #D4AF37; font-size: 1.8rem; line-height: 1;">✦</span>
+            <h1 class="font-serif fw-bold mb-1 d-flex align-items-center gap-2" style="font-size: clamp(1.4rem, 4vw, 2.2rem); color: #1E3A8A; font-family: 'Playfair Display', serif;">
+                <span id="dynamicTimeGreeting">@greeting</span>, @displayName <span style="color: #D4AF37; font-size: 1.6rem; line-height: 1;">✦</span>
             </h1>
-            <p class="mb-0 fw-medium" style="font-size: 0.95rem; color: #64748B; font-family: 'Playfair Display', serif; font-style: italic;">
+            <p class="mb-0 fw-medium" style="font-size: clamp(0.825rem, 2vw, 0.95rem); color: #64748B; font-family: 'Playfair Display', serif; font-style: italic;">
                 Every great story begins with a brave heart and a blank page.
             </p>
         </div>
 
         <!-- Actions on Right -->
-        <div class="d-flex align-items-center gap-3">
-            <a href="@Url.Action("Create", "Stories")" class="btn px-4 py-2 rounded-pill fw-bold d-inline-flex align-items-center gap-2 bg-white" 
+        <div class="d-flex align-items-center gap-2 gap-md-3 flex-wrap">
+            <a href="@Url.Action("Create", "Stories")" class="btn px-3 px-md-4 py-2 rounded-pill fw-bold d-inline-flex align-items-center gap-2 bg-white" 
                style="border: 1px solid #E2E8F0; color: #334155; font-size: 0.85rem; font-family: 'Inter', sans-serif; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                 <i data-lucide="plus" style="width: 16px; height: 16px;"></i> New Story
             </a>
 
             @if (hasStories)
             {
-                <a href="@Url.Action("Details", "Stories", new { id = activeStoryId })" class="btn px-4 py-2 rounded-pill text-white fw-bold d-inline-flex align-items-center gap-2 shadow-sm" 
+                <a href="@Url.Action("Details", "Stories", new { id = activeStoryId })" class="btn px-3 px-md-4 py-2 rounded-pill text-white fw-bold d-inline-flex align-items-center gap-2 shadow-sm" 
                    style="background-color: #13A8A6; border: none; font-size: 0.85rem; font-family: 'Inter', sans-serif;">
                     <i data-lucide="pen-tool" style="width: 16px; height: 16px;"></i> Continue Writing
                 </a>
             }
 
-            <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0 position-relative" disabled title="Notifications (Coming Soon)" style="width: 40px; height: 40px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="bell" style="width: 18px; height: 18px; color: #64748B;"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
 
-            <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0 position-relative" disabled title="Toggle Theme (Coming Soon)" style="width: 40px; height: 40px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="sun" style="width: 18px; height: 18px; color: #64748B;"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
         </div>
     </header>
@@ -68,12 +114,38 @@ else if (!(controller == "Stories" && (action == "Index" || action == "Create" |
     <!-- Compact Top bar for other pages -->
     <header class="d-flex align-items-center justify-content-end py-2 mb-4" style="background: transparent;">
         <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-white border border-secondary border-opacity-10 rounded-circle p-2 shadow-sm bg-white bg-opacity-70 transition-all">
+            <button class="btn btn-white border border-secondary border-opacity-10 rounded-circle p-2 shadow-sm bg-white bg-opacity-70 transition-all position-relative" disabled title="Notifications (Coming Soon)" style="opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="bell" style="width: 20px; height: 20px;" class="text-secondary"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
-            <button class="btn btn-white border border-secondary border-opacity-10 rounded-circle p-2 shadow-sm bg-white bg-opacity-70 transition-all">
+            <button class="btn btn-white border border-secondary border-opacity-10 rounded-circle p-2 shadow-sm bg-white bg-opacity-70 transition-all position-relative" disabled title="Toggle Theme (Coming Soon)" style="opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="moon" style="width: 20px; height: 20px;" class="text-secondary"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
         </div>
     </header>
 }
+
+<script>
+    (function () {
+        function updateTimeGreeting() {
+            var greetingEl = document.getElementById('dynamicTimeGreeting');
+            if (greetingEl) {
+                var hour = new Date().getHours();
+                var text = 'Good evening';
+                if (hour >= 5 && hour < 12) {
+                    text = 'Good morning';
+                } else if (hour >= 12 && hour < 17) {
+                    text = 'Good afternoon';
+                }
+                greetingEl.textContent = text;
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateTimeGreeting);
+        } else {
+            updateTimeGreeting();
+        }
+    })();
+</script>
+

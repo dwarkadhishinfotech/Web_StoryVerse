@@ -1,21 +1,168 @@
+@using StoryVerse.Infrastructure.Data
+@using Microsoft.EntityFrameworkCore
+@using StoryVerse.Core.Entities
 @inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext DbContext
 @{
     var user = await UserManager.GetUserAsync(User);
-    var displayName = user?.DisplayName ?? user?.FirstName ?? user?.UserName ?? "Author";
-    var initials = !string.IsNullOrEmpty(displayName) ? displayName[0].ToString().ToUpper() : "A";
     
-    // Forcing exact match to screenshot
-    displayName = "Sachi Patel";
-    initials = "SP";
+    string displayName;
+    string initials = "A";
+    
+    if (user != null)
+    {
+        if (!string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName))
+        {
+            displayName = $"{user.FirstName} {user.LastName}";
+            initials = $"{user.FirstName[0]}{user.LastName[0]}".ToUpper();
+        }
+        else if (!string.IsNullOrWhiteSpace(user.DisplayName))
+        {
+            displayName = user.DisplayName;
+            var parts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            initials = parts.Length > 1 
+                ? $"{parts[0][0]}{parts[1][0]}".ToUpper() 
+                : (parts.Length > 0 ? parts[0][0].ToString().ToUpper() : "A");
+        }
+        else if (!string.IsNullOrWhiteSpace(user.FirstName))
+        {
+            displayName = user.FirstName;
+            initials = user.FirstName[0].ToString().ToUpper();
+        }
+        else if (!string.IsNullOrWhiteSpace(user.UserName))
+        {
+            displayName = user.UserName;
+            initials = user.UserName[0].ToString().ToUpper();
+        }
+        else
+        {
+            displayName = "Author";
+            initials = "A";
+        }
+    }
+    else
+    {
+        displayName = User.Identity?.Name ?? "Author";
+        initials = !string.IsNullOrEmpty(displayName) ? displayName[0].ToString().ToUpper() : "A";
+    }
 
     var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
+
+    // Calculate Writing Streak & Weekly Activity
+    var streakDays = 0;
+    var activeDaysOfWeek = new bool[7]; // Mon=0 .. Sun=6
+    var todayUtc = DateTime.UtcNow.Date;
+    int todayIndex = ((int)DateTime.UtcNow.DayOfWeek + 6) % 7; // Mon=0 .. Sun=6
+
+    if (user != null)
+    {
+        var userId = user.Id;
+
+        var activityDates = await DbContext.ActivityLogs
+            .Where(a => a.UserId == userId)
+            .Select(a => a.Timestamp.Date)
+            .Distinct()
+            .ToListAsync();
+
+        var storyDates = await DbContext.Stories
+            .Where(s => s.UserId == userId)
+            .Select(s => s.UpdatedAt.Date)
+            .Distinct()
+            .ToListAsync();
+
+        var chapterDates = await DbContext.Chapters
+            .Where(c => c.Story.UserId == userId)
+            .Select(c => c.UpdatedAt.Date)
+            .Distinct()
+            .ToListAsync();
+
+        var characterDates = await DbContext.Characters
+            .Where(c => c.Story != null && c.Story.UserId == userId)
+            .Select(c => c.UpdatedAt.Date)
+            .Distinct()
+            .ToListAsync();
+
+        var worldEntityDates = await DbContext.WorldEntities
+            .Where(w => w.Story != null && w.Story.UserId == userId)
+            .Select(w => w.UpdatedDate.Date)
+            .Distinct()
+            .ToListAsync();
+
+        var timelineEventDates = await DbContext.TimelineEvents
+            .Where(t => t.Story != null && t.Story.UserId == userId)
+            .Select(t => t.UpdatedAt.Date)
+            .Distinct()
+            .ToListAsync();
+
+        var allDates = new HashSet<DateTime>(activityDates);
+        allDates.UnionWith(storyDates);
+        allDates.UnionWith(chapterDates);
+        allDates.UnionWith(characterDates);
+        allDates.UnionWith(worldEntityDates);
+        allDates.UnionWith(timelineEventDates);
+
+        var checkDate = todayUtc;
+        if (!allDates.Contains(checkDate))
+        {
+            checkDate = checkDate.AddDays(-1);
+        }
+
+        while (allDates.Contains(checkDate))
+        {
+            streakDays++;
+            checkDate = checkDate.AddDays(-1);
+        }
+
+        var startOfWeek = todayUtc.AddDays(-todayIndex); // Monday of current week
+        for (int i = 0; i < 7; i++)
+        {
+            var dayDate = startOfWeek.AddDays(i);
+            activeDaysOfWeek[i] = allDates.Contains(dayDate);
+        }
+
+        // Also update UserGoals table if streak changed
+        var userGoal = await DbContext.UserGoals.FirstOrDefaultAsync(ug => ug.UserId == userId);
+        if (userGoal != null)
+        {
+            if (userGoal.CurrentStreakDays != streakDays)
+            {
+                userGoal.CurrentStreakDays = streakDays;
+                userGoal.LastUpdated = DateTime.UtcNow;
+                await DbContext.SaveChangesAsync();
+            }
+        }
+        else
+        {
+            DbContext.UserGoals.Add(new UserGoal
+            {
+                UserId = userId,
+                CurrentStreakDays = streakDays,
+                LastUpdated = DateTime.UtcNow
+            });
+            await DbContext.SaveChangesAsync();
+        }
+    }
+
+    var dayLabels = new[] { "M", "T", "W", "T", "F", "S", "S" };
 }
 
 <style>
     .sidebar-custom {
         background-color: #0A1128; /* Very dark blue from screenshot */
-        position: relative;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    @@media (min-width: 992px) {
+        .sidebar-custom {
+            position: relative !important;
+            top: 0;
+            height: 100vh !important;
+            height: 100dvh !important;
+            max-height: 100vh !important;
+            max-height: 100dvh !important;
+            flex-shrink: 0;
+            z-index: 1000;
+            overflow: hidden;
+        }
     }
     .sidebar-nav-link {
         color: #94A3B8 !important;
@@ -59,6 +206,14 @@
         align-items: center;
         justify-content: center;
         margin: 0 auto 6px auto;
+        transition: all 0.3s ease;
+    }
+    .streak-circle.active {
+        background-color: #13A8A6 !important;
+        box-shadow: 0 0 8px rgba(19, 168, 166, 0.6) !important;
+    }
+    .streak-circle.today {
+        border: 1.5px solid #FCD34D !important;
     }
 
     /* Collapsed Sidebar Styles */
@@ -73,12 +228,16 @@
     }
     .sidebar-custom.sidebar-collapsed .sidebar-header {
         justify-content: center !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
     }
     .sidebar-custom.sidebar-collapsed .sidebar-workspace-wrapper {
         padding-left: 8px !important;
         padding-right: 8px !important;
+    }
+    .sidebar-custom.sidebar-collapsed .sidebar-workspace-wrapper > div {
+        justify-content: center !important;
+        padding: 8px !important;
     }
     .sidebar-custom.sidebar-collapsed .sidebar-nav-link {
         justify-content: center !important;
@@ -86,15 +245,105 @@
     }
     .sidebar-custom.sidebar-collapsed #sidebarCollapseBtn {
         justify-content: center !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
     .sidebar-custom.sidebar-collapsed .sidebar-collapse-icon {
-        transform: rotate(180deg);
+        transform: rotate(180deg) !important;
+    }
+    .sidebar-custom.sidebar-collapsed .sidebar-footer-profile {
+        flex-direction: column !important;
+        gap: 10px !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    .sidebar-user-avatar-btn {
+        transition: background-color 0.2s ease;
+        border-radius: 8px;
+    }
+    .sidebar-user-avatar-btn:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+    .sidebar-custom.sidebar-collapsed .sidebar-footer-wrapper {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    .sidebar-profile-logout-btn {
+        width: 34px;
+        height: 34px;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+    }
+    .sidebar-profile-logout-btn:hover {
+        background-color: rgba(239, 68, 68, 0.2) !important;
+    }
+    .sidebar-profile-logout-btn:hover i {
+        color: #EF4444 !important;
+        transform: scale(1.1);
+    }
+    /* Coming Soon Disabled Link & Micro Badges */
+    .sidebar-nav-link.disabled-link {
+        opacity: 0.55 !important;
+        cursor: not-allowed !important;
+    }
+    .sidebar-nav-link.disabled-link:hover {
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        color: #94A3B8 !important;
+    }
+    /* Dark Theme Micro Badge (Sidebar) */
+    .badge-coming-soon {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: rgba(212, 175, 55, 0.15);
+        color: #FCD34D;
+        border: 1px solid rgba(252, 211, 77, 0.35);
+        box-shadow: 0 0 6px rgba(252, 211, 77, 0.15);
+        animation: comingSoonGlow 2.5s infinite ease-in-out alternate;
+        font-family: 'Inter', sans-serif;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    /* Light Theme Micro Badge (Dashboard / White Buttons) */
+    .badge-soon-light {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: #FFFBEB;
+        color: #B45309 !important;
+        border: 1px solid rgba(217, 119, 6, 0.35);
+        box-shadow: 0 1px 3px rgba(180, 83, 9, 0.1);
+        font-family: 'Inter', sans-serif;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    @@keyframes comingSoonGlow {
+        0% {
+            box-shadow: 0 0 3px rgba(252, 211, 77, 0.15);
+            border-color: rgba(252, 211, 77, 0.25);
+            transform: scale(0.98);
+        }
+        100% {
+            box-shadow: 0 0 8px rgba(252, 211, 77, 0.45);
+            border-color: rgba(252, 211, 77, 0.65);
+            transform: scale(1.02);
+        }
     }
 </style>
 
-<nav id="mainSidebar" class="sidebar-custom shadow-lg d-flex flex-column" style="width: 250px; min-width: 250px; max-width: 250px; height: 100vh; flex-shrink: 0; overflow: hidden;">
+<nav id="mainSidebar" class="sidebar-custom shadow-lg d-flex flex-column" style="width: 250px; min-width: 250px; max-width: 250px; height: 100vh; height: 100dvh; flex-shrink: 0; overflow: hidden;">
     <!-- Logo Section -->
-    <div class="px-4 pt-4 pb-2 d-flex align-items-center gap-3 sidebar-header">
+    <div class="px-4 pt-4 pb-2 d-flex align-items-center gap-3 sidebar-header flex-shrink-0">
         <div style="height: 32px; width: 32px; flex-shrink: 0;">
             <img src="/images/CompanyLogo/Logo_Transperent.png" alt="StoryVerse Logo" class="img-fluid" onerror="this.style.display='none'" />
             <i data-lucide="feather" class="text-white" style="width:24px; height:24px; display:none;" onload="if(!this.previousElementSibling.complete || this.previousElementSibling.naturalHeight === 0) this.style.display='block';"></i>
@@ -106,7 +355,7 @@
     </div>
 
     <!-- Current Workspace -->
-    <div class="px-4 mt-4 mb-2 sidebar-workspace-wrapper">
+    <div class="px-4 mt-4 mb-2 sidebar-workspace-wrapper flex-shrink-0">
         <div class="text-uppercase fw-bold text-white mb-2 sidebar-text-label" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.6; font-family: 'Inter', sans-serif;">CURRENT WORKSPACE</div>
         <div class="d-flex align-items-center justify-content-between p-2 rounded-3 cursor-pointer" style="background: rgba(255, 255, 255, 0.05);">
             <div class="d-flex align-items-center gap-2">
@@ -163,60 +412,82 @@
                 <a href="@Url.Action("Index", "Timeline", new { activeTab = "TimelineView", viewMode = "Graph" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small">Timeline Views</a>
             </div>
         </div>
-        <a href="@Url.Action("Index", "Chapters")" title="Chapters" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Chapters" ? "active" : "")">
-            <i data-lucide="file-text" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
-            <span class="sidebar-text-label" style="font-size: 0.85rem;">Chapters</span>
+        <a href="javascript:void(0)" title="Chapters (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="file-text" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                <span class="sidebar-text-label" style="font-size: 0.85rem;">Chapters</span>
+            </div>
+            <span class="badge-coming-soon sidebar-text-label">SOON</span>
         </a>
-        <a href="@Url.Action("Index", "Research")" title="Research" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Research" ? "active" : "")">
-            <i data-lucide="search" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
-            <span class="sidebar-text-label" style="font-size: 0.85rem;">Research</span>
+        <a href="javascript:void(0)" title="Research (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="search" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                <span class="sidebar-text-label" style="font-size: 0.85rem;">Research</span>
+            </div>
+            <span class="badge-coming-soon sidebar-text-label">SOON</span>
         </a>
-        <a href="@Url.Action("Index", "Maps")" title="Maps" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Maps" ? "active" : "")">
-            <i data-lucide="map" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
-            <span class="sidebar-text-label" style="font-size: 0.85rem;">Maps</span>
+        <a href="javascript:void(0)" title="Maps (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="map" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                <span class="sidebar-text-label" style="font-size: 0.85rem;">Maps</span>
+            </div>
+            <span class="badge-coming-soon sidebar-text-label">SOON</span>
         </a>
-        <a href="@Url.Action("Index", "Notes")" title="Notes" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Notes" ? "active" : "")">
-            <i data-lucide="file" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
-            <span class="sidebar-text-label" style="font-size: 0.85rem;">Notes</span>
+        <a href="javascript:void(0)" title="Notes (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="file" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                <span class="sidebar-text-label" style="font-size: 0.85rem;">Notes</span>
+            </div>
+            <span class="badge-coming-soon sidebar-text-label">SOON</span>
         </a>
-        <a href="@Url.Action("Index", "Assets")" title="Assets" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Assets" ? "active" : "")">
-            <i data-lucide="folder-open" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
-            <span class="sidebar-text-label" style="font-size: 0.85rem;">Assets</span>
+        <a href="javascript:void(0)" title="Assets (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="folder-open" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                <span class="sidebar-text-label" style="font-size: 0.85rem;">Assets</span>
+            </div>
+            <span class="badge-coming-soon sidebar-text-label">SOON</span>
         </a>
-        <a href="@Url.Action("Index", "Analytics")" title="Analytics" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Analytics" ? "active" : "")">
-            <i data-lucide="bar-chart-2" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
-            <span class="sidebar-text-label" style="font-size: 0.85rem;">Analytics</span>
+        <a href="javascript:void(0)" title="Analytics (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
+            <div class="d-flex align-items-center gap-3">
+                <i data-lucide="bar-chart-2" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                <span class="sidebar-text-label" style="font-size: 0.85rem;">Analytics</span>
+            </div>
+            <span class="badge-coming-soon sidebar-text-label">SOON</span>
         </a>
     </div>
 
     <!-- Writing Streak -->
-    <div class="px-4 mb-4 sidebar-streak-card">
+    <div class="px-4 mb-4 sidebar-streak-card flex-shrink-0">
         <div class="d-flex justify-content-between align-items-center mb-1">
             <span class="text-uppercase fw-bold text-white" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.6; font-family: 'Inter', sans-serif;">WRITING STREAK</span>
             <span style="font-size: 14px;">🔥</span>
         </div>
         <div class="d-flex align-items-baseline gap-1 mb-1">
-            <span class="fw-bold text-white" style="font-size: 1.5rem; line-height: 1;">0</span>
+            <span class="fw-bold text-white" style="font-size: 1.5rem; line-height: 1;">@streakDays</span>
             <span class="text-white-50 fw-medium" style="font-size: 0.75rem;">days</span>
         </div>
-        <div class="text-white-50 mb-3" style="font-size: 0.75rem; font-family: 'Inter', sans-serif;">Start your streak today!</div>
+        <div class="text-white-50 mb-3" style="font-size: 0.75rem; font-family: 'Inter', sans-serif;">
+            @(streakDays > 0 ? (streakDays == 1 ? "1 day streak! Keep it up!" : $"{streakDays} day streak! You're on fire!") : "Start your streak today!")
+        </div>
         
         <div class="d-flex justify-content-between text-center" style="font-size: 9px; font-weight: 600; color: #64748B; font-family: 'Inter', sans-serif;">
-            <div><div class="streak-circle"></div>M</div>
-            <div><div class="streak-circle"></div>T</div>
-            <div><div class="streak-circle"></div>W</div>
-            <div><div class="streak-circle"></div>T</div>
-            <div><div class="streak-circle"></div>F</div>
-            <div><div class="streak-circle"></div>S</div>
-            <div><div class="streak-circle"></div>S</div>
+            @for (int i = 0; i < 7; i++)
+            {
+                var isActive = activeDaysOfWeek[i];
+                var isToday = i == todayIndex;
+                <div>
+                    <div class="streak-circle @(isActive ? "active" : "") @(isToday ? "today" : "")"></div>
+                    <span style="@(isToday ? "color: #13A8A6; font-weight: 700;" : "")">@dayLabels[i]</span>
+                </div>
+            }
         </div>
     </div>
 
     <!-- User Profile Footer -->
-    <div class="px-4 pb-4">
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="height: 36px; width: 36px; background-color: #13A8A6; color: white; font-size: 0.9rem; font-family: 'Inter', sans-serif; flex-shrink: 0;">
+    <div class="px-4 pb-4 flex-shrink-0 sidebar-footer-wrapper">
+        <div class="d-flex align-items-center justify-content-between mb-3 sidebar-footer-profile">
+            <div class="d-flex align-items-center gap-2 cursor-pointer p-1 sidebar-user-avatar-btn" data-bs-toggle="modal" data-bs-target="#logoutModal" title="Sign Out (@displayName)">
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="height: 36px; width: 36px; background-color: #13A8A6; color: white; font-size: 0.9rem; font-family: 'Inter', sans-serif; flex-shrink: 0;" title="Sign Out (@displayName)">
                     @initials
                 </div>
                 <div class="d-flex flex-column sidebar-text-label">
@@ -224,11 +495,13 @@
                     <span class="fw-medium mt-0.5" style="font-size: 11px; color: #64748B; font-family: 'Inter', sans-serif;">Author</span>
                 </div>
             </div>
-            <i data-lucide="chevron-down" class="sidebar-text-label" style="width: 16px; height: 16px; color: #64748B; cursor: pointer;"></i>
+            <button type="button" class="btn border-0 p-0 d-flex align-items-center justify-content-center sidebar-profile-logout-btn" title="Sign Out" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                <i data-lucide="log-out" style="width: 18px; height: 18px; color: #F87171; transition: all 0.2s ease;"></i>
+            </button>
         </div>
 
         <!-- Collapse Toggle Button -->
-        <div id="sidebarCollapseBtn" class="d-flex align-items-center gap-2 text-white-50 cursor-pointer hover-text-white transition-all py-1 px-2 rounded-2" onclick="toggleSidebarCollapse()" style="user-select: none;">
+        <div id="sidebarCollapseBtn" class="d-flex align-items-center gap-2 text-white-50 cursor-pointer hover-text-white transition-all py-1 px-2 rounded-2" onclick="toggleSidebarCollapse()" style="user-select: none;" title="Toggle Sidebar Collapse">
             <i data-lucide="chevron-left" class="sidebar-collapse-icon" style="width: 16px; height: 16px; transition: transform 0.3s ease; flex-shrink: 0;"></i>
             <span class="sidebar-text-label" style="font-size: 0.85rem; font-weight: 500; font-family: 'Inter', sans-serif;">Collapse</span>
         </div>

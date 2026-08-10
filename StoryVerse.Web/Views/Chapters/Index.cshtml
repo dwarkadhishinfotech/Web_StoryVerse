@@ -33,11 +33,11 @@
     <!-- Chapters Table Container -->
     <div class="dashboard-glass-panel border overflow-hidden mb-4" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
         <!-- Header row -->
-        <div class="row g-3 px-4 py-3 border-bottom border-light align-items-center" style="font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; tracking: 0.1em;">
-            <div class="col-5">Chapter</div>
-            <div class="col-3">Word Progress</div>
-            <div class="col-2">Last Updated</div>
-            <div class="col-2 text-end">Actions</div>
+        <div class="d-none d-md-flex row g-3 px-4 py-3 border-bottom border-light align-items-center" style="font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; tracking: 0.1em;">
+            <div class="col-md-5">Chapter</div>
+            <div class="col-md-3">Word Progress</div>
+            <div class="col-md-2">Last Updated</div>
+            <div class="col-md-2 text-end">Actions</div>
         </div>
 
         <!-- Chapters List -->
@@ -51,7 +51,7 @@
 
                     <div class="row g-3 px-3 py-3 align-items-center rounded-4 border bg-white shadow-xs transition-all hover-lift-subtle" style="border-color: #F1F5F9 !important;">
                         <!-- Chapter info -->
-                        <div class="col-5 d-flex align-items-center gap-3">
+                        <div class="col-12 col-md-5 d-flex align-items-center gap-3">
                             <div class="rounded-3 d-flex align-items-center justify-content-center fw-bold font-serif text-white flex-shrink-0" 
                                  style="width: 42px; height: 42px; background: var(--peacock-gradient); font-size: 1.15rem; box-shadow: 0 4px 10px rgba(19, 168, 166, 0.15);">
                                 @chapter.Order
@@ -75,7 +75,7 @@
                         </div>
 
                         <!-- Word Progress -->
-                        <div class="col-3">
+                        <div class="col-12 col-sm-6 col-md-3">
                             <div class="d-flex justify-content-between align-items-baseline mb-1">
                                 <span class="fw-bold text-slate-700" style="font-size: 13px;">@chapter.WordCount.ToString("N0") <span class="text-muted fw-semibold" style="font-size: 11px;">words</span></span>
                                 <span class="text-secondary font-monospace" style="font-size: 11px;">@percent%</span>
@@ -86,12 +86,12 @@
                         </div>
 
                         <!-- Last Updated -->
-                        <div class="col-2 text-secondary" style="font-size: 12px; font-weight: 500;">
+                        <div class="col-6 col-md-2 text-secondary" style="font-size: 12px; font-weight: 500;">
                             @chapter.UpdatedAt.ToString("g")
                         </div>
 
                         <!-- Actions -->
-                        <div class="col-2 d-flex justify-content-end gap-2">
+                        <div class="col-6 col-md-2 d-flex justify-content-end gap-2">
                             <a href="@Url.Action("Editor", "Chapters", new { storyId = chapter.StoryId, chapterId = chapter.Id })" 
                                class="btn btn-white border rounded-3 p-2 d-flex align-items-center justify-content-center text-secondary hover-lift-subtle shadow-xs" 
                                style="width: 36px; height: 36px; border-color: var(--parchment-border) !important;" title="Edit Chapter">

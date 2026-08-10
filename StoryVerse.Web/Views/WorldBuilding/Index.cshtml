@@ -388,12 +388,13 @@
                 </button>
             </form>
 
-            <button class="btn btn-white border rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-xs" style="width: 36px; height: 36px; border-color: #E2E8F0 !important;">
+            <button class="btn btn-white border rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-xs position-relative" disabled title="Toggle Theme (Coming Soon)" style="width: 36px; height: 36px; border-color: #E2E8F0 !important; opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="sun" style="width: 18px; height: 18px;" class="text-slate-600"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
-            <button class="btn btn-white border rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-xs position-relative" style="width: 36px; height: 36px; border-color: #E2E8F0 !important;">
+            <button class="btn btn-white border rounded-circle bg-white p-2 d-flex align-items-center justify-content-center shadow-xs position-relative" disabled title="Notifications (Coming Soon)" style="width: 36px; height: 36px; border-color: #E2E8F0 !important; opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="bell" style="width: 18px; height: 18px;" class="text-slate-600"></i>
-                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="font-size: 8px;"></span>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
         </div>
     </div>
@@ -620,8 +621,8 @@
         <!-- POPULATED DASHBOARD LAYOUT (IMAGE 2) -->
         <!-- Stats Summary Grid -->
         <div class="row g-3 mb-4">
-            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
-                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white h-100" style="border: 1px solid #E2E8F0 !important;">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-circle bg-light p-2.5 text-peacock-teal d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
                             <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
@@ -635,8 +636,8 @@
                 </div>
             </div>
 
-            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
-                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white h-100" style="border: 1px solid #E2E8F0 !important;">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-circle bg-light p-2.5 text-warning d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
                             <i data-lucide="map-pin" style="width: 20px; height: 20px;"></i>
@@ -650,8 +651,8 @@
                 </div>
             </div>
 
-            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
-                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white h-100" style="border: 1px solid #E2E8F0 !important;">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-circle bg-light p-2.5 text-indigo d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
                             <i data-lucide="landmark" style="width: 20px; height: 20px;"></i>
@@ -665,8 +666,8 @@
                 </div>
             </div>
 
-            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
-                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white h-100" style="border: 1px solid #E2E8F0 !important;">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-circle bg-light p-2.5 text-info d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
                             <i data-lucide="users" style="width: 20px; height: 20px;"></i>
@@ -680,8 +681,8 @@
                 </div>
             </div>
 
-            <div class="col-md-2.4 col-sm-6" style="width: 20%;">
-                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white" style="border: 1px solid #E2E8F0 !important;">
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card border-0 rounded-4 p-3 shadow-xs bg-white h-100" style="border: 1px solid #E2E8F0 !important;">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-circle bg-light p-2.5 text-success d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
                             <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
@@ -755,7 +756,7 @@
                 <div id="view-grid" class="row g-3">
                     @foreach (var item in Model.Entities)
                     {
-                        <div class="col-md-6 col-xl-3">
+                        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
                             <div class="card border-0 rounded-4 overflow-hidden shadow-xs bg-white hover-lift cursor-pointer h-100 position-relative" 
                                  style="border: 1px solid #E2E8F0 !important;"
                                  onclick="loadEntityDetail('@item.Id')">

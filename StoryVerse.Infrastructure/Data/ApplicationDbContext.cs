@@ -21,6 +21,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserGoal> UserGoals { get; set; }
     public DbSet<DropdownOption> DropdownOptions { get; set; }
 
+    // Genre System
+    public DbSet<Genre> Genres { get; set; }
+    public DbSet<StoryGenre> StoryGenres { get; set; }
+
     public DbSet<WorldEntityType> WorldEntityTypes { get; set; }
     public DbSet<WorldEntityField> WorldEntityFields { get; set; }
     public DbSet<WorldEntity> WorldEntities { get; set; }
@@ -105,6 +109,52 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── Genre Master ─────────────────────────────────────────────────
+        builder.Entity<Genre>(entity =>
+        {
+            entity.ToTable("DI_MST_Genres");
+            entity.HasKey(g => g.Id);
+            entity.HasIndex(g => g.Slug).IsUnique();
+            entity.Property(g => g.Name).HasMaxLength(100).IsRequired();
+            entity.Property(g => g.Slug).HasMaxLength(100).IsRequired();
+            entity.Property(g => g.Icon).HasMaxLength(100);
+            entity.Property(g => g.Description).HasMaxLength(500);
+
+            // Seed data — always controlled by code, never by users
+            entity.HasData(
+                new Genre { Id = 1,  Name = "Fantasy",          Slug = "fantasy",          Icon = "castle",       Description = "Magic, mythical creatures, and imaginary worlds.",             SortOrder = 1,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 2,  Name = "Science Fiction",  Slug = "science-fiction",  Icon = "rocket",       Description = "Futuristic, space, technology, and advanced worlds.",         SortOrder = 2,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 3,  Name = "Mystery",          Slug = "mystery",          Icon = "search",       Description = "Puzzles, crime, secrets, and investigations.",                 SortOrder = 3,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 4,  Name = "Romance",          Slug = "romance",          Icon = "heart",        Description = "Love, relationships, and emotional journeys.",                 SortOrder = 4,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 5,  Name = "Thriller",         Slug = "thriller",         Icon = "theater",      Description = "Suspense, tension, and edge of the seat.",                   SortOrder = 5,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 6,  Name = "Historical Fiction",Slug = "historical-fiction",Icon = "landmark",  Description = "Stories set in the past with real or imagined events.",       SortOrder = 6,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 7,  Name = "Horror",           Slug = "horror",           Icon = "ghost",        Description = "Dark, eerie, and supernatural themes.",                     SortOrder = 7,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 8,  Name = "Comedy",           Slug = "comedy",           Icon = "smile",        Description = "Humor, light-hearted and feel-good stories.",                SortOrder = 8,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 9,  Name = "Adventure",        Slug = "adventure",        Icon = "compass",      Description = "Exciting journeys, quests, and daring challenges.",          SortOrder = 9,  IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 10, Name = "Drama",            Slug = "drama",            Icon = "clapperboard", Description = "Character-driven stories with emotional depth.",             SortOrder = 10, IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Genre { Id = 11, Name = "Other",            Slug = "other",            Icon = "plus",         Description = "My genre is not listed here.",                               SortOrder = 11, IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            );
+        });
+
+        // ── StoryGenre Join Table ─────────────────────────────────────────
+        builder.Entity<StoryGenre>(entity =>
+        {
+            entity.ToTable("DI_TRN_StoryGenres");
+            entity.HasKey(sg => new { sg.StoryId, sg.GenreId });
+
+            entity.HasOne(sg => sg.Story)
+                .WithMany(s => s.StoryGenres)
+                .HasForeignKey(sg => sg.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(sg => sg.Genre)
+                .WithMany(g => g.StoryGenres)
+                .HasForeignKey(sg => sg.GenreId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(sg => sg.AddedAt).HasDefaultValueSql("GETUTCDATE()");
         });
 
         builder.Entity<Chapter>(entity =>

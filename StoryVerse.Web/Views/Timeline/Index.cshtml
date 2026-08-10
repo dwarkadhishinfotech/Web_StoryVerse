@@ -63,6 +63,13 @@
         border-bottom: 1px solid #E2E8F0;
         gap: 1.5rem;
         padding-bottom: 2px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
     }
     .timeline-tab-link {
         color: #64748B;
@@ -75,6 +82,7 @@
         align-items: center;
         gap: 8px;
         transition: all 0.2s ease;
+        white-space: nowrap;
     }
     .timeline-tab-link:hover {
         color: #13A8A6;
@@ -142,6 +150,31 @@
     .timeline-event-card:hover {
         box-shadow: 0 6px 16px rgba(0,0,0,0.06);
         border-color: #CBD5E1;
+    }
+
+    @@media (max-width: 575.98px) {
+        .timeline-track-wrapper {
+            padding-left: 0;
+        }
+        .timeline-track-line {
+            left: 14px;
+        }
+        .timeline-node-date {
+            position: relative;
+            left: 32px;
+            top: 0;
+            width: auto;
+            text-align: left;
+            margin-bottom: 6px;
+        }
+        .timeline-node-dot {
+            left: 8px;
+            top: 6px;
+        }
+        .timeline-event-card {
+            margin-left: 28px;
+            padding: 14px;
+        }
     }
     .category-badge {
         font-size: 0.72rem;
@@ -378,34 +411,30 @@
                 </button>
             </form>
 
-            <!-- Create Timeline Button -->
-            <a href="@Url.Action("Create", "Timeline", new { storyId = Model.SelectedStoryId })" class="btn btn-outline-teal rounded-3 font-semibold shadow-xs d-inline-flex align-items-center gap-1" style="height: 38px; font-size: 0.85rem;">
-                <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i>
-                <span>Add New Timeline</span>
-            </a>
-
             <!-- Create Event Split Button -->
             <div class="btn-group shadow-xs">
-                <button type="button" class="btn timeline-create-btn" onclick="openCreateEventModal()">
+                <a href="@Url.Action("Create", "Timeline", new { storyId = Model.SelectedStoryId })" class="btn timeline-create-btn">
                     <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
                     <span>Create Timeline Event</span>
-                </button>
+                </a>
                 <button type="button" class="btn timeline-create-toggle dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="visually-hidden">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2" style="font-size: 0.85rem; min-width: 180px;">
                     <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="@Url.Action("Create", "Timeline", new { storyId = Model.SelectedStoryId })"><i data-lucide="git-branch" class="me-2" style="width: 16px; color: #13A8A6;"></i>New Timeline Wizard</a></li>
-                    <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="javascript:void(0)" onclick="openCreateEventModal()"><i data-lucide="plus-circle" class="me-2" style="width: 16px; color: #13A8A6;"></i>New Event</a></li>
+                    <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="javascript:void(0)" onclick="openCreateEventModal()"><i data-lucide="plus-circle" class="me-2" style="width: 16px; color: #13A8A6;"></i>New Quick Event</a></li>
                     <li><a class="dropdown-item py-2 px-3 d-flex align-items-center" href="javascript:void(0)" onclick="openCreateArcModal()"><i data-lucide="flag" class="me-2" style="width: 16px; color: #EF4444;"></i>New Story Arc</a></li>
                 </ul>
             </div>
 
             <!-- Theme & Notification Icons -->
-            <button type="button" class="btn timeline-icon-btn shadow-xs" title="Notifications">
+            <button type="button" class="btn timeline-icon-btn shadow-xs position-relative" disabled title="Notifications (Coming Soon)" style="opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="bell" style="width: 17px; height: 17px;"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
-            <button type="button" class="btn timeline-icon-btn shadow-xs" title="Toggle Theme">
+            <button type="button" class="btn timeline-icon-btn shadow-xs position-relative" disabled title="Toggle Theme (Coming Soon)" style="opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="sun" style="width: 17px; height: 17px;"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
         </div>
     </div>
@@ -494,9 +523,9 @@
                         Capture the important moments, define your story's history, and connect characters, places, and events.
                     </p>
 
-                    <button class="btn text-white fw-bold px-4 py-2.5 rounded-3 mb-3" style="background-color: #13A8A6; font-size: 0.9rem;" onclick="openCreateEventModal()">
+                    <a href="@Url.Action("Create", "Timeline", new { storyId = Model.SelectedStoryId })" class="btn text-white fw-bold px-4 py-2.5 rounded-3 mb-3 d-inline-flex align-items-center justify-content-center" style="background-color: #13A8A6; font-size: 0.9rem;">
                         <i data-lucide="plus" class="me-1" style="width: 18px; height: 18px;"></i> Create Your First Timeline Event
-                    </button>
+                    </a>
 
                     <div class="text-muted small">
                         or import from existing timeline <a href="javascript:void(0)" onclick="alert('Import options ready.')" class="text-decoration-none fw-semibold" style="color: #13A8A6;">Import Timeline <i data-lucide="external-link" style="width: 14px; height: 14px;"></i></a>
@@ -508,7 +537,7 @@
                     <h6 class="fw-bold text-dark mb-3" style="font-size: 0.9rem;">Get started quickly</h6>
                     <div class="row g-3">
                         <div class="col-md-4 col-6">
-                            <a href="javascript:void(0)" onclick="openCreateEventModal()" class="empty-quick-card">
+                            <a href="@Url.Action("Create", "Timeline", new { storyId = Model.SelectedStoryId })" class="empty-quick-card">
                                 <div class="p-2 rounded-3 bg-light text-teal d-inline-block mb-2">
                                     <i data-lucide="calendar-plus" style="width: 20px; height: 20px; color: #13A8A6;"></i>
                                 </div>

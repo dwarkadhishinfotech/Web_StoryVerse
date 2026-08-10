@@ -354,6 +354,14 @@ namespace StoryVerse.Web.Controllers
             }
 
             _context.StoryTimelines.Add(timeline);
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                UserId = user.Id,
+                ActionType = "Timeline",
+                Description = $"Created timeline '{timeline.Name}'",
+                RelatedEntityName = timeline.Name,
+                Timestamp = DateTime.UtcNow
+            });
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = $"Timeline '{timeline.Name}' created successfully!";

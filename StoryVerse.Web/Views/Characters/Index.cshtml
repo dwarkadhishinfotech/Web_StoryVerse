@@ -498,12 +498,14 @@
                 <span>Import</span>
             </button>
 
-            <button class="action-btn shadow-sm" title="Notifications">
+            <button class="action-btn shadow-sm position-relative" disabled title="Notifications (Coming Soon)" style="opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
 
-            <button class="action-btn shadow-sm" title="Toggle Theme">
+            <button class="action-btn shadow-sm position-relative" disabled title="Toggle Theme (Coming Soon)" style="opacity: 0.65; cursor: not-allowed;">
                 <i data-lucide="sun" style="width: 18px; height: 18px;"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
             </button>
         </div>
     </div>
@@ -1018,7 +1020,7 @@
                     ? new List<string>() 
                     : c.PersonalityTraits.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).Take(4).ToList();
 
-                <div class="col-12 col-md-6 col-lg-4">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
                     <div class="character-card">
                         <div>
                             <!-- Card Header: Avatar, Name, Archetype & Dropdown -->

@@ -6,6 +6,7 @@ using StoryVerse.Core.Entities;
 using StoryVerse.Core.Entities.Identity;
 using StoryVerse.Infrastructure.Data;
 using StoryVerse.Web.Models;
+using StoryVerse.Web.Services;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,11 +17,16 @@ public class DashboardController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IQuoteService _quoteService;
 
-    public DashboardController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+    public DashboardController(
+        ApplicationDbContext context, 
+        UserManager<ApplicationUser> userManager,
+        IQuoteService quoteService)
     {
         _context = context;
         _userManager = userManager;
+        _quoteService = quoteService;
     }
 
     public async Task<IActionResult> Index()
@@ -63,9 +69,17 @@ public class DashboardController : Controller
             ActiveStoriesCount = activeStoriesCount,
             CharactersCount = charactersCount,
             LocationsCount = locationsCount,
-            UserGoal = userGoal
+            UserGoal = userGoal,
+            InspirationQuote = _quoteService.GetDailyQuote()
         };
 
         return View(viewModel);
+    }
+
+    [HttpGet]
+    public IActionResult GetRandomQuote([FromQuery] string? currentContent = null)
+    {
+        var quote = _quoteService.GetRandomQuote(currentContent);
+        return Json(new { content = quote.Content, author = quote.Author });
     }
 }

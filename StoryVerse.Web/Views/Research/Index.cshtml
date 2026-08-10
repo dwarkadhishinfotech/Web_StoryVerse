@@ -5,15 +5,15 @@
 
 <div class="w-full pb-5 relative z-10 font-sans text-slate-800">
     <!-- Header Section -->
-    <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 mt-2 gap-3">
         <div>
-            <h2 class="font-serif fw-bold text-slate-900 mb-1" style="font-size: 28px; color: var(--forest-green-dark);">
+            <h2 class="font-serif fw-bold text-slate-900 mb-1" style="font-size: clamp(22px, 4vw, 28px); color: var(--forest-green-dark);">
                 Research Board <span class="text-warning fs-4">✦</span>
             </h2>
             <p class="text-secondary mb-0" style="font-size: 0.875rem;">Manage research notes, categories, and references for world-building accuracy.</p>
         </div>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
             <a href="@Url.Action("Details", "Stories", new { id = story?.Id })" class="btn btn-outline-secondary rounded-pill px-4 py-2 d-flex align-items-center hover-lift-subtle" style="font-size: 0.85rem; font-weight: 700; border-color: var(--parchment-border) !important;">
                 <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Story Overview
             </a>
@@ -29,7 +29,7 @@
     <!-- 3-Column Split Layout -->
     <div class="row g-4">
         <!-- Col 1: Categories Sidebar -->
-        <div class="col-lg-3">
+        <div class="col-12 col-lg-3">
             <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
                 <h6 class="font-serif fw-bold text-peacock mb-3">Categories</h6>
                 <div class="d-flex flex-column gap-2" id="categoryList">
@@ -50,9 +50,9 @@
         </div>
 
         <!-- Col 2: Research Grid -->
-        <div class="col-lg-6">
+        <div class="col-12 col-md-7 col-lg-6">
             <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-2">
                     <h5 class="font-serif fw-bold text-peacock-dark mb-0">Documents & Notes</h5>
                     <div class="position-relative" style="max-width: 200px;">
                         <i data-lucide="search" class="position-absolute text-muted" style="left: 10px; top: 10px; width: 14px; height: 14px;"></i>
@@ -62,7 +62,7 @@
 
                 <div class="row g-3">
                     <!-- Note 1 -->
-                    <div class="col-md-6">
+                    <div class="col-12 col-sm-6">
                         <div class="card border rounded-4 p-3 bg-white cursor-pointer hover-lift-subtle shadow-xs" style="border-color: #F1F5F9 !important;">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="badge bg-teal-subtle text-teal-700 font-bold" style="font-size: 8px;">HISTORICAL</span>
@@ -74,7 +74,7 @@
                     </div>
 
                     <!-- Note 2 -->
-                    <div class="col-md-6">
+                    <div class="col-12 col-sm-6">
                         <div class="card border rounded-4 p-3 bg-white cursor-pointer hover-lift-subtle shadow-xs" style="border-color: #F1F5F9 !important;">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="badge bg-warning-subtle text-warning-emphasis font-bold" style="font-size: 8px;">SCIENTIFIC</span>
@@ -89,7 +89,7 @@
         </div>
 
         <!-- Col 3: Research Details Panel -->
-        <div class="col-lg-3">
+        <div class="col-12 col-md-5 col-lg-3">
             <div class="dashboard-glass-panel p-4" style="background: var(--parchment-card); border: 1px solid var(--parchment-border);">
                 <h5 class="font-serif fw-bold text-peacock mb-3">Detail Panel</h5>
                 <div class="bg-white p-3 rounded-4 border shadow-xs">

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using StoryVerse.Core.Entities;
+using StoryVerse.Web.Services;
 
 namespace StoryVerse.Web.Models
 {
@@ -16,6 +17,7 @@ namespace StoryVerse.Web.Models
         public int LocationsCount { get; set; }
         
         public UserGoal UserGoal { get; set; } = null!;
+        public QuoteModel InspirationQuote { get; set; } = new QuoteModel();
         
         public int GoalProgressPercentage => UserGoal != null && UserGoal.DailyWordCountGoal > 0 
             ? (int)Math.Clamp(((double)UserGoal.WordsWrittenToday / UserGoal.DailyWordCountGoal) * 100, 0, 100)

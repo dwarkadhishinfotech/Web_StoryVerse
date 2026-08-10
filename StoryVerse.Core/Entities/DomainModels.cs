@@ -11,6 +11,12 @@ namespace StoryVerse.Core.Entities
         public ApplicationUser User { get; set; } = null!;
         
         public string Title { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Legacy single-genre string. Kept for backward compatibility.
+        /// Use StoryGenres navigation for all new code.
+        /// </summary>
+        [Obsolete("Use StoryGenres navigation property instead.")]
         public string Genre { get; set; } = string.Empty;
         public string CoverImageUrl { get; set; } = string.Empty;
         public int TargetWordCount { get; set; }
@@ -37,6 +43,9 @@ namespace StoryVerse.Core.Entities
         public ICollection<StoryTimeline> StoryTimelines { get; set; } = new List<StoryTimeline>();
         public ICollection<ResearchNote> ResearchNotes { get; set; } = new List<ResearchNote>();
         public ICollection<Asset> Assets { get; set; } = new List<Asset>();
+
+        // Genre many-to-many
+        public ICollection<StoryGenre> StoryGenres { get; set; } = new List<StoryGenre>();
     }
 
     public class Chapter
