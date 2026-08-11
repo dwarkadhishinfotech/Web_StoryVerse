@@ -621,7 +621,7 @@
                         @foreach (var st in userStories)
                         {
                             <li>
-                                <a class="dropdown-item @(selectedStory?.Id == st.Id ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStoryFilter('@st.Id');">
+                                <a class="dropdown-item @(selectedStory?.Id == st.Id ? "active fw-bold" : "")" href="javascript:void(0);" onclick="setStoryFilter('@st.Id', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(st.Title))');">
                                     @st.Title
                                 </a>
                             </li>
@@ -1197,39 +1197,82 @@
 
 @section Scripts {
     <script>
-        function setStoryFilter(id) {
-            document.getElementById('storyIdInput').value = id;
-            document.getElementById('pageInput').value = 1;
-            document.getElementById('filterForm').submit();
+        function submitFilterFormDynamic() {
+            var form = document.getElementById('filterForm');
+            if (!form) return;
+
+            var formData = new FormData(form);
+            var params = new URLSearchParams();
+            for (var pair of formData.entries()) {
+                if (pair[1]) {
+                    params.append(pair[0], pair[1]);
+                }
+            }
+            var targetUrl = form.action + '?' + params.toString();
+
+            history.pushState(null, '', targetUrl);
+
+            var container = document.querySelector('.character-page-container') || document.querySelector('.main-content-wrapper');
+            if (container) {
+                container.style.opacity = '0.65';
+                fetch(targetUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(res) { return res.text(); })
+                    .then(function(htmlText) {
+                        var parser = new DOMParser();
+                        var doc = parser.parseFromString(htmlText, 'text/html');
+                        var newContent = doc.querySelector('.character-page-container') || doc.querySelector('.main-content-wrapper');
+                        if (newContent) {
+                            container.innerHTML = newContent.innerHTML;
+                        }
+                        container.style.opacity = '1';
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    })
+                    .catch(function() {
+                        container.style.opacity = '1';
+                        form.submit();
+                    });
+            } else {
+                form.submit();
+            }
+        }
+
+        function setStoryFilter(id, title) {
+            if (id && typeof switchGlobalStory === 'function') {
+                switchGlobalStory(id, title);
+            } else {
+                document.getElementById('storyIdInput').value = id || '';
+                document.getElementById('pageInput').value = 1;
+                submitFilterFormDynamic();
+            }
         }
 
         function setRoleFilter(role) {
             document.getElementById('roleInput').value = role;
             document.getElementById('pageInput').value = 1;
-            document.getElementById('filterForm').submit();
+            submitFilterFormDynamic();
         }
 
         function setStatusFilter(status) {
             document.getElementById('statusInput').value = status;
             document.getElementById('pageInput').value = 1;
-            document.getElementById('filterForm').submit();
+            submitFilterFormDynamic();
         }
 
         function setArcTypeFilter(arc) {
             document.getElementById('arcTypeInput').value = arc;
             document.getElementById('pageInput').value = 1;
-            document.getElementById('filterForm').submit();
+            submitFilterFormDynamic();
         }
 
         function setSortValue(value) {
             document.getElementById('sortByInput').value = value;
-            document.getElementById('filterForm').submit();
+            submitFilterFormDynamic();
         }
 
         function clearSearch() {
             document.getElementById('searchInput').value = '';
             document.getElementById('pageInput').value = 1;
-            document.getElementById('filterForm').submit();
+            submitFilterFormDynamic();
         }
 
         function clearAllFilters() {
@@ -1240,18 +1283,18 @@
             document.getElementById('arcTypeInput').value = '';
             document.getElementById('sortByInput').value = 'recently_updated';
             document.getElementById('pageInput').value = 1;
-            document.getElementById('filterForm').submit();
+            submitFilterFormDynamic();
         }
 
         function goToPage(page) {
             document.getElementById('pageInput').value = page;
-            document.getElementById('filterForm').submit();
+            submitFilterFormDynamic();
         }
 
         function changePageSize(size) {
             document.getElementById('pageSizeInput').value = size;
             document.getElementById('pageInput').value = 1;
-            document.getElementById('filterForm').submit();
+            submitFilterFormDynamic();
         }
 
         document.addEventListener("DOMContentLoaded", function () {

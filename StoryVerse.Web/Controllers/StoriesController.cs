@@ -20,12 +20,18 @@ namespace StoryVerse.Web.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly StoryVerse.Web.Services.IDropdownService _dropdownService;
+        private readonly StoryVerse.Web.Services.IActiveStoryService _activeStoryService;
 
-        public StoriesController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, StoryVerse.Web.Services.IDropdownService dropdownService)
+        public StoriesController(
+            ApplicationDbContext context, 
+            UserManager<ApplicationUser> userManager, 
+            StoryVerse.Web.Services.IDropdownService dropdownService,
+            StoryVerse.Web.Services.IActiveStoryService activeStoryService)
         {
             _context = context;
             _userManager = userManager;
             _dropdownService = dropdownService;
+            _activeStoryService = activeStoryService;
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────
@@ -179,11 +185,34 @@ namespace StoryVerse.Web.Controllers
                 });
 
                 await _context.SaveChangesAsync();
+                _activeStoryService.SetActiveStoryId(HttpContext, story.Id);
                 return RedirectToAction(nameof(Index));
             }
 
             await PopulateViewBagAsync();
             return View(story);
+        }
+
+        // ── POST: Stories/SetGlobalStory ─────────────────────────────────────
+
+        [HttpPost]
+        public async Task<IActionResult> SetGlobalStory(Guid storyId, string? returnUrl = null)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var storyExists = await _context.Stories.AnyAsync(s => s.Id == storyId && s.UserId == user.Id);
+            if (storyExists)
+            {
+                _activeStoryService.SetActiveStoryId(HttpContext, storyId);
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return RedirectToAction("Index", "Dashboard");
         }
 
         // ── GET: Stories/Edit/5 ───────────────────────────────────────────────

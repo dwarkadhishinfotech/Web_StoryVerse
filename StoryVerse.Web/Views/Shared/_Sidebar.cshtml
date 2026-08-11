@@ -3,8 +3,30 @@
 @using StoryVerse.Core.Entities
 @inject UserManager<ApplicationUser> UserManager
 @inject ApplicationDbContext DbContext
+@inject StoryVerse.Web.Services.IActiveStoryService ActiveStoryService
 @{
     var user = await UserManager.GetUserAsync(User);
+    var userId = user?.Id ?? UserManager.GetUserId(User);
+    
+    List<Story> userStories = new();
+    Story? activeStory = null;
+    
+    if (!string.IsNullOrEmpty(userId))
+    {
+        userStories = await ActiveStoryService.GetUserStoriesAsync(userId);
+
+        Guid? reqStoryId = null;
+        if (Context.Request.Query.TryGetValue("storyId", out var qStoryId) && Guid.TryParse(qStoryId, out var parsedGuid))
+        {
+            reqStoryId = parsedGuid;
+        }
+
+        var activeStoryId = await ActiveStoryService.GetActiveStoryIdAsync(Context, userId, reqStoryId);
+        if (activeStoryId.HasValue)
+        {
+            activeStory = userStories.FirstOrDefault(s => s.Id == activeStoryId.Value);
+        }
+    }
     
     string displayName;
     string initials = "A";
@@ -48,98 +70,37 @@
 
     var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
 
-    // Calculate Writing Streak & Weekly Activity
+    // Calculate Writing Streak & Weekly Activity (Lightweight, No DB Writes during View Render)
     var streakDays = 0;
     var activeDaysOfWeek = new bool[7]; // Mon=0 .. Sun=6
     var todayUtc = DateTime.UtcNow.Date;
     int todayIndex = ((int)DateTime.UtcNow.DayOfWeek + 6) % 7; // Mon=0 .. Sun=6
 
-    if (user != null)
+    if (!string.IsNullOrEmpty(userId))
     {
-        var userId = user.Id;
+        var userGoal = await DbContext.UserGoals
+            .AsNoTracking()
+            .FirstOrDefaultAsync(ug => ug.UserId == userId);
 
-        var activityDates = await DbContext.ActivityLogs
-            .Where(a => a.UserId == userId)
+        if (userGoal != null)
+        {
+            streakDays = userGoal.CurrentStreakDays;
+        }
+
+        var startOfWeek = todayUtc.AddDays(-todayIndex);
+        var endOfWeek = startOfWeek.AddDays(7);
+
+        var recentActivities = await DbContext.ActivityLogs
+            .AsNoTracking()
+            .Where(a => a.UserId == userId && a.Timestamp >= startOfWeek && a.Timestamp < endOfWeek)
             .Select(a => a.Timestamp.Date)
             .Distinct()
             .ToListAsync();
 
-        var storyDates = await DbContext.Stories
-            .Where(s => s.UserId == userId)
-            .Select(s => s.UpdatedAt.Date)
-            .Distinct()
-            .ToListAsync();
-
-        var chapterDates = await DbContext.Chapters
-            .Where(c => c.Story.UserId == userId)
-            .Select(c => c.UpdatedAt.Date)
-            .Distinct()
-            .ToListAsync();
-
-        var characterDates = await DbContext.Characters
-            .Where(c => c.Story != null && c.Story.UserId == userId)
-            .Select(c => c.UpdatedAt.Date)
-            .Distinct()
-            .ToListAsync();
-
-        var worldEntityDates = await DbContext.WorldEntities
-            .Where(w => w.Story != null && w.Story.UserId == userId)
-            .Select(w => w.UpdatedDate.Date)
-            .Distinct()
-            .ToListAsync();
-
-        var timelineEventDates = await DbContext.TimelineEvents
-            .Where(t => t.Story != null && t.Story.UserId == userId)
-            .Select(t => t.UpdatedAt.Date)
-            .Distinct()
-            .ToListAsync();
-
-        var allDates = new HashSet<DateTime>(activityDates);
-        allDates.UnionWith(storyDates);
-        allDates.UnionWith(chapterDates);
-        allDates.UnionWith(characterDates);
-        allDates.UnionWith(worldEntityDates);
-        allDates.UnionWith(timelineEventDates);
-
-        var checkDate = todayUtc;
-        if (!allDates.Contains(checkDate))
-        {
-            checkDate = checkDate.AddDays(-1);
-        }
-
-        while (allDates.Contains(checkDate))
-        {
-            streakDays++;
-            checkDate = checkDate.AddDays(-1);
-        }
-
-        var startOfWeek = todayUtc.AddDays(-todayIndex); // Monday of current week
+        var activitySet = new HashSet<DateTime>(recentActivities);
         for (int i = 0; i < 7; i++)
         {
-            var dayDate = startOfWeek.AddDays(i);
-            activeDaysOfWeek[i] = allDates.Contains(dayDate);
-        }
-
-        // Also update UserGoals table if streak changed
-        var userGoal = await DbContext.UserGoals.FirstOrDefaultAsync(ug => ug.UserId == userId);
-        if (userGoal != null)
-        {
-            if (userGoal.CurrentStreakDays != streakDays)
-            {
-                userGoal.CurrentStreakDays = streakDays;
-                userGoal.LastUpdated = DateTime.UtcNow;
-                await DbContext.SaveChangesAsync();
-            }
-        }
-        else
-        {
-            DbContext.UserGoals.Add(new UserGoal
-            {
-                UserId = userId,
-                CurrentStreakDays = streakDays,
-                LastUpdated = DateTime.UtcNow
-            });
-            await DbContext.SaveChangesAsync();
+            activeDaysOfWeek[i] = activitySet.Contains(startOfWeek.AddDays(i));
         }
     }
 
@@ -354,21 +315,68 @@
         </div>
     </div>
 
-    <!-- Current Workspace -->
-    <div class="px-4 mt-4 mb-2 sidebar-workspace-wrapper flex-shrink-0">
+    <!-- Current Workspace / Story Selector -->
+    <div class="px-4 mt-4 mb-2 sidebar-workspace-wrapper flex-shrink-0 position-relative">
         <div class="text-uppercase fw-bold text-white mb-2 sidebar-text-label" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.6; font-family: 'Inter', sans-serif;">CURRENT WORKSPACE</div>
-        <div class="d-flex align-items-center justify-content-between p-2 rounded-3 cursor-pointer" style="background: rgba(255, 255, 255, 0.05);">
-            <div class="d-flex align-items-center gap-2">
-                <i data-lucide="home" style="width: 16px; height: 16px; color: #94A3B8; flex-shrink: 0;"></i>
-                <span class="text-white fw-medium sidebar-text-label" style="font-size: 0.85rem; font-family: 'Inter', sans-serif;">My Workspace</span>
+        
+        <div class="dropdown">
+            <div class="d-flex align-items-center justify-content-between p-2 rounded-3 cursor-pointer sidebar-workspace-selector" 
+                 id="workspaceDropdown" 
+                 data-bs-toggle="dropdown" 
+                 aria-expanded="false" 
+                 style="background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); transition: all 0.2s ease;">
+                <div class="d-flex align-items-center gap-2 text-truncate me-1">
+                    <i data-lucide="book-open" style="width: 16px; height: 16px; color: #13A8A6; flex-shrink: 0;"></i>
+                    <span class="text-white fw-semibold sidebar-text-label text-truncate" style="font-size: 0.85rem; font-family: 'Inter', sans-serif;" title="@(activeStory?.Title ?? "My Workspace")">
+                        @(activeStory?.Title ?? "My Workspace")
+                    </span>
+                </div>
+                <i data-lucide="chevron-down" class="sidebar-text-label flex-shrink-0" style="width: 14px; height: 14px; color: #94A3B8;"></i>
             </div>
-            <i data-lucide="chevron-down" class="sidebar-text-label" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+
+            <ul class="dropdown-menu dropdown-menu-dark sidebar-workspace-dropdown shadow-lg border-0 mt-1 py-2" aria-labelledby="workspaceDropdown" style="width: 100%; min-width: 220px; background-color: #0F172A !important; border: 1px solid rgba(255,255,255,0.14) !important; border-radius: 12px; z-index: 1050;">
+                <li class="px-3 py-1 text-uppercase fw-bold" style="font-size: 9px; letter-spacing: 0.08em; color: #94A3B8 !important;">Select Active Story</li>
+                <li><hr class="dropdown-divider my-1" style="border-color: rgba(255, 255, 255, 0.12) !important;"></li>
+                @if (userStories != null && userStories.Any())
+                {
+                    @foreach (var s in userStories)
+                    {
+                        var isSelected = activeStory != null && activeStory.Id == s.Id;
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none small @(isSelected ? "active" : "")"
+                               href="javascript:void(0)"
+                               onclick="switchGlobalStory('@s.Id', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(s.Title))')"
+                               style="@(isSelected ? "background-color: rgba(19, 168, 166, 0.2) !important; color: #13A8A6 !important;" : "color: #E2E8F0 !important;")">
+                                <div class="d-flex align-items-center gap-2 text-truncate">
+                                    <i data-lucide="book" style="width: 14px; height: 14px; color: @(isSelected ? "#13A8A6" : "#94A3B8");"></i>
+                                    <span class="text-truncate" style="font-weight: @(isSelected ? "600" : "400"); color: @(isSelected ? "#13A8A6" : "#E2E8F0");">@s.Title</span>
+                                </div>
+                                @if (isSelected)
+                                {
+                                    <i data-lucide="check" style="width: 14px; height: 14px; color: #13A8A6;"></i>
+                                }
+                            </a>
+                        </li>
+                    }
+                }
+                else
+                {
+                    <li class="px-3 py-2 small italic" style="color: #94A3B8 !important;">No stories created yet</li>
+                }
+                <li><hr class="dropdown-divider my-1" style="border-color: rgba(255, 255, 255, 0.12) !important;"></li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-decoration-none small fw-medium" style="color: #13A8A6 !important;" href="@Url.Action("Create", "Stories")">
+                        <i data-lucide="plus-circle" style="width: 14px; height: 14px; color: #13A8A6 !important;"></i>
+                        <span style="color: #13A8A6 !important;">+ Create New Story</span>
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
 
     <!-- Navigation Menu -->
     <div class="flex-grow-1 px-3 py-3 no-scrollbar" style="overflow-y: auto;">
-        <a href="@Url.Action("Index", "Dashboard")" title="Dashboard" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Dashboard" || controller == null ? "active" : "")">
+        <a href="@Url.Action("Index", "Dashboard", new { storyId = activeStory?.Id })" title="Dashboard" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Dashboard" || controller == null ? "active" : "")">
             <i data-lucide="layout-grid" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
             <span class="sidebar-text-label" style="font-size: 0.85rem;">Dashboard</span>
         </a>
@@ -376,12 +384,12 @@
             <i data-lucide="book" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
             <span class="sidebar-text-label" style="font-size: 0.85rem;">Stories</span>
         </a>
-        <a href="@Url.Action("Index", "Characters")" title="Characters" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Characters" ? "active" : "")">
+        <a href="@Url.Action("Index", "Characters", new { storyId = activeStory?.Id })" title="Characters" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(controller == "Characters" ? "active" : "")">
             <i data-lucide="users" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
             <span class="sidebar-text-label" style="font-size: 0.85rem;">Characters</span>
         </a>
         <div>
-            <a href="@Url.Action("Index", "WorldBuilding")" title="World Building" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(controller == "WorldBuilding" ? "active" : "")" data-bs-toggle="collapse" data-bs-target="#worldBuildingSubmenu" aria-expanded="@(controller == "WorldBuilding" ? "true" : "false")">
+            <a href="@Url.Action("Index", "WorldBuilding", new { storyId = activeStory?.Id })" title="World Building" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(controller == "WorldBuilding" ? "active" : "")" data-bs-toggle="collapse" data-bs-target="#worldBuildingSubmenu" aria-expanded="@(controller == "WorldBuilding" ? "true" : "false")">
                 <div class="d-flex align-items-center gap-3">
                     <i data-lucide="globe-2" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
                     <span class="sidebar-text-label" style="font-size: 0.85rem;">World Building</span>
@@ -389,15 +397,15 @@
                 <i data-lucide="chevron-down" class="sidebar-text-label" style="width: 14px; height: 14px;"></i>
             </a>
             <div class="collapse @(controller == "WorldBuilding" ? "show" : "") ms-3 ps-3 border-start border-white border-opacity-10 my-1 sidebar-text-label" id="worldBuildingSubmenu">
-                <a href="@Url.Action("Index", "WorldBuilding")" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">World Dashboard</a>
-                <a href="@Url.Action("Index", "WorldBuilding", new { category = "All Entities" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1 fw-semibold text-white">Entities</a>
-                <a href="@Url.Action("Index", "WorldBuilding", new { category = "Locations" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Maps</a>
-                <a href="@Url.Action("Index", "WorldBuilding", new { category = "Organizations" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Relationships</a>
-                <a href="@Url.Action("Index", "WorldBuilding")" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small" data-bs-toggle="modal" data-bs-target="#templatesModal">Templates</a>
+                <a href="@Url.Action("Index", "WorldBuilding", new { storyId = activeStory?.Id })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">World Dashboard</a>
+                <a href="@Url.Action("Index", "WorldBuilding", new { storyId = activeStory?.Id, category = "All Entities" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1 fw-semibold text-white">Entities</a>
+                <a href="@Url.Action("Index", "WorldBuilding", new { storyId = activeStory?.Id, category = "Locations" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Maps</a>
+                <a href="@Url.Action("Index", "WorldBuilding", new { storyId = activeStory?.Id, category = "Organizations" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Relationships</a>
+                <a href="@Url.Action("Index", "WorldBuilding", new { storyId = activeStory?.Id })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small" data-bs-toggle="modal" data-bs-target="#templatesModal">Templates</a>
             </div>
         </div>
         <div>
-            <a href="@Url.Action("Index", "Timeline")" title="Timeline" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(controller == "Timeline" ? "active" : "")" data-bs-toggle="collapse" data-bs-target="#timelineSubmenu" aria-expanded="@(controller == "Timeline" ? "true" : "false")">
+            <a href="@Url.Action("Index", "Timeline", new { storyId = activeStory?.Id })" title="Timeline" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(controller == "Timeline" ? "active" : "")" data-bs-toggle="collapse" data-bs-target="#timelineSubmenu" aria-expanded="@(controller == "Timeline" ? "true" : "false")">
                 <div class="d-flex align-items-center gap-3">
                     <i data-lucide="clock" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
                     <span class="sidebar-text-label" style="font-size: 0.85rem;">Timeline</span>
@@ -405,11 +413,11 @@
                 <i data-lucide="chevron-down" class="sidebar-text-label" style="width: 14px; height: 14px;"></i>
             </a>
             <div class="collapse @(controller == "Timeline" ? "show" : "") ms-3 ps-3 border-start border-white border-opacity-10 my-1 sidebar-text-label" id="timelineSubmenu">
-                <a href="@Url.Action("Index", "Timeline")" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Timeline Dashboard</a>
-                <a href="@Url.Action("Index", "Timeline", new { activeTab = "TimelineView", viewMode = "Vertical" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Events</a>
-                <a href="@Url.Action("Index", "Timeline", new { activeTab = "CalendarView" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Calendar</a>
-                <a href="@Url.Action("Index", "Timeline", new { activeTab = "ArcView" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Story Arcs</a>
-                <a href="@Url.Action("Index", "Timeline", new { activeTab = "TimelineView", viewMode = "Graph" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small">Timeline Views</a>
+                <a href="@Url.Action("Index", "Timeline", new { storyId = activeStory?.Id })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Timeline Dashboard</a>
+                <a href="@Url.Action("Index", "Timeline", new { storyId = activeStory?.Id, activeTab = "TimelineView", viewMode = "Vertical" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Events</a>
+                <a href="@Url.Action("Index", "Timeline", new { storyId = activeStory?.Id, activeTab = "CalendarView" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Calendar</a>
+                <a href="@Url.Action("Index", "Timeline", new { storyId = activeStory?.Id, activeTab = "ArcView" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small mb-1">Story Arcs</a>
+                <a href="@Url.Action("Index", "Timeline", new { storyId = activeStory?.Id, activeTab = "TimelineView", viewMode = "Graph" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small">Timeline Views</a>
             </div>
         </div>
         <a href="javascript:void(0)" title="Chapters (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
@@ -517,6 +525,171 @@
         var isCollapsed = sidebar.classList.contains('sidebar-collapsed');
         localStorage.setItem('storyverse_sidebar_collapsed', isCollapsed ? 'true' : 'false');
     }
+
+    function switchGlobalStory(storyId, storyTitle) {
+        if (!storyId) return;
+
+        // 1. Immediately update Sidebar Workspace Selector UI
+        if (storyTitle) {
+            var label = document.querySelector('#workspaceDropdown .sidebar-text-label');
+            if (label) {
+                label.textContent = storyTitle;
+                label.setAttribute('title', storyTitle);
+            }
+        }
+
+        // Update active class & checkmarks in dropdown items
+        var items = document.querySelectorAll('.sidebar-workspace-dropdown .dropdown-item');
+        items.forEach(function(item) {
+            var onclickVal = item.getAttribute('onclick') || '';
+            var checkIcon = item.querySelector('i[data-lucide="check"]');
+            if (onclickVal.includes("'" + storyId + "'")) {
+                item.classList.add('active');
+                item.style.backgroundColor = 'rgba(19, 168, 166, 0.2)';
+                item.style.color = '#13A8A6';
+                var s = item.querySelector('span');
+                if (s) { s.style.fontWeight = '600'; s.style.color = '#13A8A6'; }
+                var i = item.querySelector('i[data-lucide="book"]');
+                if (i) { i.style.color = '#13A8A6'; }
+                if (!checkIcon && !item.getAttribute('href')?.includes('/Stories/Create')) {
+                    var checkEl = document.createElement('i');
+                    checkEl.setAttribute('data-lucide', 'check');
+                    checkEl.style.width = '14px';
+                    checkEl.style.height = '14px';
+                    checkEl.style.color = '#13A8A6';
+                    item.appendChild(checkEl);
+                }
+            } else if (!item.getAttribute('href')?.includes('/Stories/Create')) {
+                item.classList.remove('active');
+                item.style.backgroundColor = 'transparent';
+                item.style.color = '#E2E8F0';
+                var s = item.querySelector('span');
+                if (s) { s.style.fontWeight = '400'; s.style.color = '#E2E8F0'; }
+                var i = item.querySelector('i[data-lucide="book"]');
+                if (i) { i.style.color = '#94A3B8'; }
+                if (checkIcon) { checkIcon.remove(); }
+            }
+        });
+
+        // Close dropdown
+        var dropdownEl = document.getElementById('workspaceDropdown');
+        if (dropdownEl && typeof bootstrap !== 'undefined') {
+            var bsDropdown = bootstrap.Dropdown.getInstance(dropdownEl);
+            if (bsDropdown) bsDropdown.hide();
+        }
+
+        // Update all sidebar navigation link hrefs to carry the selected storyId
+        var navLinks = document.querySelectorAll('.sidebar-nav-link, #worldBuildingSubmenu a, #timelineSubmenu a');
+        navLinks.forEach(function(link) {
+            var href = link.getAttribute('href');
+            if (href && href !== 'javascript:void(0)' && !href.startsWith('#')) {
+                try {
+                    var u = new URL(href, window.location.origin);
+                    u.searchParams.set('storyId', storyId);
+                    link.setAttribute('href', u.pathname + u.search);
+                } catch(e) {}
+            }
+        });
+
+        var currentPath = window.location.pathname;
+        var currentUrl = new URL(window.location.href);
+        
+        var lowerPath = currentPath.toLowerCase();
+        if (lowerPath.includes('/edit') || lowerPath.includes('/details') || lowerPath.includes('/create')) {
+            if (lowerPath.includes('/characters')) {
+                currentPath = '/Characters';
+            } else if (lowerPath.includes('/worldbuilding')) {
+                currentPath = '/WorldBuilding';
+            } else if (lowerPath.includes('/timeline')) {
+                currentPath = '/Timeline';
+            } else if (lowerPath.includes('/chapters')) {
+                currentPath = '/Chapters';
+            } else if (lowerPath.includes('/stories')) {
+                currentPath = '/Stories';
+            }
+        }
+        
+        currentUrl.pathname = currentPath;
+        currentUrl.searchParams.set('storyId', storyId);
+
+        var formData = new URLSearchParams();
+        formData.append('storyId', storyId);
+        formData.append('returnUrl', currentUrl.pathname + currentUrl.search);
+
+        // 2. Persist active story in session/cookie via POST
+        fetch('/Stories/SetGlobalStory', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData.toString()
+        });
+
+        // 3. Dynamic SPA-style content fetch without browser page refresh
+        var targetUrl = currentUrl.toString();
+        history.pushState({ storyId: storyId }, '', targetUrl);
+
+        var mainWrapper = document.querySelector('.main-content-wrapper');
+        if (mainWrapper) {
+            mainWrapper.style.opacity = '0.65';
+            mainWrapper.style.pointerEvents = 'none';
+
+            fetch(targetUrl, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function(res) { return res.text(); })
+            .then(function(htmlText) {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(htmlText, 'text/html');
+                var newContent = doc.querySelector('.main-content-wrapper');
+                if (newContent) {
+                    mainWrapper.innerHTML = newContent.innerHTML;
+                }
+                mainWrapper.style.opacity = '1';
+                mainWrapper.style.pointerEvents = 'auto';
+
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+
+                // Execute embedded scripts
+                var scripts = mainWrapper.querySelectorAll('script');
+                scripts.forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(function(attr) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+            })
+            .catch(function(err) {
+                mainWrapper.style.opacity = '1';
+                mainWrapper.style.pointerEvents = 'auto';
+                window.location.href = targetUrl;
+            });
+        } else {
+            window.location.href = targetUrl;
+        }
+    }
+
+    // Handle browser back/forward buttons seamlessly
+    window.addEventListener('popstate', function(e) {
+        var mainWrapper = document.querySelector('.main-content-wrapper');
+        if (mainWrapper) {
+            fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function(res) { return res.text(); })
+                .then(function(htmlText) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(htmlText, 'text/html');
+                    var newContent = doc.querySelector('.main-content-wrapper');
+                    if (newContent) {
+                        mainWrapper.innerHTML = newContent.innerHTML;
+                    }
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+        }
+    });
 
     // Restore state on page load
     (function() {

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" fill="none">
+  <!-- Background -->
+  <rect width="200" height="140" rx="12" fill="#FFFBEB"/>
+
+  <!-- Story arc curve -->
+  <path d="M18 110 Q 45 50, 80 80 Q 115 110, 140 50 Q 155 20, 182 35" stroke="#D97706" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- Gradient fill under arc -->
+  <path d="M18 110 Q 45 50, 80 80 Q 115 110, 140 50 Q 155 20, 182 35 L 182 130 L 18 130 Z" fill="#FEF3C7" opacity="0.5"/>
+
+  <!-- Event nodes on arc -->
+  <circle cx="18" cy="110" r="7" fill="#F59E0B" stroke="white" stroke-width="2"/>
+  <circle cx="80" cy="80" r="7" fill="#F59E0B" stroke="white" stroke-width="2"/>
+  <circle cx="140" cy="50" r="7" fill="#D97706" stroke="white" stroke-width="2"/>
+  <circle cx="182" cy="35" r="7" fill="#B45309" stroke="white" stroke-width="2"/>
+
+  <!-- Star at climax -->
+  <polygon points="140,25 142,31 149,31 143,35 145,42 140,38 135,42 137,35 131,31 138,31" fill="#F59E0B"/>
+
+  <!-- Labels below nodes -->
+  <rect x="6" y="122" width="24" height="4" rx="2" fill="#D97706" opacity="0.6"/>
+  <rect x="68" y="92" width="24" height="4" rx="2" fill="#D97706" opacity="0.6"/>
+  <rect x="128" y="62" width="24" height="4" rx="2" fill="#D97706" opacity="0.6"/>
+  <rect x="170" y="47" width="24" height="4" rx="2" fill="#D97706" opacity="0.6"/>
+</svg>

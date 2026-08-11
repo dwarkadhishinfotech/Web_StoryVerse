@@ -1,0 +1,215 @@
+// Peacock & Parchment Theme Loader Component
+
+// -------------------------------------------------------------
+// Top Progress Bar (for AJAX/Fetch background activity)
+// -------------------------------------------------------------
+#svTopProgressBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, #13A8A6, #1E439B, #C5A880, #13A8A6);
+  background-size: 200% 100%;
+  z-index: 100000;
+  box-shadow: 0 0 10px rgba(19, 168, 166, 0.7), 0 0 5px rgba(197, 168, 128, 0.5);
+  transition: width 0.2s ease, opacity 0.3s ease;
+  pointer-events: none;
+  opacity: 0;
+  animation: svProgressShimmer 2s linear infinite;
+
+  &.active {
+    opacity: 1;
+  }
+}
+
+@keyframes svProgressShimmer {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+// -------------------------------------------------------------
+// Full-Screen Theme Loader Overlay (Clean Frameless / Cardless)
+// -------------------------------------------------------------
+.sv-loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 27, 42, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+
+  &.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  // Frameless Content Wrapper
+  .sv-loader-card,
+  .sv-loader-content {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    animation: svFadeScale 0.35s ease-out;
+
+    &::before {
+      display: none !important;
+    }
+  }
+
+  // Theme Ring & Logo Container
+  .sv-loader-graphic {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 20px rgba(19, 168, 166, 0.4));
+
+    // Outer Dual Spinning Rings
+    .sv-loader-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3.5px solid transparent;
+      border-top-color: #13A8A6;
+      border-right-color: #38BDF8;
+      animation: svSpin 1.2s linear infinite;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 5px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-bottom-color: #C5A880;
+        border-left-color: #13A8A6;
+        animation: svSpinReverse 0.9s linear infinite;
+      }
+    }
+
+    // Inner Branding Logo/Icon
+    .sv-loader-logo {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      z-index: 2;
+      animation: svPulse 1.8s ease-in-out infinite;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+    }
+  }
+
+  // Text Label
+  .sv-loader-text {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: #FFFFFF;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  }
+
+  // Subtitle / Dots
+  .sv-loader-subtext {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+
+    .sv-dot {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background-color: #13A8A6;
+      box-shadow: 0 0 6px rgba(19, 168, 166, 0.8);
+      animation: svDotBlink 1.4s infinite ease-in-out both;
+
+      &:nth-child(1) { animation-delay: 0s; }
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.4s; }
+    }
+  }
+}
+
+// Inline Button Spinner State
+.btn-sv-loading {
+  position: relative;
+  pointer-events: none !important;
+  opacity: 0.85;
+
+  .btn-sv-text {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 1.2rem;
+    height: 1.2rem;
+    top: calc(50% - 0.6rem);
+    left: calc(50% - 0.6rem);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: svSpin 0.75s linear infinite;
+  }
+}
+
+// -------------------------------------------------------------
+// Animations
+// -------------------------------------------------------------
+@keyframes svSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes svSpinReverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes svPulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.85; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes svFadeScale {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes svDotBlink {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.2); }
+}

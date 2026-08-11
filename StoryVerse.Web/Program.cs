@@ -149,6 +149,9 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     StoryVerse.Web.Services.IQuoteService,
     StoryVerse.Web.Services.QuoteService>();
+builder.Services.AddScoped<
+    StoryVerse.Web.Services.IActiveStoryService,
+    StoryVerse.Web.Services.ActiveStoryService>();
 
 
 // ============================================================

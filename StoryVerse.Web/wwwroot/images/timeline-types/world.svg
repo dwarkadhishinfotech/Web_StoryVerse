@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" fill="none">
+  <!-- Background sky -->
+  <rect width="200" height="140" rx="12" fill="#EFF6FF"/>
+
+  <!-- Ground line -->
+  <line x1="0" y1="122" x2="200" y2="122" stroke="#94A3B8" stroke-width="1.5"/>
+
+  <!-- Mountains / hills in back -->
+  <path d="M0 122 L 30 72 L 60 95 L 90 50 L 120 95 L 150 65 L 200 122 Z" fill="#CBD5E1" opacity="0.6"/>
+
+  <!-- Castle towers -->
+  <rect x="78" y="58" width="44" height="64" fill="#94A3B8"/>
+
+  <!-- Castle battlements (top of main wall) -->
+  <rect x="74" y="52" width="8" height="12" rx="1" fill="#64748B"/>
+  <rect x="86" y="52" width="8" height="12" rx="1" fill="#64748B"/>
+  <rect x="98" y="52" width="8" height="12" rx="1" fill="#64748B"/>
+  <rect x="110" y="52" width="8" height="12" rx="1" fill="#64748B"/>
+
+  <!-- Left tower -->
+  <rect x="62" y="72" width="22" height="50" fill="#64748B"/>
+  <rect x="58" y="66" width="8" height="10" rx="1" fill="#475569"/>
+  <rect x="68" y="66" width="8" height="10" rx="1" fill="#475569"/>
+  <rect x="78" y="66" width="8" height="10" rx="1" fill="#475569"/>
+
+  <!-- Right tower -->
+  <rect x="116" y="72" width="22" height="50" fill="#64748B"/>
+  <rect x="114" y="66" width="8" height="10" rx="1" fill="#475569"/>
+  <rect x="124" y="66" width="8" height="10" rx="1" fill="#475569"/>
+  <rect x="134" y="66" width="8" height="10" rx="1" fill="#475569"/>
+
+  <!-- Gate/door -->
+  <path d="M91 122 L91 98 Q100 90 109 98 L109 122 Z" fill="#1E293B"/>
+
+  <!-- Windows -->
+  <rect x="84" y="78" width="10" height="12" rx="2" fill="#DBEAFE"/>
+  <rect x="106" y="78" width="10" height="12" rx="2" fill="#DBEAFE"/>
+
+  <!-- Flag -->
+  <line x1="100" y1="52" x2="100" y2="28" stroke="#64748B" stroke-width="1.5"/>
+  <polygon points="100,28 116,33 100,38" fill="#EF4444"/>
+
+  <!-- Clouds -->
+  <ellipse cx="30" cy="30" rx="18" ry="8" fill="white" opacity="0.9"/>
+  <ellipse cx="44" cy="28" rx="14" ry="7" fill="white" opacity="0.9"/>
+  <ellipse cx="158" cy="24" rx="16" ry="7" fill="white" opacity="0.9"/>
+  <ellipse cx="172" cy="22" rx="12" ry="6" fill="white" opacity="0.9"/>
+</svg>

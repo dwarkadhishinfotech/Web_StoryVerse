@@ -1,14 +1,34 @@
 @model StoryVerse.Web.Models.TimelineFormViewModel
 @{
     ViewData["Title"] = Model.IsEdit ? "Edit Timeline - StoryVerse" : "Create New Timeline - StoryVerse";
+    var defaultCover = "/images/empty-states/book-feather-new.png";
+    var storyCoverUrl = !string.IsNullOrWhiteSpace(Model.StoryCoverImageUrl) ? Model.StoryCoverImageUrl : defaultCover;
 }
 
 <style>
-    /* Wizard Header */
+    /* Main Page Container & Background */
+    .timeline-page-container {
+        position: relative;
+        padding-bottom: 3rem;
+    }
+
+    .peacock-header-watermark {
+        position: absolute;
+        top: -15px;
+        right: 0;
+        width: 320px;
+        height: auto;
+        opacity: 0.85;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Page Header */
     .wizard-title-font {
         font-family: 'Playfair Display', serif;
         font-weight: 700;
         color: #0F172A;
+        font-size: 1.85rem;
     }
     
     /* Stepper Styling */
@@ -17,12 +37,12 @@
         align-items: center;
         justify-content: space-between;
         position: relative;
-        padding: 1.5rem 1rem;
-        margin-bottom: 2rem;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.75rem;
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-radius: 16px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
     .stepper-progress-line {
         position: absolute;
@@ -38,7 +58,7 @@
         top: 40px;
         left: 8%;
         height: 2px;
-        background: #13A8A6;
+        background: #0D9488;
         z-index: 2;
         transition: width 0.3s ease;
     }
@@ -53,16 +73,16 @@
         padding: 0 10px;
     }
     .step-bubble {
-        width: 36px;
-        height: 36px;
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
-        background: #F1F5F9;
+        background: #F8FAFC;
         color: #64748B;
         font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         border: 2px solid #E2E8F0;
         transition: all 0.25s ease;
         font-size: 0.9rem;
@@ -79,7 +99,7 @@
         border-color: #10B981;
     }
     .step-label {
-        font-size: 0.82rem;
+        font-size: 0.83rem;
         font-weight: 700;
         color: #64748B;
         margin-bottom: 2px;
@@ -98,34 +118,54 @@
         border: 1px solid #E2E8F0;
         border-radius: 16px;
         padding: 1.75rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
     .form-label-custom {
         font-size: 0.84rem;
         font-weight: 700;
         color: #1E293B;
         margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
     .form-label-custom span.req {
         color: #EF4444;
     }
 
+    .form-control-custom {
+        border: 1px solid #CBD5E1;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        color: #0F172A;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .form-control-custom:focus {
+        border-color: #0D9488;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+        outline: none;
+    }
+
     /* Color Swatch Circles */
     .color-swatch-picker {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         align-items: center;
         flex-wrap: wrap;
+        padding-top: 4px;
     }
     .color-circle-btn {
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
         border: 2px solid transparent;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
+        color: white;
+        font-size: 14px;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .color-circle-btn:hover {
@@ -140,26 +180,28 @@
         background: #FFFFFF;
         border: 2px solid #E2E8F0;
         border-radius: 14px;
-        padding: 18px;
+        padding: 14px 14px 16px;
         cursor: pointer;
         transition: all 0.2s ease;
         position: relative;
         text-align: center;
         height: 100%;
+        overflow: hidden;
     }
     .type-card:hover {
         border-color: #99F6E4;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.06);
+        box-shadow: 0 6px 18px rgba(13, 148, 136, 0.10);
     }
     .type-card.selected {
         border-color: #0D9488;
         background: rgba(13, 148, 136, 0.03);
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
     }
     .type-card-badge {
         position: absolute;
-        top: 12px;
-        right: 12px;
+        top: 10px;
+        right: 10px;
         width: 22px;
         height: 22px;
         border-radius: 50%;
@@ -169,12 +211,21 @@
         align-items: center;
         justify-content: center;
         font-size: 12px;
+        z-index: 2;
     }
     .type-card.selected .type-card-badge {
         display: flex;
     }
+    .type-card-img {
+        width: 100%;
+        height: 108px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: block;
+    }
 
-    /* Theme Dropdown */
+    /* Dropdown Component */
     .theme-dropdown-wrapper {
         position: relative;
     }
@@ -222,16 +273,6 @@
     .theme-dropdown-option.active-option {
         background: #CCFBF1;
     }
-    .theme-dropdown-option .option-title {
-        font-weight: 700;
-        font-size: 0.88rem;
-        color: #0F172A;
-    }
-    .theme-dropdown-option .option-desc {
-        font-size: 0.76rem;
-        color: #64748B;
-        margin-top: 2px;
-    }
 
     /* Toggle Switches */
     .form-switch-custom {
@@ -258,7 +299,7 @@
     .file-upload-zone {
         border: 2px dashed #CBD5E1;
         border-radius: 12px;
-        padding: 20px;
+        padding: 24px;
         text-align: center;
         background: #F8FAFC;
         cursor: pointer;
@@ -274,9 +315,11 @@
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-radius: 16px;
-        padding: 1.25rem;
+        padding: 1.35rem;
         margin-bottom: 1.25rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        position: relative;
+        overflow: hidden;
     }
     .sidebar-widget-title {
         font-family: 'Playfair Display', serif;
@@ -291,8 +334,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 0.82rem;
-        padding: 8px 0;
+        font-size: 0.83rem;
+        padding: 10px 0;
         border-bottom: 1px dashed #F1F5F9;
     }
     .summary-row:last-child {
@@ -300,7 +343,7 @@
     }
     .summary-label {
         color: #64748B;
-        font-weight: 600;
+        font-weight: 500;
         display: flex;
         align-items: center;
         gap: 6px;
@@ -310,39 +353,314 @@
         font-weight: 700;
     }
 
+    /* Calendar Watermark on Summary Card */
+    .card-calendar-watermark {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 48px;
+        height: 48px;
+        opacity: 0.12;
+        pointer-events: none;
+    }
+
+    /* Quill Watermark on Tips Card */
+    .card-quill-watermark {
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
+        width: 60px;
+        height: 60px;
+        opacity: 0.12;
+        pointer-events: none;
+    }
+
     .tip-bullet {
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        font-size: 0.8rem;
+        font-size: 0.82rem;
         color: #475569;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
-    .tip-bullet i {
+    .tip-check-circle {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1.5px solid #0D9488;
         color: #0D9488;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
-        margin-top: 2px;
+        margin-top: 1px;
     }
+    .tip-check-circle i {
+        width: 11px;
+        height: 11px;
+    }
+
+    .inspiration-card-bg {
+        background: linear-gradient(135deg, #FFFFFF 0%, #FAFBFD 100%);
+    }
+
+    .btn-teal {
+        background-color: #0D9488;
+        color: #FFFFFF;
+        border: none;
+        transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+    .btn-teal:hover {
+        background-color: #0F766E;
+        color: #FFFFFF;
+        transform: translateY(-1px);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       Step 4 – Story Arc Rich UI
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    /* Tab Navigation */
+    .arc-tab-nav {
+        display: flex;
+        gap: 0;
+        border-bottom: 2px solid #E2E8F0;
+    }
+    .arc-tab-btn {
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        padding: 8px 18px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #64748B;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+    }
+    .arc-tab-btn:hover { color: #0D9488; }
+    .arc-tab-btn.active {
+        color: #0D9488;
+        border-bottom-color: #0D9488;
+    }
+
+    /* Arc Item Cards */
+    .arc-item-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        background: #FFFFFF;
+        transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+        user-select: none;
+    }
+    .arc-item-card:hover {
+        border-color: #99F6E4;
+        background: #F0FDFA;
+        box-shadow: 0 2px 8px rgba(13,148,136,0.06);
+    }
+    .arc-item-card.arc-card-selected {
+        border-color: #0D9488;
+        background: rgba(13,148,136,0.04);
+    }
+
+    /* Arc Icon Circle */
+    .arc-icon-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* Primary Badge */
+    .arc-primary-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: #FEF3C7;
+        color: #D97706;
+        border: 1px solid #FDE68A;
+        border-radius: 20px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 1px 7px;
+    }
+
+    /* Arc Type Badge */
+    .arc-type-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 20px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        white-space: nowrap;
+    }
+
+    /* Progress Track */
+    .arc-progress-track {
+        width: 72px;
+        height: 5px;
+        background: #E2E8F0;
+        border-radius: 99px;
+        overflow: hidden;
+    }
+    .arc-progress-bar {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.3s ease;
+    }
+
+    /* Checkbox visual */
+    .arc-check-area { margin-left: 8px; }
+    .arc-check-box {
+        width: 20px;
+        height: 20px;
+        border: 1.5px solid #CBD5E1;
+        border-radius: 6px;
+        background: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        color: transparent;
+    }
+    .arc-check-box-checked {
+        background: #0D9488;
+        border-color: #0D9488;
+        color: #FFFFFF;
+    }
+
+    /* Selected Arc Tags Panel */
+    .arc-selected-panel {
+        background: #FAFBFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 14px;
+        min-height: 80px;
+    }
+    .arc-selected-tag {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 6px 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #1E293B;
+        margin-bottom: 6px;
+    }
+    .arc-tag-remove {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: #94A3B8;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        transition: color 0.15s;
+    }
+    .arc-tag-remove:hover { color: #EF4444; }
+
+    /* Arc Template Cards */
+    .arc-template-card {
+        background: #FFFFFF;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .arc-template-card:hover {
+        border-color: #0D9488;
+        box-shadow: 0 2px 8px rgba(13,148,136,0.08);
+    }
+
+    /* Scrollbar for arc list */
+    .arc-options-list::-webkit-scrollbar { width: 4px; }
+    .arc-options-list::-webkit-scrollbar-track { background: #F8FAFC; border-radius: 4px; }
+    .arc-options-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+    .arc-options-list::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+    /* Button Aesthetics & Theme Styling */
+    .btn-teal {
+        background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%) !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.22) !important;
+        transition: all 0.2s ease !important;
+    }
+    .btn-teal:hover, .btn-teal:focus {
+        background: linear-gradient(135deg, #0F766E 0%, #115E59 100%) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(13, 148, 136, 0.32) !important;
+        color: #FFFFFF !important;
+    }
+    .btn-outline-teal {
+        background: #FFFFFF !important;
+        border: 1.5px solid #0D9488 !important;
+        color: #0D9488 !important;
+        box-shadow: 0 2px 6px rgba(13, 148, 136, 0.08) !important;
+        transition: all 0.2s ease !important;
+    }
+    .btn-outline-teal:hover {
+        background: #0D9488 !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2) !important;
+    }
+    .btn-outline-secondary-themed {
+        background: #FFFFFF !important;
+        border: 1.5px solid #CBD5E1 !important;
+        color: #475569 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+        transition: all 0.2s ease !important;
+    }
+    .btn-outline-secondary-themed:hover {
+        background: #F8FAFC !important;
+        border-color: #94A3B8 !important;
+        color: #0F172A !important;
+        transform: translateY(-1px);
+    }
+
+    .min-width-0 { min-width: 0; }
 </style>
 
-<div class="container-fluid px-4 py-3">
-    <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
+<div class="container-fluid px-4 py-3 timeline-page-container">
+    <!-- Peacock Feather Background Watermark Image -->
+    <img src="/backgrounds/PeacockFeather.png" alt="Peacock Background" class="peacock-header-watermark" onerror="this.style.display='none'" />
+
+    <!-- Page Title & Navigation Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 position-relative" style="z-index: 1;">
         <div>
-            <h1 class="wizard-title-font h3 mb-1">
-                @(Model.IsEdit ? "Edit Timeline" : "Create New Timeline") 🪶
+            <h1 class="wizard-title-font mb-1 d-flex align-items-center gap-2">
+                @(Model.IsEdit ? "Edit Timeline" : "Create New Timeline")
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 34px; height: 34px; background: rgba(13, 148, 136, 0.1);">
+                    <i data-lucide="feather" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                </span>
             </h1>
-            <p class="text-secondary small mb-0">Build the chronological backbone of your story.</p>
+            <p class="text-secondary small mb-0 fw-medium">Build the chronological backbone of your story.</p>
         </div>
         <div>
-            <a href="@Url.Action("Index", "Timeline", new { storyId = Model.StoryId })" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                <i data-lucide="arrow-left" style="width: 14px; height: 14px;" class="me-1"></i> Back to Timelines
+            <a href="@Url.Action("Index", "Timeline", new { storyId = Model.StoryId })" class="btn btn-outline-teal rounded-pill px-3.5 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back to Timelines
             </a>
         </div>
     </div>
 
     <!-- Stepper Navigation -->
-    <div class="stepper-container">
+    <div class="stepper-container position-relative" style="z-index: 1;">
         <div class="stepper-progress-line"></div>
         <div class="stepper-progress-active" id="stepperProgressBar" style="width: 0%;"></div>
 
@@ -373,7 +691,7 @@
         </div>
     </div>
 
-    <form id="timelineWizardForm" action="@(Model.IsEdit ? Url.Action("Edit", "Timeline", new { id = Model.TimelineId }) : Url.Action("Create", "Timeline"))" method="post" enctype="multipart/form-data">
+    <form id="timelineWizardForm" action="@(Model.IsEdit ? Url.Action("Edit", "Timeline", new { id = Model.TimelineId }) : Url.Action("Create", "Timeline"))" method="post" enctype="multipart/form-data" class="position-relative" style="z-index: 1;">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="StoryId" id="inputStoryId" />
         <input type="hidden" asp-for="Color" id="inputColor" />
@@ -385,44 +703,48 @@
         <input type="hidden" asp-for="DefaultTimelineView" id="inputDefaultTimelineView" />
         <input type="hidden" asp-for="EventGrouping" id="inputEventGrouping" />
 
-        <div class="row">
-            <!-- Left Main Wizard Area -->
+        <div class="row g-4">
+            <!-- Left Main Form Area -->
             <div class="col-lg-8">
                 <!-- STEP 1: Basic Information -->
                 <div class="wizard-card wizard-step-panel" id="stepPanel1">
-                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                        <i data-lucide="hourglass" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                    <div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom">
+                        <div class="rounded-circle bg-teal-50 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(13, 148, 136, 0.08);">
+                            <i data-lucide="compass" class="text-teal-600" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                        </div>
                         <div>
-                            <h5 class="fw-bold text-slate-800 mb-0">Basic Information</h5>
+                            <h5 class="fw-bold text-slate-800 mb-0" style="font-size: 1.05rem;">Basic Information</h5>
                             <span class="text-muted" style="font-size: 0.78rem;">Provide the essential details for your new timeline.</span>
                         </div>
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-12">
+                        <!-- Row 1: Timeline Name (Left) & Description (Right) -->
+                        <div class="col-md-6">
                             <label class="form-label-custom">Timeline Name <span class="req">*</span></label>
                             <div class="position-relative">
-                                <input type="text" asp-for="Name" class="form-control rounded-3" id="timelineNameInput" placeholder="e.g. Main Timeline" maxlength="100" oninput="updateCharCount('timelineNameInput', 'nameCount', 100); updateSummary();" required />
+                                <input type="text" asp-for="Name" class="form-control form-control-custom pe-5" id="timelineNameInput" placeholder="e.g. Main Timeline" maxlength="100" oninput="updateCharCount('timelineNameInput', 'nameCount', 100); updateSummary();" required />
                                 <span class="position-absolute end-0 top-50 translate-middle-y me-3 text-muted" style="font-size: 0.72rem;" id="nameCount">0/100</span>
                             </div>
                             <span asp-validation-for="Name" class="text-danger small"></span>
                         </div>
 
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label class="form-label-custom">Description</label>
                             <div class="position-relative">
-                                <textarea asp-for="Description" class="form-control rounded-3" id="timelineDescInput" rows="3" placeholder="Describe the purpose of this timeline..." maxlength="500" oninput="updateCharCount('timelineDescInput', 'descCount', 500); updateSummary();"></textarea>
+                                <textarea asp-for="Description" class="form-control form-control-custom pe-5" id="timelineDescInput" rows="3" placeholder="Describe the purpose of this timeline..." maxlength="500" oninput="updateCharCount('timelineDescInput', 'descCount', 500); updateSummary();" style="min-height: 42px;"></textarea>
                                 <span class="position-absolute end-0 bottom-0 mb-2 me-3 text-muted" style="font-size: 0.72rem;" id="descCount">0/500</span>
                             </div>
                         </div>
 
+                        <!-- Row 2: Story (Left) & Timeline Color (Right) -->
                         <div class="col-md-6">
                             <label class="form-label-custom">Story <span class="req">*</span></label>
                             <div class="theme-dropdown-wrapper" id="ddStoryWrapper">
                                 <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddStoryWrapper')">
-                                    <span id="ddStoryText" class="fw-medium text-slate-800">
-                                        <i data-lucide="book-open" class="me-1 text-teal-600" style="width: 16px; height: 16px;"></i>
-                                        @Model.StoryTitle
+                                    <span id="ddStoryText" class="fw-medium text-slate-800 d-flex align-items-center gap-2">
+                                        <i data-lucide="book-open" class="text-teal-600" style="width: 16px; height: 16px; color: #0D9488;"></i>
+                                        <span id="storyTitleSpan">@Model.StoryTitle</span>
                                     </span>
                                     <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
                                 </div>
@@ -430,8 +752,11 @@
                                     <div class="options-list">
                                         @foreach (var s in Model.Stories)
                                         {
-                                            <div class="theme-dropdown-option @(s.Id == Model.StoryId ? "active-option" : "")" onclick="selectStoryOption('@s.Id', '@s.Title')">
-                                                <div class="option-title">📖 @s.Title</div>
+                                            <div class="theme-dropdown-option @(s.Id == Model.StoryId ? "active-option" : "")" onclick="selectStoryOption('@s.Id', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(s.Title))', '@(s.CoverImageUrl ?? defaultCover)')">
+                                                <div class="option-title d-flex align-items-center gap-2">
+                                                    <i data-lucide="book" style="width: 14px; height: 14px; color: #0D9488;"></i>
+                                                    <span>@s.Title</span>
+                                                </div>
                                                 <div class="option-desc">Select as active story context</div>
                                             </div>
                                         }
@@ -442,8 +767,8 @@
 
                         <div class="col-md-6">
                             <label class="form-label-custom">Timeline Color</label>
-                            <div class="color-swatch-picker pt-1">
-                                <div class="color-circle-btn selected" style="background-color: #13A8A6;" data-color="Teal" onclick="selectColorSwatch(this, 'Teal')"></div>
+                            <div class="color-swatch-picker">
+                                <div class="color-circle-btn selected" style="background-color: #13A8A6;" data-color="Teal" onclick="selectColorSwatch(this, 'Teal')"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
                                 <div class="color-circle-btn" style="background-color: #2563EB;" data-color="Blue" onclick="selectColorSwatch(this, 'Blue')"></div>
                                 <div class="color-circle-btn" style="background-color: #7C3AED;" data-color="Purple" onclick="selectColorSwatch(this, 'Purple')"></div>
                                 <div class="color-circle-btn" style="background-color: #DB2777;" data-color="Magenta" onclick="selectColorSwatch(this, 'Magenta')"></div>
@@ -454,142 +779,175 @@
                             </div>
                         </div>
 
+                        <!-- Row 3: Start Date (Left) & End Date (Right) -->
                         <div class="col-md-6">
                             <label class="form-label-custom">Start Date <span class="text-muted fw-normal">(Optional)</span></label>
-                            <input type="date" asp-for="StartDate" class="form-control rounded-3" id="startDateInput" onchange="updateSummary()" />
+                            <div class="position-relative">
+                                <input type="date" asp-for="StartDate" class="form-control form-control-custom ps-5" id="startDateInput" onchange="updateSummary()" />
+                                <i data-lucide="calendar" class="position-absolute start-0 top-50 translate-middle-y ms-3 text-slate-400" style="width: 16px; height: 16px;"></i>
+                            </div>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label-custom">End Date <span class="text-muted fw-normal">(Optional)</span></label>
-                            <input type="date" asp-for="EndDate" class="form-control rounded-3" id="endDateInput" onchange="updateSummary()" />
+                            <div class="position-relative">
+                                <input type="date" asp-for="EndDate" class="form-control form-control-custom ps-5" id="endDateInput" onchange="updateSummary()" />
+                                <i data-lucide="calendar" class="position-absolute start-0 top-50 translate-middle-y ms-3 text-slate-400" style="width: 16px; height: 16px;"></i>
+                            </div>
                         </div>
 
+                        <!-- Row 4: Tags -->
                         <div class="col-12">
                             <label class="form-label-custom">Tags <span class="text-muted fw-normal">(Optional)</span></label>
-                            <input type="text" asp-for="Tags" class="form-control rounded-3" id="tagsInput" placeholder="Add tags to organize your timeline (e.g. Main, Prequel, War)" />
-                            <span class="text-muted" style="font-size: 0.74rem;">Separate tags with commas or press enter.</span>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label-custom">Cover / Banner Image <span class="text-muted fw-normal">(Optional)</span></label>
-                            <div class="file-upload-zone" onclick="document.getElementById('bannerFileInput').click()">
-                                <i data-lucide="upload-cloud" style="width: 32px; height: 32px;" class="text-teal-600 mb-2"></i>
-                                <h6 class="fw-bold mb-1 text-slate-700">Click to upload cover image</h6>
-                                <p class="text-muted small mb-0">PNG, JPG or WEBP up to 5MB</p>
-                                <input type="file" asp-for="BannerFile" id="bannerFileInput" class="d-none" accept="image/*" onchange="handleFileSelect(this)" />
+                            <div class="position-relative">
+                                <input type="text" asp-for="Tags" class="form-control form-control-custom ps-5" id="tagsInput" placeholder="Add tags to organize your timeline" />
+                                <i data-lucide="tag" class="position-absolute start-0 top-50 translate-middle-y ms-3 text-slate-400" style="width: 16px; height: 16px;"></i>
                             </div>
-                            <div id="filePreviewContainer" class="mt-2 d-none">
-                                <div class="alert alert-info py-2 px-3 d-flex align-items-center justify-content-between mb-0" style="border-radius: 10px;">
-                                    <span id="fileNameDisplay" class="fw-semibold small"></span>
-                                    <button type="button" class="btn-close btn-sm" onclick="clearFileSelect()"></button>
-                                </div>
-                            </div>
+                            <div class="text-muted mt-1" style="font-size: 0.75rem;">Press Enter to add multiple tags</div>
                         </div>
                     </div>
 
-                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
-                        <div class="text-muted small d-flex align-items-center gap-1">
-                            <i data-lucide="info" style="width: 16px; height: 16px;" class="text-teal-600"></i> You can create timeline events after your timeline is created.
+                    <!-- Step 1 Footer Action Bar -->
+                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top rounded-3 p-3" style="background: #F8FAFC; border-color: #E2E8F0 !important;">
+                        <div class="text-muted small d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; background: rgba(13, 148, 136, 0.1);">
+                                <i data-lucide="info" style="width: 14px; height: 14px; color: #0D9488;"></i>
+                            </div>
+                            <span style="font-size: 0.8rem;">You can create timeline events after your timeline is created.</span>
                         </div>
-                        <button type="button" class="btn btn-teal rounded-pill px-4" onclick="jumpToStep(2)">
-                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
-                        </button>
+                        <div class="d-flex flex-column align-items-end">
+                            <button type="button" class="btn btn-teal rounded-pill px-4 py-2.5 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" onclick="jumpToStep(2)">
+                                Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            <span class="text-muted mt-1" style="font-size: 0.72rem; padding-right: 6px;">Step 1 of 5</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- STEP 2: Choose Timeline Type -->
                 <div class="wizard-card wizard-step-panel d-none" id="stepPanel2">
-                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                        <i data-lucide="hourglass" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                    <div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(13, 148, 136, 0.08);">
+                            <i data-lucide="hourglass" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                        </div>
                         <div>
-                            <h5 class="fw-bold text-slate-800 mb-0">Choose Timeline Type</h5>
+                            <h5 class="fw-bold text-slate-800 mb-0" style="font-size: 1.05rem;">Choose Timeline Type</h5>
                             <span class="text-muted" style="font-size: 0.78rem;">Select the timeline style that best fits your story needs. You can change this later.</span>
                         </div>
                     </div>
 
                     <div class="row g-3">
+                        <!-- Card 1: Chronological Timeline -->
                         <div class="col-md-6 col-lg-3">
                             <div class="type-card selected" data-type="Chronological Timeline" onclick="selectTypeCard(this, 'Chronological Timeline')">
                                 <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
-                                <div class="my-2"><i data-lucide="git-commit" style="width: 36px; height: 36px;" class="text-teal-600"></i></div>
-                                <h6 class="fw-bold text-slate-800 mb-1">Chronological Timeline</h6>
-                                <p class="text-muted small mb-0">Classic vertical timeline in chronological order.</p>
+                                <img src="/images/timeline-types/chronological.svg" alt="Chronological Timeline" class="type-card-img"/>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.88rem;">Chronological Timeline</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Classic vertical timeline in chronological order.</p>
                             </div>
                         </div>
+
+                        <!-- Card 2: Calendar Timeline -->
                         <div class="col-md-6 col-lg-3">
                             <div class="type-card" data-type="Calendar Timeline" onclick="selectTypeCard(this, 'Calendar Timeline')">
                                 <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
-                                <div class="my-2"><i data-lucide="calendar" style="width: 36px; height: 36px;" class="text-blue-600"></i></div>
-                                <h6 class="fw-bold text-slate-800 mb-1">Calendar Timeline</h6>
-                                <p class="text-muted small mb-0">View events in calendar format (day, week, month).</p>
+                                <img src="/images/timeline-types/calendar.svg" alt="Calendar Timeline" class="type-card-img"/>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.88rem;">Calendar Timeline</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">View events in calendar format (day, week, month).</p>
                             </div>
                         </div>
+
+                        <!-- Card 3: Story Arc Timeline -->
                         <div class="col-md-6 col-lg-3">
                             <div class="type-card" data-type="Story Arc Timeline" onclick="selectTypeCard(this, 'Story Arc Timeline')">
                                 <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
-                                <div class="my-2"><i data-lucide="trending-up" style="width: 36px; height: 36px;" class="text-purple-600"></i></div>
-                                <h6 class="fw-bold text-slate-800 mb-1">Story Arc Timeline</h6>
-                                <p class="text-muted small mb-0">Organize events according to your story arc and plot points.</p>
+                                <img src="/images/timeline-types/story-arc.svg" alt="Story Arc Timeline" class="type-card-img"/>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.88rem;">Story Arc Timeline</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Organize events according to your story arc and plot points.</p>
                             </div>
                         </div>
+
+                        <!-- Card 4: Character Timeline -->
                         <div class="col-md-6 col-lg-3">
                             <div class="type-card" data-type="Character Timeline" onclick="selectTypeCard(this, 'Character Timeline')">
                                 <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
-                                <div class="my-2"><i data-lucide="users" style="width: 36px; height: 36px;" class="text-pink-600"></i></div>
-                                <h6 class="fw-bold text-slate-800 mb-1">Character Timeline</h6>
-                                <p class="text-muted small mb-0">Track events from a specific character's perspective.</p>
+                                <img src="/images/timeline-types/character.svg" alt="Character Timeline" class="type-card-img"/>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.88rem;">Character Timeline</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Track events from a specific character's perspective.</p>
                             </div>
                         </div>
+
+                        <!-- Card 5: World Timeline -->
                         <div class="col-md-6 col-lg-3">
                             <div class="type-card" data-type="World Timeline" onclick="selectTypeCard(this, 'World Timeline')">
                                 <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
-                                <div class="my-2"><i data-lucide="globe" style="width: 36px; height: 36px;" class="text-emerald-600"></i></div>
-                                <h6 class="fw-bold text-slate-800 mb-1">World Timeline</h6>
-                                <p class="text-muted small mb-0">Focus on world history, kingdoms, wars, and major events.</p>
+                                <img src="/images/timeline-types/world.svg" alt="World Timeline" class="type-card-img"/>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.88rem;">World Timeline</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Focus on world history, kingdoms, wars, and major world events.</p>
                             </div>
                         </div>
+
+                        <!-- Card 6: Investigation Board -->
                         <div class="col-md-6 col-lg-3">
                             <div class="type-card" data-type="Investigation Board" onclick="selectTypeCard(this, 'Investigation Board')">
                                 <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
-                                <div class="my-2"><i data-lucide="layout" style="width: 36px; height: 36px;" class="text-amber-600"></i></div>
-                                <h6 class="fw-bold text-slate-800 mb-1">Investigation Board</h6>
-                                <p class="text-muted small mb-0">Perfect for crime, mystery and investigation based stories.</p>
+                                <img src="/images/timeline-types/investigation.svg" alt="Investigation Board" class="type-card-img"/>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.88rem;">Investigation Board</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Perfect for crime, mystery and investigation based stories.</p>
                             </div>
                         </div>
+
+                        <!-- Card 7: Relationship Timeline -->
                         <div class="col-md-6 col-lg-3">
                             <div class="type-card" data-type="Relationship Timeline" onclick="selectTypeCard(this, 'Relationship Timeline')">
                                 <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
-                                <div class="my-2"><i data-lucide="heart" style="width: 36px; height: 36px;" class="text-rose-600"></i></div>
-                                <h6 class="fw-bold text-slate-800 mb-1">Relationship Timeline</h6>
-                                <p class="text-muted small mb-0">Track relationships and how they evolve over time.</p>
+                                <img src="/images/timeline-types/relationship.svg" alt="Relationship Timeline" class="type-card-img"/>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.88rem;">Relationship Timeline</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Track relationships and how they evolve over time.</p>
                             </div>
                         </div>
+
+                        <!-- Card 8: Custom Timeline -->
                         <div class="col-md-6 col-lg-3">
                             <div class="type-card" data-type="Custom Timeline" onclick="selectTypeCard(this, 'Custom Timeline')">
                                 <div class="type-card-badge"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
-                                <div class="my-2"><i data-lucide="sliders" style="width: 36px; height: 36px;" class="text-slate-600"></i></div>
-                                <h6 class="fw-bold text-slate-800 mb-1">Custom Timeline</h6>
-                                <p class="text-muted small mb-0">Create a custom timeline suited to your story.</p>
+                                <img src="/images/timeline-types/custom.svg" alt="Custom Timeline" class="type-card-img"/>
+                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 0.88rem;">Custom Timeline</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Create a custom timeline suited to your story.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="jumpToStep(1)">
-                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous Step
-                        </button>
-                        <button type="button" class="btn btn-teal rounded-pill px-4" onclick="jumpToStep(3)">
-                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
-                        </button>
+                    <!-- Step 2 Footer Action Bar -->
+                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top rounded-3 p-3" style="background: #F8FAFC; border-color: #E2E8F0 !important;">
+                        <div class="text-muted small d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; background: rgba(13, 148, 136, 0.1);">
+                                <i data-lucide="lightbulb" style="width: 14px; height: 14px; color: #0D9488;"></i>
+                            </div>
+                            <span style="font-size: 0.8rem; color: #475569;">You can switch timeline type anytime. Your events will remain safe.</span>
+                        </div>
+                        <div class="d-flex flex-column align-items-end">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-secondary-themed rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" onclick="jumpToStep(1)">
+                                    <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Previous Step
+                                </button>
+                                <button type="button" class="btn btn-teal rounded-pill px-4 py-2.5 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" onclick="jumpToStep(3)">
+                                    Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                                </button>
+                            </div>
+                            <span class="text-muted mt-1" style="font-size: 0.72rem; padding-right: 6px;">Step 2 of 5</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- STEP 3: Settings -->
                 <div class="wizard-card wizard-step-panel d-none" id="stepPanel3">
-                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                        <i data-lucide="settings" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                    <div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(13, 148, 136, 0.08);">
+                            <i data-lucide="settings" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                        </div>
                         <div>
-                            <h5 class="fw-bold text-slate-800 mb-0">Timeline Settings</h5>
+                            <h5 class="fw-bold text-slate-800 mb-0" style="font-size: 1.05rem;">Timeline Settings</h5>
                             <span class="text-muted" style="font-size: 0.78rem;">Configure how your timeline will work and appear.</span>
                         </div>
                     </div>
@@ -597,13 +955,13 @@
                     <div class="row g-4">
                         <!-- Date & Time Settings -->
                         <div class="col-md-4">
-                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2">Date & Time Settings</h6>
+                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2" style="font-size: 0.88rem;">Date & Time Settings</h6>
                             
                             <div class="mb-3">
                                 <label class="form-label-custom">Date Format</label>
                                 <div class="theme-dropdown-wrapper" id="ddDateFormatWrapper">
                                     <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddDateFormatWrapper')">
-                                        <span id="ddDateFormatText" class="fw-medium text-slate-800">DD MMM YYYY (31 Dec 2025)</span>
+                                        <span id="ddDateFormatText" class="fw-medium text-slate-800" style="font-size: 0.83rem;">DD MMM YYYY (31 Dec 2025)</span>
                                         <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
                                     </div>
                                     <div class="theme-dropdown-menu">
@@ -627,7 +985,7 @@
                                 <label class="form-label-custom">Time Format</label>
                                 <div class="theme-dropdown-wrapper" id="ddTimeFormatWrapper">
                                     <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddTimeFormatWrapper')">
-                                        <span id="ddTimeFormatText" class="fw-medium text-slate-800">12 Hour (AM/PM)</span>
+                                        <span id="ddTimeFormatText" class="fw-medium text-slate-800" style="font-size: 0.83rem;">12 Hour (AM/PM)</span>
                                         <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
                                     </div>
                                     <div class="theme-dropdown-menu">
@@ -645,14 +1003,14 @@
 
                             <div class="mb-3">
                                 <label class="form-label-custom">Default Time</label>
-                                <input type="time" asp-for="DefaultTime" class="form-control rounded-3" />
+                                <input type="time" asp-for="DefaultTime" class="form-control form-control-custom" />
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label-custom">Calendar Start Day</label>
                                 <div class="theme-dropdown-wrapper" id="ddStartDayWrapper">
                                     <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddStartDayWrapper')">
-                                        <span id="ddStartDayText" class="fw-medium text-slate-800">Monday</span>
+                                        <span id="ddStartDayText" class="fw-medium text-slate-800" style="font-size: 0.83rem;">Monday</span>
                                         <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
                                     </div>
                                     <div class="theme-dropdown-menu">
@@ -670,7 +1028,7 @@
                                 <label class="form-label-custom">Time Zone</label>
                                 <div class="theme-dropdown-wrapper" id="ddTimeZoneWrapper">
                                     <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddTimeZoneWrapper')">
-                                        <span id="ddTimeZoneText" class="fw-medium text-slate-800">(GMT+05:30) Asia/Kolkata</span>
+                                        <span id="ddTimeZoneText" class="fw-medium text-slate-800" style="font-size: 0.83rem;">(GMT+05:30) Asia/Kolkata</span>
                                         <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
                                     </div>
                                     <div class="theme-dropdown-menu">
@@ -690,13 +1048,13 @@
 
                         <!-- Display Settings -->
                         <div class="col-md-4">
-                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2">Display Settings</h6>
+                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2" style="font-size: 0.88rem;">Display Settings</h6>
                             
                             <div class="mb-3">
                                 <label class="form-label-custom">Default Timeline View</label>
                                 <div class="theme-dropdown-wrapper" id="ddDefaultViewWrapper">
                                     <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddDefaultViewWrapper')">
-                                        <span id="ddDefaultViewText" class="fw-medium text-slate-800">Chronological Timeline</span>
+                                        <span id="ddDefaultViewText" class="fw-medium text-slate-800" style="font-size: 0.83rem;">Chronological Timeline</span>
                                         <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
                                     </div>
                                     <div class="theme-dropdown-menu">
@@ -714,7 +1072,7 @@
                                 <label class="form-label-custom">Event Grouping</label>
                                 <div class="theme-dropdown-wrapper" id="ddGroupingWrapper">
                                     <div class="theme-dropdown-trigger d-flex align-items-center justify-content-between" onclick="toggleDropdown('ddGroupingWrapper')">
-                                        <span id="ddGroupingText" class="fw-medium text-slate-800">Group by Date</span>
+                                        <span id="ddGroupingText" class="fw-medium text-slate-800" style="font-size: 0.83rem;">Group by Date</span>
                                         <i data-lucide="chevron-down" style="width: 16px; height: 16px;" class="text-slate-400"></i>
                                     </div>
                                     <div class="theme-dropdown-menu">
@@ -763,14 +1121,14 @@
 
                         <!-- Behavior Settings -->
                         <div class="col-md-4">
-                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2">Behavior Settings</h6>
+                            <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2" style="font-size: 0.88rem;">Behavior Settings</h6>
 
                             <div class="form-switch-custom">
                                 <div>
                                     <div class="switch-label">Allow Overlapping Events</div>
                                     <div class="switch-subtext">Events can occur at the same time</div>
                                 </div>
-                                <input class="form-check-input" type="checkbox" asp-for="AllowOverlappingEvents" />
+                                <input class="form-check-input" type="checkbox" asp-for="AllowOverlappingEvents" onchange="updateSettingsPreview()" />
                             </div>
 
                             <div class="form-switch-custom">
@@ -778,7 +1136,7 @@
                                     <div class="switch-label">Enable Timeline Dependencies</div>
                                     <div class="switch-subtext">Link events with cause & effect</div>
                                 </div>
-                                <input class="form-check-input" type="checkbox" asp-for="EnableTimelineDependencies" />
+                                <input class="form-check-input" type="checkbox" asp-for="EnableTimelineDependencies" onchange="updateSettingsPreview()" />
                             </div>
 
                             <div class="form-switch-custom">
@@ -823,189 +1181,562 @@
                         </div>
                     </div>
 
-                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="jumpToStep(2)">
-                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous Step
+                    <!-- Step 3 Info Notice -->
+                    <div class="d-flex align-items-center gap-2 mt-4 p-3 rounded-3" style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.15);">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; background: rgba(59, 130, 246, 0.12);">
+                            <i data-lucide="info" style="width: 14px; height: 14px; color: #3B82F6;"></i>
+                        </div>
+                        <span style="font-size: 0.8rem; color: #475569;">You can change all settings later from Timeline Settings.</span>
+                    </div>
+
+                    <!-- Step 3 Footer Action Bar -->
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top rounded-3 p-3" style="background: #F8FAFC; border-color: #E2E8F0 !important;">
+                        <button type="button" class="btn btn-outline-secondary-themed rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" onclick="jumpToStep(2)">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Previous Step
                         </button>
-                        <button type="button" class="btn btn-teal rounded-pill px-4" onclick="jumpToStep(4)">
-                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
-                        </button>
+                        <div class="d-flex flex-column align-items-end">
+                            <button type="button" class="btn btn-teal rounded-pill px-4 py-2.5 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" onclick="jumpToStep(4)">
+                                Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            <span class="text-muted mt-1" style="font-size: 0.72rem; padding-right: 6px;">Step 3 of 5</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- STEP 4: Story Arcs (Optional) -->
+                <!-- STEP 4: Story Arcs (Optional) - RICH DESIGN -->
                 <div class="wizard-card wizard-step-panel d-none" id="stepPanel4">
-                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                        <i data-lucide="flag" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                    <div class="d-flex align-items-center gap-2 mb-1 pb-3 border-bottom">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(13, 148, 136, 0.08);">
+                            <i data-lucide="git-branch" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                        </div>
                         <div>
-                            <h5 class="fw-bold text-slate-800 mb-0">Link Story Arcs (Optional)</h5>
+                            <h5 class="fw-bold text-slate-800 mb-0" style="font-size: 1.05rem;">Link Story Arcs (Optional)</h5>
                             <span class="text-muted" style="font-size: 0.78rem;">Connect existing story arcs to organize your timeline events. You can link arcs now or add them later.</span>
                         </div>
                     </div>
 
-                    <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3" style="font-size: 0.82rem;">
-                        <i data-lucide="sparkles" class="text-teal-600" style="width: 16px; height: 16px;"></i>
+                    <!-- Info Banner -->
+                    <div class="d-flex align-items-center gap-2 py-2 px-3 my-3 rounded-3" style="background: rgba(13,148,136,0.06); border: 1px solid rgba(13,148,136,0.15); font-size: 0.82rem; color: #0F766E;">
+                        <i data-lucide="sparkles" style="width: 15px; height: 15px; color: #0D9488; flex-shrink:0;"></i>
                         Story arcs help you organize events by plotlines, character journeys, themes, or subplots.
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="input-group mb-3">
-                                <span class="input-group-text bg-white border-end-0"><i data-lucide="search" style="width: 14px; height: 14px;"></i></span>
-                                <input type="text" class="form-control border-start-0" placeholder="Search story arcs..." oninput="filterArcCards(this.value)" />
-                            </div>
+                    <!-- Tab Navigation -->
+                    <div class="arc-tab-nav mb-3">
+                        <button type="button" class="arc-tab-btn active" id="arcTabExisting" onclick="switchArcTab('existing')">Existing Arcs</button>
+                        <button type="button" class="arc-tab-btn" id="arcTabCreate" onclick="switchArcTab('create')">Create New Arc</button>
+                        <button type="button" class="arc-tab-btn" id="arcTabTemplates" onclick="switchArcTab('templates')">Arc Templates</button>
+                    </div>
 
-                            <div class="arc-options-list" id="arcOptionsContainer">
-                                @if (Model.AvailableStoryArcs.Any())
-                                {
-                                    @foreach (var arc in Model.AvailableStoryArcs)
+                    <div class="row g-3">
+                        <!-- LEFT: Arc List / Create Form / Templates -->
+                        <div class="col-lg-8">
+
+                            <!-- Existing Arcs Tab -->
+                            <div id="arcPaneExisting">
+                                <!-- Search -->
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text bg-white" style="border-right:0;">
+                                        <i data-lucide="search" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                                    </span>
+                                    <input type="text" class="form-control" style="border-left:0; font-size:0.84rem;" placeholder="Search story arcs..." oninput="filterArcCards(this.value)" />
+                                </div>
+
+                                <!-- Arc Cards -->
+                                <div class="arc-options-list" id="arcOptionsContainer" style="max-height: 380px; overflow-y: auto; padding-right: 4px;">
+                                    @{
+                                        // Arc type → icon + color mapping
+                                        var arcIconMap = new Dictionary<string, (string icon, string bgColor, string textColor)>
+                                        {
+                                            ["Main Story"]           = ("heart",         "#FEE2E2", "#DC2626"),
+                                            ["Character Arc"]        = ("user",           "#EDE9FE", "#7C3AED"),
+                                            ["Romance Arc"]          = ("heart",          "#FCE7F3", "#DB2777"),
+                                            ["Mystery Arc"]          = ("search",         "#FEF3C7", "#D97706"),
+                                            ["Political Arc"]        = ("landmark",       "#DBEAFE", "#2563EB"),
+                                            ["War Arc"]              = ("sword",          "#FEE2E2", "#DC2626"),
+                                            ["Crime Investigation"]  = ("shield",         "#F0FDF4", "#16A34A"),
+                                            ["Past Trauma Arc"]      = ("clock",          "#F3F4F6", "#374151"),
+                                            ["Redemption Arc"]       = ("sunrise",        "#FFF7ED", "#EA580C"),
+                                            ["Custom"]               = ("layers",         "#F1F5F9", "#475569"),
+                                        };
+                                        // Default fallback
+                                        (string icon, string bgColor, string textColor) GetArcIcon(string arcType)
+                                        {
+                                            if (arcIconMap.TryGetValue(arcType, out var v)) return v;
+                                            return ("git-branch", "#F1F5F9", "#475569");
+                                        }
+                                        // ArcType → badge text label
+                                        var arcTypeBadgeMap = new Dictionary<string, (string label, string bg, string color)>
+                                        {
+                                            ["Main Story"]           = ("Main Plot",          "#FEE2E2", "#DC2626"),
+                                            ["Character Arc"]        = ("Character Arc",       "#EDE9FE", "#7C3AED"),
+                                            ["Romance Arc"]          = ("Romance",             "#FCE7F3", "#DB2777"),
+                                            ["Mystery Arc"]          = ("Mystery",             "#FEF3C7", "#D97706"),
+                                            ["Political Arc"]        = ("Political",           "#DBEAFE", "#2563EB"),
+                                            ["War Arc"]              = ("War",                 "#FEE2E2", "#DC2626"),
+                                            ["Crime Investigation"]  = ("Crime",               "#F0FDF4", "#16A34A"),
+                                            ["Past Trauma Arc"]      = ("Trauma",              "#F3F4F6", "#374151"),
+                                            ["Redemption Arc"]       = ("Redemption",          "#FFF7ED", "#EA580C"),
+                                            ["Custom"]               = ("Custom",              "#F1F5F9", "#475569"),
+                                        };
+                                        (string label, string bg, string color) GetBadge(string arcType)
+                                        {
+                                            if (arcTypeBadgeMap.TryGetValue(arcType, out var v)) return v;
+                                            // Derive label from type name, use neutral colors
+                                            return (arcType, "#F1F5F9", "#475569");
+                                        }
+                                    }
+
+                                    @if (Model.AvailableStoryArcs.Any())
                                     {
-                                        <div class="p-3 border rounded-3 mb-2 d-flex align-items-center justify-content-between arc-item-card" data-title="@arc.Title">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <input type="checkbox" name="SelectedStoryArcIds" value="@arc.Id" class="form-check-input arc-checkbox" @(arc.IsSelected ? "checked" : "") onchange="updateSelectedArcsUI()" />
-                                                <div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="fw-bold text-slate-800" style="font-size: 0.9rem;">@arc.Title</span>
-                                                        <span class="badge bg-slate-100 text-slate-700 border" style="font-size: 0.7rem;">@arc.ArcType</span>
+                                        @foreach (var arc in Model.AvailableStoryArcs)
+                                        {
+                                            var arcIconInfo = GetArcIcon(arc.ArcType);
+                                            var arcBadge = GetBadge(arc.ArcType);
+                                            bool isMainStory = arc.ArcType == "Main Story";
+                                            // Use the arc's own Color if set, else derive from type
+                                            string progressColor = !string.IsNullOrWhiteSpace(arc.Color) && arc.Color.StartsWith("#") ? arc.Color : arcIconInfo.textColor;
+                                            <div class="arc-item-card @(arc.IsSelected ? "arc-card-selected" : "")" 
+                                                 data-title="@arc.Title" 
+                                                 data-arc-id="@arc.Id"
+                                                 data-arc-type="@arc.ArcType"
+                                                 data-arc-color="@arcIconInfo.textColor"
+                                                 onclick="toggleArcCard(this)">
+                                                <div class="d-flex align-items-center gap-3 flex-grow-1">
+                                                    <!-- Arc Type Icon Circle -->
+                                                    <div class="arc-icon-circle flex-shrink-0" style="background: @arcIconInfo.bgColor; color: @arcIconInfo.textColor;">
+                                                        <i data-lucide="@arcIconInfo.icon" style="width: 16px; height: 16px;"></i>
                                                     </div>
-                                                    <p class="text-muted mb-0" style="font-size: 0.78rem;">@(arc.Description ?? "Story arc plotline")</p>
+                                                    <!-- Arc Info -->
+                                                    <div class="flex-grow-1 min-width-0">
+                                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                                            <span class="fw-bold text-slate-800" style="font-size: 0.88rem;">@arc.Title</span>
+                                                            @if (isMainStory)
+                                                            {
+                                                                <span class="arc-primary-badge">
+                                                                    <i data-lucide="star" style="width: 10px; height: 10px;"></i> Primary
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                        <p class="text-muted mb-1" style="font-size: 0.76rem; line-height: 1.4;">@(arc.Description ?? "No description provided.")</p>
+                                                        <!-- Type Badge + Progress -->
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <span class="arc-type-badge" style="background: @arcBadge.bg; color: @arcBadge.color;">@arcBadge.label</span>
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                <div class="arc-progress-track">
+                                                                    <div class="arc-progress-bar" style="width: @arc.ProgressPercent%; background-color: @progressColor;"></div>
+                                                                </div>
+                                                                <span class="fw-bold" style="font-size: 0.75rem; color: @progressColor; min-width: 28px;">@arc.ProgressPercent%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Checkbox -->
+                                                <div class="arc-check-area flex-shrink-0">
+                                                    <input type="checkbox" 
+                                                           name="SelectedStoryArcIds" 
+                                                           value="@arc.Id" 
+                                                           class="arc-checkbox d-none" 
+                                                           @(arc.IsSelected ? "checked" : "") />
+                                                    <div class="arc-check-box @(arc.IsSelected ? "arc-check-box-checked" : "")">
+                                                        <i data-lucide="check" style="width: 13px; height: 13px;"></i>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="text-end">
-                                                <span class="fw-bold text-teal-600" style="font-size: 0.8rem;">@arc.ProgressPercent%</span>
-                                                <div class="progress" style="height: 4px; width: 60px;">
-                                                    <div class="progress-bar bg-teal-500" style="width: @arc.ProgressPercent%"></div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center py-5">
+                                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px; background: #F1F5F9;">
+                                                <i data-lucide="git-branch" style="width: 24px; height: 24px; color: #94A3B8;"></i>
+                                            </div>
+                                            <p class="fw-semibold text-slate-600 mb-1" style="font-size: 0.88rem;">No Story Arcs Yet</p>
+                                            <p class="text-muted mb-3" style="font-size: 0.78rem;">Create story arcs from the Timeline → Story Arcs section, or use the Create New Arc tab.</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Create New Arc Tab -->
+                            <div id="arcPaneCreate" class="d-none">
+                                <div class="p-4 border rounded-3" style="background: #FAFAFA;">
+                                    <h6 class="fw-bold text-slate-800 mb-3" style="font-size: 0.9rem;">Create a New Story Arc</h6>
+                                    <p class="text-muted mb-3" style="font-size: 0.78rem;">New arcs will be created and linked to your current story when you submit this form.</p>
+                                    <div class="mb-3">
+                                        <label class="form-label-custom">Arc Title <span class="req">*</span></label>
+                                        <input type="text" id="newArcTitle" class="form-control form-control-custom" placeholder="e.g. Villain Journey, Romance Arc..." />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label-custom">Arc Type</label>
+                                        <select id="newArcType" class="form-select form-control-custom">
+                                            <option value="Main Story">Main Story</option>
+                                            <option value="Character Arc">Character Arc</option>
+                                            <option value="Romance Arc">Romance Arc</option>
+                                            <option value="Mystery Arc">Mystery Arc</option>
+                                            <option value="Political Arc">Political Arc</option>
+                                            <option value="War Arc">War Arc</option>
+                                            <option value="Crime Investigation">Crime Investigation</option>
+                                            <option value="Past Trauma Arc">Past Trauma Arc</option>
+                                            <option value="Redemption Arc">Redemption Arc</option>
+                                            <option value="Custom">Custom</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label-custom">Description <span class="text-muted fw-normal">(Optional)</span></label>
+                                        <textarea id="newArcDesc" class="form-control form-control-custom" rows="2" placeholder="Brief description of this arc..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label-custom">Completion % <span class="text-muted fw-normal">(0–100)</span></label>
+                                        <input type="number" id="newArcPercent" class="form-control form-control-custom" min="0" max="100" value="0" />
+                                    </div>
+                                    <div class="d-flex justify-content-end">
+                                        <button type="button" class="btn btn-teal rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2" onclick="createNewArcInline()">
+                                            <i data-lucide="plus" style="width: 15px; height: 15px;"></i> Add Arc
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Arc Templates Tab -->
+                            <div id="arcPaneTemplates" class="d-none">
+                                <p class="text-muted mb-3" style="font-size: 0.82rem;">Choose a template to pre-fill arc details. Click a template to add it to your arc list.</p>
+                                <div class="row g-2">
+                                    @{
+                                        var templates = new[]
+                                        {
+                                            ("Main Story Arc",       "Main Story",      "heart",     "#FEE2E2", "#DC2626", "Central plot",                           "The central conflict and resolution of your story."),
+                                            ("Romance Arc",          "Romance Arc",     "heart",     "#FCE7F3", "#DB2777", "Love story subplot",                     "An evolving romantic relationship between characters."),
+                                            ("Character Arc",        "Character Arc",   "user",      "#EDE9FE", "#7C3AED", "A character's personal journey",         "Transformation and growth of a major character."),
+                                            ("Theme Arc",            "Custom",          "layers",    "#F1F5F9", "#475569", "Representing a major theme",             "Track how a major theme develops throughout the story."),
+                                            ("Villain Journey",      "Character Arc",   "user",      "#EDE9FE", "#7C3AED", "The antagonist's rise and fall",         "Explore the motivations and downfall of the antagonist."),
+                                            ("Redemption Arc",       "Redemption Arc",  "sunrise",   "#FFF7ED", "#EA580C", "Journey toward redemption",              "A flawed character's path to becoming better."),
+                                        };
+                                    }
+                                    @foreach (var t in templates)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="arc-template-card" onclick="applyArcTemplate('@t.Item1', '@t.Item2', '@t.Item7')">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; background: @t.Item4; color: @t.Item5;">
+                                                        <i data-lucide="@t.Item3" style="width: 13px; height: 13px;"></i>
+                                                    </div>
+                                                    <span class="fw-bold text-slate-800" style="font-size: 0.84rem;">@t.Item1</span>
                                                 </div>
+                                                <p class="text-muted mb-1" style="font-size: 0.72rem;">@t.Item6</p>
+                                                <p class="text-slate-500 mb-0" style="font-size: 0.72rem; line-height: 1.4;">@t.Item7</p>
                                             </div>
                                         </div>
                                     }
-                                }
-                                else
-                                {
-                                    <div class="text-center py-4 text-muted">
-                                        <p class="mb-0">No story arcs found for this story. You can create them anytime later.</p>
-                                    </div>
-                                }
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-md-4">
-                            <div class="p-3 bg-slate-50 border rounded-3">
-                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.85rem;">Selected Arcs (<span id="selectedArcCount">0</span>)</h6>
-                                <div id="selectedArcTags" class="d-flex flex-wrap gap-1">
-                                    <span class="text-muted small italic">No arcs selected</span>
+                        <!-- RIGHT: Selected Arcs Panel -->
+                        <div class="col-lg-4">
+                            <!-- Selected Arcs -->
+                            <div class="arc-selected-panel mb-3">
+                                <div class="fw-bold text-slate-700 mb-2 d-flex align-items-center justify-content-between" style="font-size: 0.85rem;">
+                                    <span>Selected Arcs (<span id="selectedArcCount">@(Model.AvailableStoryArcs.Count(a => a.IsSelected))</span>)</span>
+                                </div>
+                                <div id="selectedArcTags">
+                                    @if (Model.AvailableStoryArcs.Any(a => a.IsSelected))
+                                    {
+                                        @foreach (var arc in Model.AvailableStoryArcs.Where(a => a.IsSelected))
+                                        {
+                                            <div class="arc-selected-tag" id="arcTag_@arc.Id">
+                                                <div class="d-flex align-items-center gap-1 min-width-0">
+                                                    <i data-lucide="heart" style="width: 11px; height: 11px; color: #DC2626; flex-shrink:0;"></i>
+                                                    <span class="text-truncate">@arc.Title</span>
+                                                    <span class="fw-bold" style="color: #0D9488; font-size: 0.7rem; white-space:nowrap;">@arc.ProgressPercent%</span>
+                                                </div>
+                                                <button type="button" class="arc-tag-remove" onclick="removeArcTag('@arc.Id')">
+                                                    <i data-lucide="x" style="width: 11px; height: 11px;"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size: 0.78rem; font-style: italic;">No arcs selected yet.</span>
+                                    }
+                                </div>
+                            </div>
+                            <!-- Tip Box -->
+                            <div class="d-flex align-items-start gap-2 p-3 rounded-3" style="background: #FFFBEB; border: 1px solid #FDE68A;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; background: #FEF3C7;">
+                                    <i data-lucide="lightbulb" style="width: 14px; height: 14px; color: #D97706;"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold mb-1" style="font-size: 0.78rem; color: #92400E;">Tip</div>
+                                    <p class="mb-0" style="font-size: 0.75rem; color: #78350F;">You can select multiple arcs. Events can belong to one or more arcs.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="jumpToStep(3)">
-                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous Step
+                    <!-- Footer -->
+                    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top rounded-3 p-3" style="background: #F8FAFC; border-color: #E2E8F0 !important;">
+                        <button type="button" class="btn btn-outline-secondary-themed rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" onclick="jumpToStep(3)">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Previous Step
                         </button>
-                        <button type="button" class="btn btn-teal rounded-pill px-4" onclick="jumpToStep(5)">
-                            Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ms-1"></i>
-                        </button>
+                        <div class="d-flex flex-column align-items-end">
+                            <button type="button" class="btn btn-teal rounded-pill px-4 py-2.5 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" onclick="jumpToStep(5)">
+                                Next Step <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            <span class="text-muted mt-1" style="font-size: 0.72rem; padding-right: 6px;">Step 4 of 5</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- STEP 5: Review -->
                 <div class="wizard-card wizard-step-panel d-none" id="stepPanel5">
-                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                        <div class="d-flex align-items-center gap-2">
-                            <i data-lucide="check-circle" class="text-teal-600" style="width: 22px; height: 22px;"></i>
+                    <!-- Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background: rgba(13, 148, 136, 0.08);">
+                                <i data-lucide="flag" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                            </div>
                             <div>
-                                <h5 class="fw-bold text-slate-800 mb-0">Review Your Timeline</h5>
+                                <h5 class="fw-bold text-slate-800 mb-0" style="font-size: 1.05rem;">Review Your Timeline</h5>
                                 <span class="text-muted" style="font-size: 0.78rem;">Please review all details before creating your timeline. You can go back and edit any step.</span>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="jumpToStep(1)">
-                            <i data-lucide="edit" style="width: 14px; height: 14px;" class="me-1"></i> Edit Any Step
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill d-flex align-items-center gap-1" onclick="jumpToStep(1)">
+                            <i data-lucide="edit" style="width: 13px; height: 13px;"></i> Edit Any Step
                         </button>
                     </div>
 
+                    <!-- 4-Column Summary Cards -->
                     <div class="row g-3 mb-4">
+                        <!-- Card 1: Basic Information -->
                         <div class="col-md-6 col-lg-3">
-                            <div class="p-3 bg-slate-50 border rounded-3 h-100">
-                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.82rem;">Basic Information</h6>
-                                <div class="mb-1"><span class="text-muted small">Name:</span> <strong id="reviewName" class="text-slate-800">Main Timeline</strong></div>
-                                <div class="mb-1"><span class="text-muted small">Story:</span> <span id="reviewStory" class="text-slate-800">@Model.StoryTitle</span></div>
-                                <div class="mb-1"><span class="text-muted small">Color:</span> <span id="reviewColor" class="badge bg-teal-600">Teal</span></div>
+                            <div class="h-100 rounded-3 p-3 border" style="background: #FAFCFF; border-color: #E2E8F0 !important;">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; background: rgba(13,148,136,0.10);">
+                                        <i data-lucide="user" style="width: 13px; height: 13px; color: #0D9488;"></i>
+                                    </div>
+                                    <span class="fw-bold text-slate-800" style="font-size: 0.83rem;">Basic Information</span>
+                                </div>
+                                <div class="d-flex flex-column gap-2" style="font-size: 0.78rem;">
+                                    <div class="d-flex align-items-start justify-content-between gap-2">
+                                        <span class="text-muted">Timeline Name</span>
+                                        <span class="fw-semibold text-slate-800 text-end" id="reviewName" style="max-width: 120px; word-break: break-word;">—</span>
+                                    </div>
+                                    <div class="d-flex align-items-start justify-content-between gap-2">
+                                        <span class="text-muted">Story</span>
+                                        <span class="fw-semibold text-slate-800 text-end" id="reviewStory" style="max-width: 120px; word-break: break-word;">@Model.StoryTitle</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Description</span>
+                                        <span class="fw-semibold text-slate-700 text-end text-truncate" id="reviewDescription" style="max-width: 120px; font-style: italic;">—</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Color</span>
+                                        <span class="d-flex align-items-center gap-1 fw-semibold" id="reviewColorRow">
+                                            <span id="reviewColorDot" style="width: 10px; height: 10px; border-radius: 50%; background: #13A8A6; display: inline-block;"></span>
+                                            <span id="reviewColor">Teal</span>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Card 2: Timeline Type -->
                         <div class="col-md-6 col-lg-3">
-                            <div class="p-3 bg-slate-50 border rounded-3 h-100">
-                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.82rem;">Timeline Type</h6>
-                                <div class="mb-1"><span class="text-muted small">Type:</span> <strong id="reviewType" class="text-teal-700">Chronological Timeline</strong></div>
-                                <div class="mb-1"><span class="text-muted small">View Style:</span> <span>Vertical</span></div>
+                            <div class="h-100 rounded-3 p-3 border" style="background: #FAFCFF; border-color: #E2E8F0 !important;">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; background: rgba(13,148,136,0.10);">
+                                        <i data-lucide="git-commit" style="width: 13px; height: 13px; color: #0D9488;"></i>
+                                    </div>
+                                    <span class="fw-bold text-slate-800" style="font-size: 0.83rem;">Timeline Type</span>
+                                </div>
+                                <div class="d-flex flex-column gap-2" style="font-size: 0.78rem;">
+                                    <div class="d-flex align-items-start justify-content-between gap-2">
+                                        <span class="text-muted">Type</span>
+                                        <span class="fw-semibold text-end" id="reviewType" style="color: #0D9488; max-width: 130px; word-break: break-word;">Chronological Timeline</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">View Style</span>
+                                        <span class="fw-semibold text-slate-700">Vertical Timeline</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Default Grouping</span>
+                                        <span class="fw-semibold text-slate-700" id="reviewGrouping">Group by Date</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Show Time</span>
+                                        <span id="reviewShowTimeCheck"><i data-lucide="check-circle" style="width: 14px; height: 14px; color: #0D9488;"></i> <span style="color:#0D9488; font-size:0.76rem;">Enabled</span></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Card 3: Date & Time Settings -->
                         <div class="col-md-6 col-lg-3">
-                            <div class="p-3 bg-slate-50 border rounded-3 h-100">
-                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.82rem;">Date & Time Settings</h6>
-                                <div class="mb-1"><span class="text-muted small">Format:</span> <span id="reviewDateFormat">DD MMM YYYY</span></div>
-                                <div class="mb-1"><span class="text-muted small">Time:</span> <span id="reviewTimeFormat">12 Hour (AM/PM)</span></div>
+                            <div class="h-100 rounded-3 p-3 border" style="background: #FAFCFF; border-color: #E2E8F0 !important;">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; background: rgba(59,130,246,0.10);">
+                                        <i data-lucide="calendar" style="width: 13px; height: 13px; color: #3B82F6;"></i>
+                                    </div>
+                                    <span class="fw-bold text-slate-800" style="font-size: 0.83rem;">Date &amp; Time Settings</span>
+                                </div>
+                                <div class="d-flex flex-column gap-2" style="font-size: 0.78rem;">
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Date Format</span>
+                                        <span class="fw-semibold text-slate-700" id="reviewDateFormat">DD MMM YYYY</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Time Format</span>
+                                        <span class="fw-semibold text-slate-700" id="reviewTimeFormat">12 Hour (AM/PM)</span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Default Time</span>
+                                        <span class="fw-semibold text-slate-700" id="reviewDefaultTime">12:00 PM</span>
+                                    </div>
+                                    <div class="d-flex align-items-start justify-content-between gap-2">
+                                        <span class="text-muted">Time Zone</span>
+                                        <span class="fw-semibold text-slate-700 text-end" id="reviewTimeZone" style="max-width: 110px; word-break: break-word;">(GMT+05:30) Asia/Kolkata</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Card 4: Display Preferences -->
                         <div class="col-md-6 col-lg-3">
-                            <div class="p-3 bg-slate-50 border rounded-3 h-100">
-                                <h6 class="fw-bold text-slate-800 mb-2" style="font-size: 0.82rem;">Display Preferences</h6>
-                                <div class="mb-1"><span class="text-muted small">Show Time:</span> <span class="badge bg-emerald-100 text-emerald-800">Yes</span></div>
-                                <div class="mb-1"><span class="text-muted small">Show Icons:</span> <span class="badge bg-emerald-100 text-emerald-800">Yes</span></div>
+                            <div class="h-100 rounded-3 p-3 border" style="background: #FAFCFF; border-color: #E2E8F0 !important;">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 26px; height: 26px; background: rgba(245,158,11,0.10);">
+                                        <i data-lucide="eye" style="width: 13px; height: 13px; color: #D97706;"></i>
+                                    </div>
+                                    <span class="fw-bold text-slate-800" style="font-size: 0.83rem;">Display Preferences</span>
+                                </div>
+                                <div class="d-flex flex-column gap-2" style="font-size: 0.78rem;">
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Show Time on Timeline</span>
+                                        <span id="revShowTime"></span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Show Event Icons</span>
+                                        <span id="revShowIcons"></span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Show Descriptions</span>
+                                        <span id="revShowDescs"></span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="text-muted">Compact Mode</span>
+                                        <span id="revCompact"></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-3 bg-teal-50 border border-teal-200 rounded-3 mb-4">
-                        <h6 class="fw-bold text-teal-900 mb-2" style="font-size: 0.88rem;">What Happens Next?</h6>
-                        <ul class="mb-0 text-teal-800 small ps-3">
-                            <li>Once your timeline is created, you can start adding events.</li>
-                            <li>Link characters, locations, chapters, and research notes to events.</li>
-                            <li>Visualize your timeline in Chronological, Calendar, or Board views.</li>
-                        </ul>
-                    </div>
-
-                    <div class="d-flex align-items-center justify-content-between pt-3 border-top">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="jumpToStep(4)">
-                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;" class="me-1"></i> Previous Step
+                    <!-- Story Arcs Linked -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i data-lucide="sparkles" style="width: 16px; height: 16px; color: #D97706;"></i>
+                            <span class="fw-bold text-slate-800" style="font-size: 0.9rem;">Story Arcs Linked (<span id="reviewArcCount">0</span>)</span>
+                        </div>
+                        <div id="reviewArcsList" class="d-flex flex-column gap-2">
+                            <div class="text-muted" style="font-size: 0.8rem; font-style: italic; padding: 0.5rem 0;">No story arcs linked. You can link arcs in Step 4.</div>
+                        </div>
+                        <button type="button" class="btn btn-link d-flex align-items-center gap-1 p-0 mt-2" style="font-size: 0.8rem; color: #0D9488; text-decoration: none;" onclick="jumpToStep(4)">
+                            <i data-lucide="plus" style="width: 13px; height: 13px;"></i> Add or Edit Story Arcs
                         </button>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-teal rounded-pill px-4 py-2 fw-bold">
-                                <i data-lucide="check" style="width: 16px; height: 16px;" class="me-1"></i>
-                                @(Model.IsEdit ? "Save Changes" : "Create Timeline")
-                            </button>
+                    </div>
+
+                    <!-- What Happens Next -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-7">
+                            <div class="p-4 rounded-3 h-100" style="background: rgba(13,148,136,0.04); border: 1px solid rgba(13,148,136,0.18);">
+                                <h6 class="fw-bold mb-3" style="font-size: 0.9rem; color: #0F766E;">What Happens Next?</h6>
+                                <p class="text-muted mb-3" style="font-size: 0.8rem;">Once your timeline is created, you can start adding events and building the chronological backbone of your story.</p>
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i data-lucide="check-circle" style="width: 15px; height: 15px; color: #0D9488; flex-shrink: 0;"></i>
+                                        <span style="font-size: 0.8rem; color: #334155;">Add timeline events</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i data-lucide="check-circle" style="width: 15px; height: 15px; color: #0D9488; flex-shrink: 0;"></i>
+                                        <span style="font-size: 0.8rem; color: #334155;">Link characters and locations</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i data-lucide="check-circle" style="width: 15px; height: 15px; color: #0D9488; flex-shrink: 0;"></i>
+                                        <span style="font-size: 0.8rem; color: #334155;">Attach chapters and notes</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i data-lucide="check-circle" style="width: 15px; height: 15px; color: #0D9488; flex-shrink: 0;"></i>
+                                        <span style="font-size: 0.8rem; color: #334155;">Visualize your story timeline</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 d-flex align-items-center justify-content-center">
+                            <img src="/images/inspiration_book_clock.png" alt="Timeline Illustration" style="width: 160px; height: auto; opacity: 0.85; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));" onerror="this.style.display='none'" />
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="d-flex align-items-center justify-content-between pt-3 mt-2 border-top" style="border-color: #E2E8F0 !important;">
+                        <button type="button" class="btn btn-outline-secondary-themed rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" onclick="jumpToStep(4)">
+                            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Previous Step
+                        </button>
+                        <div class="d-flex flex-column align-items-end gap-1">
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-teal rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" onclick="saveDraft()">
+                                    <i data-lucide="save" style="width: 15px; height: 15px;"></i> Save as Draft
+                                </button>
+                                <button type="submit" class="btn btn-teal rounded-pill px-4 py-2.5 fw-bold d-inline-flex align-items-center gap-2 shadow-sm">
+                                    @(Model.IsEdit ? "Save Changes" : "Create Timeline")
+                                    <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                                </button>
+                            </div>
+                            <span class="text-muted" style="font-size: 0.72rem;">You can start adding events after creation.</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Right Sidebar Panel -->
+
             <div class="col-lg-4">
                 <!-- Timeline Summary -->
                 <div class="sidebar-widget">
+                    <!-- Calendar Vector Watermark -->
+                    <svg class="card-calendar-watermark" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+
                     <div class="sidebar-widget-title mb-3">
-                        <i data-lucide="book-open" class="text-teal-600" style="width: 18px; height: 18px;"></i>
+                        <i data-lucide="book-open" class="text-teal-600" style="width: 18px; height: 18px; color: #0D9488;"></i>
                         Timeline Summary
                     </div>
                     <div class="summary-row">
                         <span class="summary-label"><i data-lucide="bookmark" style="width: 14px; height: 14px;"></i> Story</span>
-                        <span class="summary-val" id="sumStoryText">@Model.StoryTitle</span>
+                        <span class="summary-val d-flex align-items-center gap-2" id="sumStoryWrapper">
+                            <img src="@storyCoverUrl" id="sumStoryThumbnail" alt="Cover" class="rounded-1" style="width: 22px; height: 22px; object-fit: cover;" onerror="this.src='@defaultCover'" />
+                            <span id="sumStoryText">@Model.StoryTitle</span>
+                        </span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label"><i data-lucide="git-commit" style="width: 14px; height: 14px;"></i> Timeline Type</span>
-                        <span class="summary-val text-teal-600" id="sumTypeText">Chronological Timeline</span>
+                        <span class="summary-val" style="color: #0D9488;" id="sumTypeText">@(string.IsNullOrEmpty(Model.TimelineType) ? "Not selected" : Model.TimelineType)</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label"><i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Start Date</span>
-                        <span class="summary-val" id="sumStartDateText">Not set</span>
+                        <span class="summary-val text-muted fw-semibold" id="sumStartDateText">@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("dd MMM yyyy") : "Not set")</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label"><i data-lucide="calendar" style="width: 14px; height: 14px;"></i> End Date</span>
-                        <span class="summary-val" id="sumEndDateText">Not set</span>
+                        <span class="summary-val text-muted fw-semibold" id="sumEndDateText">@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("dd MMM yyyy") : "Not set")</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label"><i data-lucide="flag" style="width: 14px; height: 14px;"></i> Story Arcs</span>
-                        <span class="summary-val" id="sumArcsText">0 arcs linked</span>
+                        <span class="summary-val" id="sumArcsText">@(Model.SelectedStoryArcIds?.Count ?? 0) arcs linked</span>
                     </div>
                     <div class="summary-row">
                         <span class="summary-label"><i data-lucide="palette" style="width: 14px; height: 14px;"></i> Color</span>
@@ -1015,27 +1746,191 @@
                     </div>
                 </div>
 
+                <!-- Settings Preview (shown on Step 3) -->
+                <div class="sidebar-widget d-none" id="settingsPreviewWidget">
+                    <div class="sidebar-widget-title mb-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; background: rgba(13, 148, 136, 0.1);">
+                            <i data-lucide="eye" style="width: 14px; height: 14px; color: #0D9488;"></i>
+                        </div>
+                        <span>Settings Preview</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Date Format</span>
+                        <span class="summary-val" id="prevDateFormat" style="color: #0D9488; font-size: 0.8rem;">DD MMM YYYY</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Time Format</span>
+                        <span class="summary-val" id="prevTimeFormat" style="color: #0D9488; font-size: 0.8rem;">12 Hour (AM/PM)</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Default View</span>
+                        <span class="summary-val" id="prevDefaultView" style="font-size: 0.8rem;">Chronological</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Event Grouping</span>
+                        <span class="summary-val" id="prevEventGrouping" style="font-size: 0.8rem;">By Date</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Overlapping Events</span>
+                        <span id="prevOverlapping"><span class="badge rounded-pill px-2 py-1" style="background: #D1FAE5; color: #065F46; font-size: 0.72rem;">Enabled</span></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Dependencies</span>
+                        <span id="prevDependencies"><span class="badge rounded-pill px-2 py-1" style="background: #D1FAE5; color: #065F46; font-size: 0.72rem;">Enabled</span></span>
+                    </div>
+                </div>
+
+                <!-- What are Story Arcs? (shown on Step 4) -->
+                <div class="sidebar-widget d-none" id="arcInfoWidget">
+                    <div class="sidebar-widget-title mb-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; background: rgba(13, 148, 136, 0.1);">
+                            <i data-lucide="book-open" style="width: 13px; height: 13px; color: #0D9488;"></i>
+                        </div>
+                        <span>What are Story Arcs?</span>
+                    </div>
+                    <p class="text-slate-600 mb-3" style="font-size: 0.78rem; line-height: 1.55;">
+                        Story arcs help you break down your narrative into meaningful plotlines or character journeys.
+                        They make your timeline <strong>powerful and organized.</strong>
+                    </p>
+                    <!-- Quill image -->
+                    <div class="text-end mb-2">
+                        <img src="/images/inspiration_book_clock.png" alt="Story Arc" style="width: 90px; height: auto; opacity: 0.85;" />
+                    </div>
+                    <!-- Examples -->
+                    <div class="fw-bold text-slate-700 mb-2" style="font-size: 0.82rem;">Examples</div>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; background: #FEE2E2; color: #DC2626;">
+                                <i data-lucide="heart" style="width: 12px; height: 12px;"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold text-slate-700" style="font-size: 0.78rem;">Main Story Arc</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">Central plot</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; background: #FCE7F3; color: #DB2777;">
+                                <i data-lucide="heart" style="width: 12px; height: 12px;"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold text-slate-700" style="font-size: 0.78rem;">Romance Arc</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">Love story subplot</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; background: #EDE9FE; color: #7C3AED;">
+                                <i data-lucide="user" style="width: 12px; height: 12px;"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold text-slate-700" style="font-size: 0.78rem;">Character Arc</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">A character's personal journey</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; background: #DBEAFE; color: #2563EB;">
+                                <i data-lucide="landmark" style="width: 12px; height: 12px;"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold text-slate-700" style="font-size: 0.78rem;">Theme Arc</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">Representing a major theme</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="#" class="text-teal-600 d-flex align-items-center gap-1" style="font-size: 0.78rem; color: #0D9488; text-decoration: none; font-weight: 600;">
+                            <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Learn more about story arcs
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Timeline Tips -->
                 <div class="sidebar-widget">
+                    <!-- Feather Quill Watermark -->
+                    <svg class="card-quill-watermark" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L3 13.25V21h7.75l9.49-9.49z"></path>
+                        <line x1="16" y1="8" x2="2" y2="22"></line>
+                        <line x1="17.5" y1="15" x2="9" y2="15"></line>
+                    </svg>
+
                     <div class="sidebar-widget-title mb-3">
-                        <i data-lucide="lightbulb" class="text-amber-500" style="width: 18px; height: 18px;"></i>
-                        Timeline Tips
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; background: rgba(245, 158, 11, 0.15);">
+                            <i data-lucide="lightbulb" style="width: 15px; height: 15px; color: #D97706;"></i>
+                        </div>
+                        <span>Timeline Tips</span>
                     </div>
-                    <div class="tip-bullet">
-                        <i data-lucide="check-circle"></i>
-                        <span>Give your timeline a clear, meaningful name.</span>
+                    <div id="sidebarTipsContainer">
+                        <div class="tip-bullet">
+                            <div class="tip-check-circle"><i data-lucide="check"></i></div>
+                            <span>Give your timeline a clear, meaningful name.</span>
+                        </div>
+                        <div class="tip-bullet">
+                            <div class="tip-check-circle"><i data-lucide="check"></i></div>
+                            <span>Add a description to remember its purpose.</span>
+                        </div>
+                        <div class="tip-bullet">
+                            <div class="tip-check-circle"><i data-lucide="check"></i></div>
+                            <span>You can link story arcs in step 4.</span>
+                        </div>
+                        <div class="tip-bullet">
+                            <div class="tip-check-circle"><i data-lucide="check"></i></div>
+                            <span>Timeline events can be added anytime.</span>
+                        </div>
                     </div>
-                    <div class="tip-bullet">
-                        <i data-lucide="check-circle"></i>
-                        <span>Add a description to remember its purpose.</span>
+                </div>
+
+                <!-- Review Checklist (shown on Step 5) -->
+                <div class="sidebar-widget d-none" id="reviewChecklistWidget">
+                    <div class="sidebar-widget-title mb-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; background: rgba(13, 148, 136, 0.10);">
+                            <i data-lucide="check-circle" style="width: 13px; height: 13px; color: #0D9488;"></i>
+                        </div>
+                        <span>Review Checklist</span>
                     </div>
-                    <div class="tip-bullet">
-                        <i data-lucide="check-circle"></i>
-                        <span>You can link story arcs in step 4.</span>
+                    <div id="reviewChecklistItems">
+                        <!-- populated by JS -->
                     </div>
-                    <div class="tip-bullet">
-                        <i data-lucide="check-circle"></i>
-                        <span>Timeline events can be added anytime after creation.</span>
+                </div>
+
+                <!-- All good to go (shown on Step 5) -->
+                <div class="sidebar-widget d-none" id="reviewGoodToGoWidget" style="background: #D1FAE5; border: 1px solid #6EE7B7; border-radius: 12px; padding: 1rem;">
+                    <div id="reviewGoodToGoMsg">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Need Help (shown on Step 5) -->
+                <div class="sidebar-widget d-none" id="reviewNeedHelpWidget" style="">
+                    <div class="sidebar-widget-title mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; background: rgba(245,158,11,0.12);">
+                            <i data-lucide="help-circle" style="width: 13px; height: 13px; color: #D97706;"></i>
+                        </div>
+                        <span>Need Help?</span>
+                    </div>
+                    <p class="text-muted mb-3" style="font-size: 0.78rem;">Learn more about timelines and how to organize your story.</p>
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-flex align-items-center gap-1" style="font-size: 0.8rem;" onclick="alert('Help guide coming soon!')">
+                        View Help Guide <i data-lucide="arrow-right" style="width: 13px; height: 13px;" class="ms-1"></i>
+                    </button>
+                </div>
+
+                <!-- Dynamic Help / Inspiration Card -->
+                <div class="sidebar-widget inspiration-card-bg" id="sidebarHelpCard">
+
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="sidebar-widget-title mb-1" style="font-size: 1rem;" id="sidebarHelpTitle">
+                                <i data-lucide="sparkles" style="width: 16px; height: 16px; color: #D97706;"></i>
+                                Need Inspiration?
+                            </div>
+                            <p class="text-muted small mb-3" style="font-size: 0.78rem; max-width: 170px;" id="sidebarHelpDesc">
+                                Explore timeline templates to get started quickly.
+                            </p>
+                            <button type="button" class="btn btn-outline-teal btn-sm rounded-pill px-3 py-1 fw-semibold text-teal-700" style="border: 1px solid #0D9488; color: #0D9488; font-size: 0.8rem;" id="sidebarHelpBtn" onclick="alert('Help guides coming soon!')">
+                                Browse Templates <i data-lucide="arrow-right" style="width: 14px; height: 14px;" class="ms-1"></i>
+                            </button>
+                        </div>
+                        <div class="text-end">
+                            <img src="/images/inspiration_book_clock.png" id="sidebarHelpImg" alt="Help Graphic" style="width: 105px; height: auto; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.08));" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1043,7 +1938,6 @@
     </form>
 </div>
 
-@section Scripts {
     <script>
         let currentStep = 1;
 
@@ -1053,6 +1947,7 @@
             }
             updateSummary();
             updateSelectedArcsUI();
+            populateReviewArcs();
         });
 
         function jumpToStep(step) {
@@ -1062,28 +1957,183 @@
                 const navItem = document.getElementById('stepNavItem' + i);
                 const bubble = document.getElementById('stepBubble' + i);
 
-                if (i === step) {
-                    panel.classList.remove('d-none');
-                    navItem.classList.add('active');
-                    navItem.classList.remove('completed');
-                } else if (i < step) {
-                    panel.classList.add('d-none');
-                    navItem.classList.remove('active');
-                    navItem.classList.add('completed');
-                    bubble.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i>';
-                } else {
-                    panel.classList.add('d-none');
-                    navItem.classList.remove('active', 'completed');
-                    bubble.innerText = i;
+                if (panel) {
+                    if (i === step) {
+                        panel.classList.remove('d-none');
+                    } else {
+                        panel.classList.add('d-none');
+                    }
+                }
+                if (navItem) {
+                    if (i === step) {
+                        navItem.classList.add('active');
+                        navItem.classList.remove('completed');
+                    } else if (i < step) {
+                        navItem.classList.remove('active');
+                        navItem.classList.add('completed');
+                    } else {
+                        navItem.classList.remove('active', 'completed');
+                    }
+                }
+                if (bubble) {
+                    if (i < step) {
+                        bubble.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i>';
+                    } else {
+                        bubble.innerText = i;
+                    }
                 }
             }
-            const percent = ((step - 1) / 4) * 100;
-            document.getElementById('stepperProgressBar').style.width = percent + '%';
+            const progressBar = document.getElementById('stepperProgressBar');
+            if (progressBar) {
+                const percent = ((step - 1) / 4) * 100;
+                progressBar.style.width = percent + '%';
+            }
+
+            updateSidebarForStep(step);
+
+            if (step === 5) {
+                updateSummary();
+                populateReviewArcs();
+                // show reviewNeedHelpWidget on step 5
+                const needHelp = document.getElementById('reviewNeedHelpWidget');
+                if (needHelp) needHelp.classList.remove('d-none');
+            } else {
+                const needHelp = document.getElementById('reviewNeedHelpWidget');
+                if (needHelp) needHelp.classList.add('d-none');
+            }
 
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
         }
+        window.jumpToStep = jumpToStep;
+
+        function updateSidebarForStep(step) {
+            const tipsContainer = document.getElementById('sidebarTipsContainer');
+            const tipsWidget = tipsContainer ? tipsContainer.closest('.sidebar-widget') : null;
+            const settingsPreviewWidget = document.getElementById('settingsPreviewWidget');
+            const helpTitle = document.getElementById('sidebarHelpTitle');
+            const helpDesc = document.getElementById('sidebarHelpDesc');
+            const helpImg = document.getElementById('sidebarHelpImg');
+            const helpBtn = document.getElementById('sidebarHelpBtn');
+            const arcInfoWidget = document.getElementById('arcInfoWidget');
+            const reviewChecklistWidget = document.getElementById('reviewChecklistWidget');
+            const reviewGoodToGoWidget = document.getElementById('reviewGoodToGoWidget');
+
+            // Show/hide Settings Preview widget
+            if (settingsPreviewWidget) {
+                settingsPreviewWidget.classList.toggle('d-none', step !== 3);
+                if (step === 3) updateSettingsPreview();
+            }
+            // Show/hide Arc Info widget (step 4 only)
+            if (arcInfoWidget) arcInfoWidget.classList.toggle('d-none', step !== 4);
+            // Show/hide Review Checklist widget (step 5 only)
+            if (reviewChecklistWidget) reviewChecklistWidget.classList.toggle('d-none', step !== 5);
+            if (reviewGoodToGoWidget) reviewGoodToGoWidget.classList.toggle('d-none', step !== 5);
+
+            // Show/hide Tips widget
+            if (tipsWidget) tipsWidget.classList.toggle('d-none', step === 3 || step === 4 || step === 5);
+
+            // Show/hide help/inspiration card
+            const helpCard = document.getElementById('sidebarHelpCard');
+            if (helpCard) helpCard.classList.toggle('d-none', step === 5);
+
+            if (step === 2) {
+                if (tipsContainer) {
+                    tipsContainer.innerHTML = `
+                        <div class="tip-bullet"><div class="tip-check-circle"><i data-lucide="check"></i></div><span>Chronological timeline is great for straightforward stories.</span></div>
+                        <div class="tip-bullet"><div class="tip-check-circle"><i data-lucide="check"></i></div><span>Story arc timeline helps you focus on plot structure.</span></div>
+                        <div class="tip-bullet"><div class="tip-check-circle"><i data-lucide="check"></i></div><span>Investigation board is ideal for crime and mystery stories.</span></div>
+                        <div class="tip-bullet"><div class="tip-check-circle"><i data-lucide="check"></i></div><span>You can change timeline type later.</span></div>
+                    `;
+                }
+                if (helpTitle) helpTitle.innerHTML = '<i data-lucide="help-circle" style="width: 16px; height: 16px; color: #D97706;" class="me-1"></i> Need Help?';
+                if (helpDesc) helpDesc.innerText = 'Learn more about timeline types and how to use them effectively.';
+                if (helpImg) helpImg.src = '/images/timeline_help_lantern.png';
+                if (helpBtn) helpBtn.innerHTML = 'View Help Guide <i data-lucide="arrow-right" style="width: 14px; height: 14px;" class="ms-1"></i>';
+            } else if (step === 3) {
+                if (helpTitle) helpTitle.innerHTML = '<i data-lucide="help-circle" style="width: 16px; height: 16px; color: #D97706;" class="me-1"></i> Need Help?';
+                if (helpDesc) helpDesc.innerText = 'You can always change these settings later from the timeline settings page.';
+                if (helpImg) helpImg.src = '/images/timeline_help_lantern.png';
+                if (helpBtn) helpBtn.innerHTML = 'View Help Guide <i data-lucide="arrow-right" style="width: 14px; height: 14px;" class="ms-1"></i>';
+            } else if (step === 5) {
+                // populate review checklist
+                populateReviewChecklist();
+            } else {
+                if (tipsContainer) {
+                    tipsContainer.innerHTML = `
+                        <div class="tip-bullet"><div class="tip-check-circle"><i data-lucide="check"></i></div><span>Give your timeline a clear, meaningful name.</span></div>
+                        <div class="tip-bullet"><div class="tip-check-circle"><i data-lucide="check"></i></div><span>Add a description to remember its purpose.</span></div>
+                        <div class="tip-bullet"><div class="tip-check-circle"><i data-lucide="check"></i></div><span>You can link story arcs in step 4.</span></div>
+                        <div class="tip-bullet"><div class="tip-check-circle"><i data-lucide="check"></i></div><span>Timeline events can be added anytime.</span></div>
+                    `;
+                }
+                if (helpTitle) helpTitle.innerHTML = '<i data-lucide="sparkles" style="width: 16px; height: 16px; color: #D97706;" class="me-1"></i> Need Inspiration?';
+                if (helpDesc) helpDesc.innerText = 'Explore timeline templates to get started quickly.';
+                if (helpImg) helpImg.src = '/images/inspiration_book_clock.png';
+                if (helpBtn) helpBtn.innerHTML = 'Browse Templates <i data-lucide="arrow-right" style="width: 14px; height: 14px;" class="ms-1"></i>';
+            }
+        }
+        window.updateSidebarForStep = updateSidebarForStep;
+
+        function updateSettingsPreview() {
+            // Date Format — read from hidden input (set by dropdown)
+            const dateFormatInput = document.getElementById('inputDateFormat');
+            const dateFormatText = document.getElementById('ddDateFormatText');
+            const dateFormatVal = (dateFormatInput && dateFormatInput.value) ? dateFormatInput.value : (dateFormatText ? dateFormatText.innerText : 'DD MMM YYYY (31 Dec 2025)');
+            // Show only the short form e.g. "31 Dec 2025" extracted from parentheses
+            const dateFormatShort = (() => {
+                const m = dateFormatVal ? dateFormatVal.match(/\(([^)]+)\)/) : null;
+                return m ? m[1] : dateFormatVal;
+            })();
+            const prevDateFormat = document.getElementById('prevDateFormat');
+            if (prevDateFormat) prevDateFormat.innerText = dateFormatShort;
+
+            // Time Format
+            const timeFormatInput = document.getElementById('inputTimeFormat');
+            const timeFormatText = document.getElementById('ddTimeFormatText');
+            const timeFormatVal = (timeFormatInput && timeFormatInput.value) ? timeFormatInput.value : (timeFormatText ? timeFormatText.innerText : '12 Hour (AM/PM)');
+            const prevTimeFormat = document.getElementById('prevTimeFormat');
+            if (prevTimeFormat) prevTimeFormat.innerText = timeFormatVal;
+
+            // Default View
+            const defaultViewInput = document.getElementById('inputDefaultTimelineView');
+            const defaultViewText = document.getElementById('ddDefaultViewText');
+            const defaultViewVal = (defaultViewInput && defaultViewInput.value) ? defaultViewInput.value : (defaultViewText ? defaultViewText.innerText : 'Chronological Timeline');
+            // Shorten to first word or two
+            const defaultViewShort = defaultViewVal ? defaultViewVal.replace(' Timeline', '').trim() : '';
+            const prevDefaultView = document.getElementById('prevDefaultView');
+            if (prevDefaultView) prevDefaultView.innerText = defaultViewShort;
+
+            // Event Grouping
+            const groupingInput = document.getElementById('inputEventGrouping');
+            const groupingText = document.getElementById('ddGroupingText');
+            const groupingVal = (groupingInput && groupingInput.value) ? groupingInput.value : (groupingText ? groupingText.innerText : 'Group by Date');
+            const groupingShort = groupingVal ? groupingVal.replace('Group by ', 'By ').replace('No Grouping', 'None') : '';
+            const prevGrouping = document.getElementById('prevEventGrouping');
+            if (prevGrouping) prevGrouping.innerText = groupingShort;
+
+            // Overlapping Events toggle
+            const overlapCb = document.getElementById('AllowOverlappingEvents');
+            const prevOverlap = document.getElementById('prevOverlapping');
+            if (prevOverlap && overlapCb) {
+                const enabled = overlapCb.checked;
+                prevOverlap.innerHTML = enabled
+                    ? '<span class="badge rounded-pill px-2 py-1" style="background: #D1FAE5; color: #065F46; font-size: 0.72rem;">Enabled</span>'
+                    : '<span class="badge rounded-pill px-2 py-1" style="background: #FEE2E2; color: #991B1B; font-size: 0.72rem;">Disabled</span>';
+            }
+
+            // Dependencies toggle
+            const depCb = document.getElementById('EnableTimelineDependencies');
+            const prevDep = document.getElementById('prevDependencies');
+            if (prevDep && depCb) {
+                const enabled = depCb.checked;
+                prevDep.innerHTML = enabled
+                    ? '<span class="badge rounded-pill px-2 py-1" style="background: #D1FAE5; color: #065F46; font-size: 0.72rem;">Enabled</span>'
+                    : '<span class="badge rounded-pill px-2 py-1" style="background: #FEE2E2; color: #991B1B; font-size: 0.72rem;">Disabled</span>';
+            }
+        }
+        window.updateSettingsPreview = updateSettingsPreview;
 
         function updateCharCount(inputId, counterId, maxLen) {
             const input = document.getElementById(inputId);
@@ -1092,108 +2142,497 @@
                 counter.innerText = input.value.length + '/' + maxLen;
             }
         }
+        window.updateCharCount = updateCharCount;
 
         function selectColorSwatch(element, colorName) {
-            document.querySelectorAll('.color-circle-btn').forEach(btn => btn.classList.remove('selected'));
+            document.querySelectorAll('.color-circle-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.innerHTML = '';
+            });
             element.classList.add('selected');
-            document.getElementById('inputColor').value = colorName;
-            document.getElementById('sumColorText').innerHTML = `<span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${element.style.backgroundColor}; display: inline-block;"></span> ${colorName}`;
-            document.getElementById('reviewColor').innerText = colorName;
+            element.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i>';
+            const inputColor = document.getElementById('inputColor');
+            if (inputColor) inputColor.value = colorName;
+            const sumColorText = document.getElementById('sumColorText');
+            if (sumColorText) sumColorText.innerHTML = `<span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${element.style.backgroundColor}; display: inline-block;"></span> ${colorName}`;
+            const reviewColor = document.getElementById('reviewColor');
+            if (reviewColor) reviewColor.innerText = colorName;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+        window.selectColorSwatch = selectColorSwatch;
 
         function selectTypeCard(element, typeName) {
             document.querySelectorAll('.type-card').forEach(card => card.classList.remove('selected'));
             element.classList.add('selected');
-            document.getElementById('inputTimelineType').value = typeName;
-            document.getElementById('sumTypeText').innerText = typeName;
-            document.getElementById('reviewType').innerText = typeName;
+            const inputType = document.getElementById('inputTimelineType');
+            if (inputType) inputType.value = typeName;
+            const sumTypeText = document.getElementById('sumTypeText');
+            if (sumTypeText) sumTypeText.innerText = typeName;
+            const reviewType = document.getElementById('reviewType');
+            if (reviewType) reviewType.innerText = typeName;
         }
+        window.selectTypeCard = selectTypeCard;
 
         function toggleDropdown(wrapperId) {
             const wrapper = document.getElementById(wrapperId);
+            if (!wrapper) return;
             document.querySelectorAll('.theme-dropdown-wrapper').forEach(w => {
                 if (w !== wrapper) w.classList.remove('open');
             });
             wrapper.classList.toggle('open');
         }
+        window.toggleDropdown = toggleDropdown;
 
         function selectDropdownVal(wrapperId, inputId, val) {
-            document.getElementById(inputId).value = val;
+            const inputEl = document.getElementById(inputId);
+            if (inputEl) inputEl.value = val;
             const textElem = document.getElementById(wrapperId.replace('Wrapper', 'Text'));
             if (textElem) textElem.innerText = val;
-            document.getElementById(wrapperId).classList.remove('open');
+            const wrapper = document.getElementById(wrapperId);
+            if (wrapper) wrapper.classList.remove('open');
+            // Update Settings Preview if on step 3
+            if (currentStep === 3) {
+                updateSettingsPreview();
+            }
         }
+        window.selectDropdownVal = selectDropdownVal;
 
-        function selectStoryOption(storyId, storyTitle) {
-            document.getElementById('inputStoryId').value = storyId;
-            document.getElementById('ddStoryText').innerHTML = `<i data-lucide="book-open" class="me-1 text-teal-600" style="width: 16px; height: 16px;"></i> ${storyTitle}`;
-            document.getElementById('sumStoryText').innerText = storyTitle;
-            document.getElementById('reviewStory').innerText = storyTitle;
-            document.getElementById('ddStoryWrapper').classList.remove('open');
+        function selectStoryOption(storyId, storyTitle, coverUrl) {
+            const inputStory = document.getElementById('inputStoryId');
+            if (inputStory) inputStory.value = storyId;
+            const titleSpan = document.getElementById('storyTitleSpan');
+            if (titleSpan) titleSpan.innerText = storyTitle;
+            const sumStoryText = document.getElementById('sumStoryText');
+            if (sumStoryText) sumStoryText.innerText = storyTitle;
+            const reviewStory = document.getElementById('reviewStory');
+            if (reviewStory) reviewStory.innerText = storyTitle;
+            if (coverUrl) {
+                const thumb = document.getElementById('sumStoryThumbnail');
+                if (thumb) thumb.src = coverUrl;
+            }
+            const wrapper = document.getElementById('ddStoryWrapper');
+            if (wrapper) wrapper.classList.remove('open');
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+        window.selectStoryOption = selectStoryOption;
 
         function updateSummary() {
-            const name = document.getElementById('timelineNameInput').value;
-            const startDate = document.getElementById('startDateInput').value;
-            const endDate = document.getElementById('endDateInput').value;
+            const nameInp = document.getElementById('timelineNameInput');
+            const name = nameInp ? nameInp.value : '';
+            const startInp = document.getElementById('startDateInput');
+            const startDate = startInp ? startInp.value : '';
+            const endInp = document.getElementById('endDateInput');
+            const endDate = endInp ? endInp.value : '';
+            const descInp = document.getElementById('timelineDescInput') || document.getElementById('Description');
+            const desc = descInp ? descInp.value : '';
 
-            document.getElementById('reviewName').innerText = name || 'Main Timeline';
-            document.getElementById('sumStartDateText').innerText = startDate || 'Not set';
-            document.getElementById('sumEndDateText').innerText = endDate || 'Not set';
+            // Sidebar summary (safely updated if present)
+            const sumStart = document.getElementById('sumStartDateText');
+            if (sumStart) sumStart.innerText = startDate ? formatDate(startDate) : 'Not set';
+            const sumEnd = document.getElementById('sumEndDateText');
+            if (sumEnd) sumEnd.innerText = endDate ? formatDate(endDate) : 'Not set';
+
+            // Step 5 review cards — Basic Info
+            const reviewNameEl = document.getElementById('reviewName');
+            if (reviewNameEl) reviewNameEl.innerText = name || '—';
+            const reviewDescEl = document.getElementById('reviewDescription');
+            if (reviewDescEl) reviewDescEl.innerText = desc ? (desc.length > 30 ? desc.substring(0, 30) + '...' : desc) : 'No description';
+
+            // Date/Time cards
+            const dtFormatEl = document.getElementById('reviewDateFormat');
+            const tmFormatEl = document.getElementById('reviewTimeFormat');
+            const tmDefEl = document.getElementById('reviewDefaultTime');
+            const tmZoneEl = document.getElementById('reviewTimeZone');
+            if (dtFormatEl) {
+                const dtInput = document.getElementById('inputDateFormat');
+                const dtText = document.getElementById('ddDateFormatText');
+                const dtVal = (dtInput && dtInput.value) ? dtInput.value : (dtText ? dtText.innerText : 'DD MMM YYYY (31 Dec 2025)');
+                const m = dtVal ? dtVal.match(/^([^(]+)/) : null;
+                dtFormatEl.innerText = m ? m[1].trim() : (dtVal || '—');
+            }
+            if (tmFormatEl) {
+                const tmInput = document.getElementById('inputTimeFormat');
+                const tmText = document.getElementById('ddTimeFormatText');
+                tmFormatEl.innerText = (tmInput && tmInput.value) ? tmInput.value : (tmText ? tmText.innerText : '12 Hour (AM/PM)');
+            }
+            if (tmDefEl) {
+                const defTimeInput = document.getElementById('DefaultTime');
+                if (defTimeInput && defTimeInput.value) {
+                    try {
+                        const [h, min] = defTimeInput.value.split(':');
+                        const hour = parseInt(h);
+                        const ampm = hour >= 12 ? 'PM' : 'AM';
+                        const h12 = hour % 12 || 12;
+                        tmDefEl.innerText = `${h12}:${min} ${ampm}`;
+                    } catch(e) { tmDefEl.innerText = defTimeInput.value; }
+                } else { tmDefEl.innerText = '12:00 PM'; }
+            }
+            if (tmZoneEl) {
+                const tzInput = document.getElementById('inputTimeZone');
+                const tzText = document.getElementById('ddTimeZoneText');
+                tmZoneEl.innerText = (tzInput && tzInput.value) ? tzInput.value : (tzText ? tzText.innerText : '(GMT+05:30) Asia/Kolkata');
+            }
+
+            // Grouping
+            const grpEl = document.getElementById('reviewGrouping');
+            if (grpEl) {
+                const grpInput = document.getElementById('inputEventGrouping');
+                const grpText = document.getElementById('ddGroupingText');
+                grpEl.innerText = (grpInput && grpInput.value) ? grpInput.value : (grpText ? grpText.innerText : 'Group by Date');
+            }
+
+            // Display preference badges
+            function yesNoBadge(checked) {
+                return checked
+                    ? '<span class="d-flex align-items-center gap-1"><i data-lucide="check-circle" style="width:13px;height:13px;color:#0D9488;"></i><span style="font-size:0.76rem;color:#0D9488;font-weight:600;">Yes</span></span>'
+                    : '<span class="d-flex align-items-center gap-1"><i data-lucide="x-circle" style="width:13px;height:13px;color:#94A3B8;"></i><span style="font-size:0.76rem;color:#94A3B8;">No</span></span>';
+            }
+            const showTimeCb = document.getElementById('ShowTimeOnTimeline');
+            const showIconsCb = document.getElementById('ShowEventIcons');
+            const showDescsCb = document.getElementById('ShowEventDescriptions');
+            const compactCb = document.getElementById('CompactMode');
+            const revShowTime = document.getElementById('revShowTime');
+            const revShowIcons = document.getElementById('revShowIcons');
+            const revShowDescs = document.getElementById('revShowDescs');
+            const revCompact = document.getElementById('revCompact');
+            if (revShowTime && showTimeCb) revShowTime.innerHTML = yesNoBadge(showTimeCb.checked);
+            if (revShowIcons && showIconsCb) revShowIcons.innerHTML = yesNoBadge(showIconsCb.checked);
+            if (revShowDescs && showDescsCb) revShowDescs.innerHTML = yesNoBadge(showDescsCb.checked);
+            if (revCompact && compactCb) revCompact.innerHTML = yesNoBadge(compactCb.checked);
+            const revShowTimeCheck = document.getElementById('reviewShowTimeCheck');
+            if (revShowTimeCheck && showTimeCb) {
+                revShowTimeCheck.innerHTML = showTimeCb.checked
+                    ? '<i data-lucide="check-circle" style="width:14px;height:14px;color:#0D9488;"></i> <span style="color:#0D9488;font-size:0.76rem;">Enabled</span>'
+                    : '<i data-lucide="x-circle" style="width:14px;height:14px;color:#94A3B8;"></i> <span style="color:#94A3B8;font-size:0.76rem;">Disabled</span>';
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+        window.updateSummary = updateSummary;
 
-        function updateSelectedArcsUI() {
+        // Populate the Review step Story Arcs list from checked arc cards
+        function populateReviewArcs() {
             const checkboxes = document.querySelectorAll('.arc-checkbox:checked');
-            const tagContainer = document.getElementById('selectedArcTags');
-            const countElem = document.getElementById('selectedArcCount');
-            countElem.innerText = checkboxes.length;
-            document.getElementById('sumArcsText').innerText = checkboxes.length + ' arcs linked';
+            const arcCountEl = document.getElementById('reviewArcCount');
+            const arcsListEl = document.getElementById('reviewArcsList');
+            if (!arcsListEl) return;
+            if (arcCountEl) arcCountEl.innerText = checkboxes.length;
+
+            // Sync sidebar
+            const sumArcs = document.getElementById('sumArcsText');
+            if (sumArcs) sumArcs.innerText = checkboxes.length + (checkboxes.length === 1 ? ' arc linked' : ' arcs linked');
+
+            const arcIconMap = {
+                'Main Story':          { icon: 'heart',     bg: '#FEE2E2', color: '#DC2626', label: 'Main Plot' },
+                'Character Arc':       { icon: 'user',      bg: '#EDE9FE', color: '#7C3AED', label: 'Character Arc' },
+                'Romance Arc':         { icon: 'heart',     bg: '#FCE7F3', color: '#DB2777', label: 'Romance' },
+                'Mystery Arc':         { icon: 'search',    bg: '#FEF3C7', color: '#D97706', label: 'Mystery' },
+                'Political Arc':       { icon: 'landmark',  bg: '#DBEAFE', color: '#2563EB', label: 'Political' },
+                'War Arc':             { icon: 'shield',    bg: '#FEE2E2', color: '#DC2626', label: 'War' },
+                'Crime Investigation': { icon: 'shield',    bg: '#F0FDF4', color: '#16A34A', label: 'Crime' },
+                'Past Trauma Arc':     { icon: 'clock',     bg: '#F3F4F6', color: '#374151', label: 'Trauma' },
+                'Redemption Arc':      { icon: 'sunrise',   bg: '#FFF7ED', color: '#EA580C', label: 'Redemption' },
+                'Custom':              { icon: 'layers',    bg: '#F1F5F9', color: '#475569', label: 'Custom' },
+            };
 
             if (checkboxes.length === 0) {
-                tagContainer.innerHTML = '<span class="text-muted small italic">No arcs selected</span>';
+                arcsListEl.innerHTML = '<div class="text-muted" style="font-size: 0.8rem; font-style: italic; padding: 0.5rem 0;">No story arcs linked. You can link arcs in Step 4.</div>';
                 return;
             }
 
             let html = '';
             checkboxes.forEach(cb => {
                 const card = cb.closest('.arc-item-card');
-                const title = card.getAttribute('data-title');
-                html += `<span class="badge bg-teal-100 text-teal-800 border border-teal-200 py-1 px-2 me-1 mb-1 d-inline-flex align-items-center gap-1">${title}</span>`;
-            });
-            tagContainer.innerHTML = html;
-        }
+                const title = card ? card.getAttribute('data-title') : 'Unknown Arc';
+                const arcType = card ? card.getAttribute('data-arc-type') || 'Custom' : 'Custom';
+                const arcColor = card ? card.getAttribute('data-arc-color') || '#475569' : '#475569';
+                const info = arcIconMap[arcType] || { icon: 'git-branch', bg: '#F1F5F9', color: '#475569', label: arcType };
+                const pb = card ? card.querySelector('.arc-progress-bar') : null;
+                const progressW = pb ? pb.style.width : '0%';
+                const isMain = arcType === 'Main Story';
 
-        function filterArcCards(query) {
-            const q = query.toLowerCase().trim();
-            document.querySelectorAll('.arc-item-card').forEach(card => {
-                const title = card.getAttribute('data-title').toLowerCase();
-                if (!q || title.includes(q)) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
+                html += `
+                    <div class="d-flex align-items-center gap-3 p-3 rounded-3 border" style="background: #FAFCFF; border-color: #E8EDF5 !important;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: ${info.bg};">
+                            <i data-lucide="${info.icon}" style="width: 15px; height: 15px; color: ${info.color};"></i>
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="fw-bold text-slate-800" style="font-size: 0.85rem;">${title}</span>
+                                ${isMain ? '<span class="badge rounded-pill" style="font-size:0.68rem; background:#FEF3C7; color:#D97706; padding:2px 7px;"><i data-lucide="star" style="width:9px;height:9px;"></i> Primary</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <span class="badge rounded-pill" style="font-size: 0.72rem; background: ${info.bg}; color: ${info.color}; padding: 3px 10px; font-weight: 600;">${info.label}</span>
+                            <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                        </div>
+                    </div>
+                `;
+            });
+            arcsListEl.innerHTML = html;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        window.populateReviewArcs = populateReviewArcs;
+
+        // Populate Review Checklist in sidebar
+        function populateReviewChecklist() {
+            const nameEl = document.getElementById('timelineNameInput');
+            const name = nameEl ? nameEl.value.trim() : '';
+            const typeEl = document.getElementById('inputTimelineType');
+            const type = typeEl ? typeEl.value : '';
+            const startDateEl = document.getElementById('startDateInput');
+            const startDate = startDateEl ? startDateEl.value : '';
+            const arcCount = document.querySelectorAll('.arc-checkbox:checked').length;
+
+            function checkItem(ok, label) {
+                return `<div class="d-flex align-items-center gap-2 mb-2">
+                    <i data-lucide="${ok ? 'check-circle' : 'circle'}" style="width:15px;height:15px;color:${ok ? '#0D9488' : '#CBD5E1'};flex-shrink:0;"></i>
+                    <span style="font-size:0.78rem;color:${ok ? '#0F172A' : '#94A3B8'};">${label}</span>
+                </div>`;
+            }
+
+            const checklistEl = document.getElementById('reviewChecklistItems');
+            if (checklistEl) {
+                checklistEl.innerHTML =
+                    checkItem(!!name, 'Timeline details are correct') +
+                    checkItem(!!type, 'Timeline type is selected') +
+                    checkItem(true, 'Settings are configured') +
+                    checkItem(arcCount > 0, `Story arcs are linked (${arcCount})`) +
+                    checkItem(!!name && !!type, 'Ready to create your timeline!');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // All good to go state
+            const goodToGoEl = document.getElementById('reviewGoodToGoMsg');
+            if (goodToGoEl) {
+                const allGood = !!name && !!type;
+                goodToGoEl.innerHTML = allGood
+                    ? '<div class="fw-bold mb-1" style="font-size:0.85rem;color:#065F46;"><i data-lucide="check-circle" style="width:15px;height:15px;color:#059669;" class="me-1"></i> All good to go!</div><p class="mb-0" style="font-size:0.76rem;color:#047857;">You can now create your timeline.</p>'
+                    : '<div class="fw-bold mb-1" style="font-size:0.85rem;color:#92400E;"><i data-lucide="alert-circle" style="width:15px;height:15px;color:#D97706;" class="me-1"></i> Almost there!</div><p class="mb-0" style="font-size:0.76rem;color:#92400E;">Please fill in the required details.</p>';
+                const goodToGoWidget = document.getElementById('reviewGoodToGoWidget');
+                if (goodToGoWidget) {
+                    goodToGoWidget.style.background = allGood ? '#D1FAE5' : '#FEF3C7';
+                    goodToGoWidget.style.borderColor = allGood ? '#6EE7B7' : '#FDE68A';
                 }
-            });
-        }
-
-        function handleFileSelect(input) {
-            if (input.files && input.files[0]) {
-                const fileName = input.files[0].name;
-                document.getElementById('fileNameDisplay').innerText = 'Selected file: ' + fileName;
-                document.getElementById('filePreviewContainer').classList.remove('d-none');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         }
+        window.populateReviewChecklist = populateReviewChecklist;
+
+        function saveDraft() {
+            // Set a hidden field to indicate draft save, then submit
+            const statusField = document.querySelector('input[name="Status"]');
+            if (statusField) { statusField.value = 'Draft'; }
+            else {
+                const inp = document.createElement('input');
+                inp.type = 'hidden'; inp.name = 'Status'; inp.value = 'Draft';
+                const form = document.querySelector('form');
+                if (form) form.appendChild(inp);
+            }
+            const form = document.querySelector('form');
+            if (form) form.submit();
+        }
+        window.saveDraft = saveDraft;
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Not set';
+            try {
+                const d = new Date(dateStr);
+                return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            } catch (e) {
+                return dateStr;
+            }
+        }
+        window.formatDate = formatDate;
+
+        // ── Arc Tab Switching ──────────────────────────────────────────────
+        function switchArcTab(tab) {
+            ['existing','create','templates'].forEach(function(t) {
+                const pane = document.getElementById('arcPane' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (pane) pane.classList.add('d-none');
+                const tabElem = document.getElementById('arcTab' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (tabElem) tabElem.classList.remove('active');
+            });
+            const activePane = document.getElementById('arcPane' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (activePane) activePane.classList.remove('d-none');
+            const activeTab = document.getElementById('arcTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (activeTab) activeTab.classList.add('active');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        window.switchArcTab = switchArcTab;
+
+        // ── Toggle Arc Card Selection ──────────────────────────────────────
+        function toggleArcCard(card) {
+            if (!card) return;
+            const cb = card.querySelector('.arc-checkbox');
+            const checkBox = card.querySelector('.arc-check-box');
+            if (cb) cb.checked = !cb.checked;
+            if (cb && cb.checked) {
+                card.classList.add('arc-card-selected');
+                if (checkBox) checkBox.classList.add('arc-check-box-checked');
+            } else {
+                card.classList.remove('arc-card-selected');
+                if (checkBox) checkBox.classList.remove('arc-check-box-checked');
+            }
+            updateSelectedArcsUI();
+        }
+        window.toggleArcCard = toggleArcCard;
+
+        // ── Remove Arc via Tag × button ────────────────────────────────────
+        function removeArcTag(arcId) {
+            const card = document.querySelector('.arc-item-card[data-arc-id="' + arcId + '"]');
+            if (card) {
+                const cb = card.querySelector('.arc-checkbox');
+                if (cb) cb.checked = false;
+                card.classList.remove('arc-card-selected');
+                const checkBox = card.querySelector('.arc-check-box');
+                if (checkBox) checkBox.classList.remove('arc-check-box-checked');
+            }
+            updateSelectedArcsUI();
+        }
+        window.removeArcTag = removeArcTag;
+
+        // ── Refresh Selected Arcs Panel ────────────────────────────────────
+        function updateSelectedArcsUI() {
+            const checkboxes = document.querySelectorAll('.arc-checkbox:checked');
+            const tagContainer = document.getElementById('selectedArcTags');
+            const countElem = document.getElementById('selectedArcCount');
+            if (countElem) countElem.innerText = checkboxes.length;
+            const sumArcs = document.getElementById('sumArcsText');
+            if (sumArcs) sumArcs.innerText = checkboxes.length + (checkboxes.length === 1 ? ' arc linked' : ' arcs linked');
+
+            if (!tagContainer) return;
+
+            if (checkboxes.length === 0) {
+                tagContainer.innerHTML = '<span class="text-muted" style="font-size: 0.78rem; font-style: italic;">No arcs selected yet.</span>';
+                return;
+            }
+
+            let html = '';
+            checkboxes.forEach(function(cb) {
+                const card = cb.closest('.arc-item-card');
+                if (!card) return;
+                const title = card.getAttribute('data-title') || 'Arc';
+                const arcId = card.getAttribute('data-arc-id') || '';
+                const arcColor = card.getAttribute('data-arc-color') || '#DC2626';
+                const pb = card.querySelector('.arc-progress-bar');
+                const progressW = pb ? pb.style.width : '0%';
+                html += '<div class="arc-selected-tag" id="arcTag_' + arcId + '">' +
+                    '<div class="d-flex align-items-center gap-1 min-width-0">' +
+                    '<i data-lucide="heart" style="width: 11px; height: 11px; color: ' + arcColor + '; flex-shrink:0;"></i>' +
+                    '<span class="text-truncate" style="font-size:0.78rem; max-width:110px;">' + title + '</span>' +
+                    '<span class="fw-bold" style="color: #0D9488; font-size: 0.7rem; white-space:nowrap;">' + progressW + '</span>' +
+                    '</div>' +
+                    '<button type="button" class="arc-tag-remove" onclick="removeArcTag(\'' + arcId + '\')">' +
+                    '<i data-lucide="x" style="width: 11px; height: 11px;"></i>' +
+                    '</button>' +
+                    '</div>';
+            });
+            tagContainer.innerHTML = html;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        window.updateSelectedArcsUI = updateSelectedArcsUI;
+
+        // ── Filter Arc Cards by search query ──────────────────────────────
+        function filterArcCards(query) {
+            const q = query.toLowerCase().trim();
+            document.querySelectorAll('.arc-item-card').forEach(function(card) {
+                const title = (card.getAttribute('data-title') || '').toLowerCase();
+                card.style.display = (!q || title.includes(q)) ? 'flex' : 'none';
+            });
+        }
+        window.filterArcCards = filterArcCards;
+
+        // ── Apply Arc Template ─────────────────────────────────────────────
+        function applyArcTemplate(title, type, description) {
+            switchArcTab('create');
+            const newTitle = document.getElementById('newArcTitle');
+            if (newTitle) newTitle.value = title;
+            const newType = document.getElementById('newArcType');
+            if (newType) newType.value = type;
+            const newDesc = document.getElementById('newArcDesc');
+            if (newDesc) newDesc.value = description;
+        }
+        window.applyArcTemplate = applyArcTemplate;
+
+        // ── Create New Arc Inline ──────────────────────────────────────────
+        function createNewArcInline() {
+            const titleEl = document.getElementById('newArcTitle');
+            const title = titleEl ? titleEl.value.trim() : '';
+            const typeEl = document.getElementById('newArcType');
+            const type = typeEl ? typeEl.value : '';
+            const descEl = document.getElementById('newArcDesc');
+            const desc = descEl ? descEl.value.trim() : '';
+            const pctEl = document.getElementById('newArcPercent');
+            const pct = (pctEl ? parseInt(pctEl.value) : 0) || 0;
+            if (!title) {
+                if (titleEl) titleEl.focus();
+                return;
+            }
+            const container = document.getElementById('arcOptionsContainer');
+            if (!container) return;
+            const tempId = 'new_' + Date.now();
+            const card = document.createElement('div');
+            card.className = 'arc-item-card arc-card-new';
+            card.setAttribute('data-title', title);
+            card.setAttribute('data-arc-id', tempId);
+            card.setAttribute('data-arc-color', '#0D9488');
+            card.setAttribute('onclick', 'toggleArcCard(this)');
+            card.innerHTML = '<div class="d-flex align-items-center gap-3 flex-grow-1">' +
+                '<div class="arc-icon-circle flex-shrink-0" style="background: #CCFBF1; color: #0D9488;">' +
+                '<i data-lucide="git-branch" style="width: 16px; height: 16px;"></i>' +
+                '</div>' +
+                '<div class="flex-grow-1">' +
+                '<div class="d-flex align-items-center gap-2 mb-1">' +
+                '<span class="fw-bold text-slate-800" style="font-size: 0.88rem;">' + title + '</span>' +
+                '<span class="badge rounded-pill" style="font-size:0.68rem; background:#CCFBF1; color:#0D9488; padding:2px 7px;">New</span>' +
+                '</div>' +
+                '<p class="text-muted mb-1" style="font-size: 0.76rem;">' + (desc || 'No description provided.') + '</p>' +
+                '<div class="d-flex align-items-center gap-2">' +
+                '<span class="arc-type-badge" style="background:#CCFBF1; color:#0D9488;">' + type + '</span>' +
+                '<div class="arc-progress-track"><div class="arc-progress-bar" style="width:' + pct + '%; background:#0D9488;"></div></div>' +
+                '<span class="fw-bold" style="font-size:0.75rem; color:#0D9488;">' + pct + '%</span>' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="arc-check-area flex-shrink-0">' +
+                '<input type="checkbox" name="NewArcTitles" value="' + title + '" class="arc-checkbox d-none" checked />' +
+                '<div class="arc-check-box arc-check-box-checked">' +
+                '<i data-lucide="check" style="width: 13px; height: 13px;"></i>' +
+                '</div>' +
+                '</div>';
+            container.appendChild(card);
+            if (titleEl) titleEl.value = '';
+            if (descEl) descEl.value = '';
+            if (pctEl) pctEl.value = '0';
+            switchArcTab('existing');
+            card.classList.add('arc-card-selected');
+            updateSelectedArcsUI();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        window.createNewArcInline = createNewArcInline;
+
+        function handleFileSelect(input) {
+            if (input && input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                const nameDisplay = document.getElementById('fileNameDisplay');
+                if (nameDisplay) nameDisplay.innerText = 'Selected file: ' + fileName;
+                const previewContainer = document.getElementById('filePreviewContainer');
+                if (previewContainer) previewContainer.classList.remove('d-none');
+            }
+        }
+        window.handleFileSelect = handleFileSelect;
 
         function clearFileSelect() {
             const input = document.getElementById('bannerFileInput');
-            input.value = '';
-            document.getElementById('filePreviewContainer').classList.add('d-none');
+            if (input) input.value = '';
+            const previewContainer = document.getElementById('filePreviewContainer');
+            if (previewContainer) previewContainer.classList.add('d-none');
         }
+        window.clearFileSelect = clearFileSelect;
 
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.theme-dropdown-wrapper')) {
-                document.querySelectorAll('.theme-dropdown-wrapper').forEach(w => w.classList.remove('open'));
+                document.querySelectorAll('.theme-dropdown-wrapper').forEach(function(w) { w.classList.remove('open'); });
             }
         });
     </script>
-}

@@ -18,11 +18,16 @@ namespace StoryVerse.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly StoryVerse.Web.Services.IActiveStoryService _activeStoryService;
 
-        public CharactersController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public CharactersController(
+            ApplicationDbContext context, 
+            UserManager<ApplicationUser> userManager,
+            StoryVerse.Web.Services.IActiveStoryService activeStoryService)
         {
             _context = context;
             _userManager = userManager;
+            _activeStoryService = activeStoryService;
         }
 
         // GET: Characters?storyId=...&search=...&role=...&status=...&sortBy=...&arcType=...&page=1&pageSize=10
@@ -32,19 +37,16 @@ namespace StoryVerse.Web.Controllers
             if (user == null) return Challenge();
 
             // Fetch user's stories for filter dropdown
-            var userStories = await _context.Stories
-                .Where(s => s.UserId == user.Id)
-                .OrderBy(s => s.Title)
-                .ToListAsync();
-
+            var userStories = await _activeStoryService.GetUserStoriesAsync(user.Id);
             ViewBag.Stories = userStories;
 
-            // Selected Story filter
-            Story? selectedStory = null;
-            if (storyId.HasValue && storyId.Value != Guid.Empty)
-            {
-                selectedStory = userStories.FirstOrDefault(s => s.Id == storyId.Value);
-            }
+            // Selected Story filter via ActiveStoryService
+            var activeStoryIdGuid = await _activeStoryService.GetActiveStoryIdAsync(HttpContext, user.Id, storyId);
+            
+            Story? selectedStory = activeStoryIdGuid.HasValue
+                ? userStories.FirstOrDefault(s => s.Id == activeStoryIdGuid.Value)
+                : null;
+
             ViewBag.Story = selectedStory;
             var worldLocations = selectedStory != null
                 ? await _context.Locations.Where(l => l.StoryId == selectedStory.Id).OrderBy(l => l.Name).ToListAsync()
@@ -57,22 +59,22 @@ namespace StoryVerse.Web.Controllers
                 .Where(c => c.Story.UserId == user.Id)
                 .AsQueryable();
 
-            // All characters for overall stats & relationships mapping
+            // Apply Story Filter first so stats and cards reflect active story
+            if (selectedStory != null)
+            {
+                query = query.Where(c => c.StoryId == selectedStory.Id);
+            }
+
+            // All characters for active story stats & relationships mapping
             var allUserCharacters = await query.ToListAsync();
             ViewBag.AllCharacters = allUserCharacters;
 
-            // Calculate overall DB Stats
+            // Calculate overall Stats for active story
             ViewBag.TotalCount = allUserCharacters.Count;
             ViewBag.MainCount = allUserCharacters.Count(c => (c.ArcType != null && c.ArcType.Equals("Main", StringComparison.OrdinalIgnoreCase)) || (c.Role != null && (c.Role.Contains("Protagonist", StringComparison.OrdinalIgnoreCase) || c.Role.Contains("Antagonist", StringComparison.OrdinalIgnoreCase))));
             ViewBag.SupportingCount = allUserCharacters.Count(c => (c.ArcType != null && c.ArcType.Equals("Supporting", StringComparison.OrdinalIgnoreCase)) || (c.Role != null && (c.Role.Contains("Mentor", StringComparison.OrdinalIgnoreCase) || c.Role.Contains("Supporter", StringComparison.OrdinalIgnoreCase) || c.Role.Contains("Supporting", StringComparison.OrdinalIgnoreCase))));
             ViewBag.MinorCount = allUserCharacters.Count(c => (c.ArcType != null && c.ArcType.Equals("Minor", StringComparison.OrdinalIgnoreCase)) || (c.Role != null && (c.Role.Contains("Minor", StringComparison.OrdinalIgnoreCase) || c.Role.Contains("Authority", StringComparison.OrdinalIgnoreCase))));
             ViewBag.RecentlyAddedCount = allUserCharacters.Count(c => c.CreatedAt >= DateTime.UtcNow.AddDays(-30));
-
-            // Apply Story Filter
-            if (selectedStory != null)
-            {
-                query = query.Where(c => c.StoryId == selectedStory.Id);
-            }
 
             // Apply Search Filter
             if (!string.IsNullOrWhiteSpace(search))

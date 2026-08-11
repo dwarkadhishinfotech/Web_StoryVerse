@@ -16,6 +16,7 @@
     @RenderSection("Styles", required: false)
 </head>
 <body class="auth-page">
+    <partial name="_Loader" />
     <div class="auth-layout-container">
         <!-- Premium Glass Overlay -->
         <div class="overlay-glass"></div>
@@ -70,6 +71,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/loader.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

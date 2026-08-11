@@ -14,11 +14,16 @@ namespace StoryVerse.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly StoryVerse.Web.Services.IActiveStoryService _activeStoryService;
 
-        public ResearchController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public ResearchController(
+            ApplicationDbContext context, 
+            UserManager<ApplicationUser> userManager,
+            StoryVerse.Web.Services.IActiveStoryService activeStoryService)
         {
             _context = context;
             _userManager = userManager;
+            _activeStoryService = activeStoryService;
         }
 
         // GET: Research?storyId=...
@@ -27,12 +32,13 @@ namespace StoryVerse.Web.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            if (storyId.HasValue && storyId.Value != Guid.Empty)
+            var activeStoryIdGuid = await _activeStoryService.GetActiveStoryIdAsync(HttpContext, user.Id, storyId);
+
+            if (activeStoryIdGuid.HasValue && activeStoryIdGuid.Value != Guid.Empty)
             {
                 var story = await _context.Stories
-                    .FirstOrDefaultAsync(s => s.Id == storyId.Value && s.UserId == user.Id);
+                    .FirstOrDefaultAsync(s => s.Id == activeStoryIdGuid.Value && s.UserId == user.Id);
 
-                if (story == null) return NotFound();
                 ViewBag.Story = story;
             }
             else

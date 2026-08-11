@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" fill="none">
+  <!-- Background cork board -->
+  <rect width="200" height="140" rx="12" fill="#FEF9F0"/>
+
+  <!-- Evidence cards / notes -->
+
+  <!-- Card A -->
+  <rect x="14" y="20" width="58" height="38" rx="5" fill="white" stroke="#FCA5A5" stroke-width="1.5"/>
+  <rect x="22" y="28" width="40" height="4" rx="2" fill="#EF4444" opacity="0.7"/>
+  <rect x="22" y="36" width="32" height="3" rx="1.5" fill="#CBD5E1"/>
+  <rect x="22" y="42" width="28" height="3" rx="1.5" fill="#CBD5E1"/>
+  <!-- Pin on card A -->
+  <circle cx="43" cy="20" r="4" fill="#EF4444"/>
+
+  <!-- Card B -->
+  <rect x="130" y="15" width="58" height="38" rx="5" fill="white" stroke="#FCA5A5" stroke-width="1.5"/>
+  <rect x="138" y="23" width="40" height="4" rx="2" fill="#EF4444" opacity="0.7"/>
+  <rect x="138" y="31" width="32" height="3" rx="1.5" fill="#CBD5E1"/>
+  <rect x="138" y="37" width="28" height="3" rx="1.5" fill="#CBD5E1"/>
+  <!-- Pin on card B -->
+  <circle cx="159" cy="15" r="4" fill="#EF4444"/>
+
+  <!-- Card C (bottom center) -->
+  <rect x="71" y="88" width="58" height="38" rx="5" fill="white" stroke="#FCA5A5" stroke-width="1.5"/>
+  <rect x="79" y="96" width="40" height="4" rx="2" fill="#EF4444" opacity="0.7"/>
+  <rect x="79" y="104" width="32" height="3" rx="1.5" fill="#CBD5E1"/>
+  <rect x="79" y="110" width="28" height="3" rx="1.5" fill="#CBD5E1"/>
+  <!-- Pin on card C -->
+  <circle cx="100" cy="88" r="4" fill="#EF4444"/>
+
+  <!-- Red string connections -->
+  <line x1="43" y1="58" x2="100" y2="88" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="159" y1="53" x2="100" y2="88" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="72" y1="39" x2="130" y2="34" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Magnifying glass hint -->
+  <circle cx="170" cy="112" r="16" fill="none" stroke="#6B7280" stroke-width="2.5"/>
+  <line x1="181" y1="123" x2="190" y2="132" stroke="#6B7280" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="170" cy="112" r="8" fill="white" opacity="0.4"/>
+</svg>

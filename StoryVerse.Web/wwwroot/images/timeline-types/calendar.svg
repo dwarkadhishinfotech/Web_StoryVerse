@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" fill="none">
+  <!-- Background -->
+  <rect width="200" height="140" rx="12" fill="#EFF6FF"/>
+
+  <!-- Calendar frame -->
+  <rect x="20" y="14" width="160" height="112" rx="10" fill="white" stroke="#BFDBFE" stroke-width="1.5"/>
+
+  <!-- Calendar header -->
+  <rect x="20" y="14" width="160" height="30" rx="10" fill="#3B82F6"/>
+  <rect x="20" y="34" width="160" height="10" rx="0" fill="#3B82F6"/>
+
+  <!-- Header pins -->
+  <rect x="52" y="10" width="6" height="12" rx="3" fill="#1D4ED8"/>
+  <rect x="142" y="10" width="6" height="12" rx="3" fill="#1D4ED8"/>
+
+  <!-- Header text placeholder -->
+  <rect x="60" y="22" width="80" height="5" rx="2.5" fill="white" opacity="0.7"/>
+
+  <!-- Weekday labels -->
+  <rect x="28" y="50" width="16" height="4" rx="2" fill="#93C5FD" opacity="0.8"/>
+  <rect x="50" y="50" width="16" height="4" rx="2" fill="#93C5FD" opacity="0.8"/>
+  <rect x="72" y="50" width="16" height="4" rx="2" fill="#93C5FD" opacity="0.8"/>
+  <rect x="94" y="50" width="16" height="4" rx="2" fill="#93C5FD" opacity="0.8"/>
+  <rect x="116" y="50" width="16" height="4" rx="2" fill="#93C5FD" opacity="0.8"/>
+  <rect x="138" y="50" width="16" height="4" rx="2" fill="#93C5FD" opacity="0.8"/>
+  <rect x="160" y="50" width="16" height="4" rx="2" fill="#93C5FD" opacity="0.8"/>
+
+  <!-- Row 1 day numbers -->
+  <circle cx="36" cy="68" r="7" fill="#DBEAFE"/>
+  <circle cx="58" cy="68" r="7" fill="#3B82F6"/>
+  <circle cx="80" cy="68" r="7" fill="#DBEAFE"/>
+  <circle cx="102" cy="68" r="7" fill="#DBEAFE"/>
+  <circle cx="124" cy="68" r="7" fill="#DBEAFE"/>
+  <circle cx="146" cy="68" r="7" fill="#10B981"/>
+  <circle cx="168" cy="68" r="7" fill="#DBEAFE"/>
+
+  <!-- Row 2 day numbers -->
+  <circle cx="36" cy="88" r="7" fill="#DBEAFE"/>
+  <circle cx="58" cy="88" r="7" fill="#DBEAFE"/>
+  <circle cx="80" cy="88" r="7" fill="#F59E0B"/>
+  <circle cx="102" cy="88" r="7" fill="#DBEAFE"/>
+  <circle cx="124" cy="88" r="7" fill="#3B82F6"/>
+  <circle cx="146" cy="88" r="7" fill="#DBEAFE"/>
+  <circle cx="168" cy="88" r="7" fill="#DBEAFE"/>
+
+  <!-- Row 3 day numbers -->
+  <circle cx="36" cy="108" r="7" fill="#DBEAFE"/>
+  <circle cx="58" cy="108" r="7" fill="#DBEAFE"/>
+  <circle cx="80" cy="108" r="7" fill="#DBEAFE"/>
+  <circle cx="102" cy="108" r="7" fill="#EF4444"/>
+  <circle cx="124" cy="108" r="7" fill="#DBEAFE"/>
+  <circle cx="146" cy="108" r="7" fill="#DBEAFE"/>
+  <circle cx="168" cy="108" r="7" fill="#DBEAFE"/>
+</svg>

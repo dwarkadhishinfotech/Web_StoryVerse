@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" fill="none">
+  <!-- Background -->
+  <rect width="200" height="140" rx="12" fill="#F0FDFA"/>
+
+  <!-- Track lines (slider rails) -->
+  <line x1="22" y1="38" x2="178" y2="38" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <line x1="22" y1="70" x2="178" y2="70" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  <line x1="22" y1="102" x2="178" y2="102" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Active track portions -->
+  <line x1="22" y1="38" x2="100" y2="38" stroke="#0D9488" stroke-width="4" stroke-linecap="round"/>
+  <line x1="22" y1="70" x2="140" y2="70" stroke="#0D9488" stroke-width="4" stroke-linecap="round"/>
+  <line x1="22" y1="102" x2="70" y2="102" stroke="#0D9488" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Slider thumbs -->
+  <circle cx="100" cy="38" r="11" fill="#0D9488" stroke="white" stroke-width="3"/>
+  <circle cx="140" cy="70" r="11" fill="#14B8A6" stroke="white" stroke-width="3"/>
+  <circle cx="70" cy="102" r="11" fill="#0F766E" stroke="white" stroke-width="3"/>
+
+  <!-- Slider labels left -->
+  <rect x="22" y="24" width="30" height="5" rx="2.5" fill="#CCFBF1"/>
+  <rect x="22" y="56" width="30" height="5" rx="2.5" fill="#CCFBF1"/>
+  <rect x="22" y="88" width="30" height="5" rx="2.5" fill="#CCFBF1"/>
+
+  <!-- Value labels on thumbs (white dots) -->
+  <circle cx="100" cy="38" r="3" fill="white"/>
+  <circle cx="140" cy="70" r="3" fill="white"/>
+  <circle cx="70" cy="102" r="3" fill="white"/>
+
+  <!-- Small settings gear icon hint -->
+  <circle cx="160" cy="122" r="10" fill="#CCFBF1"/>
+  <circle cx="160" cy="122" r="5" fill="#0D9488"/>
+  <!-- gear teeth stubs -->
+  <rect x="158" y="109" width="4" height="4" rx="1" fill="#0D9488"/>
+  <rect x="158" y="131" width="4" height="4" rx="1" fill="#0D9488"/>
+  <rect x="147" y="120" width="4" height="4" rx="1" fill="#0D9488"/>
+  <rect x="169" y="120" width="4" height="4" rx="1" fill="#0D9488"/>
+</svg>

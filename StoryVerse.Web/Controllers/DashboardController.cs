@@ -18,19 +18,22 @@ public class DashboardController : Controller
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IQuoteService _quoteService;
+    private readonly StoryVerse.Web.Services.IActiveStoryService _activeStoryService;
 
     public DashboardController(
         ApplicationDbContext context, 
         UserManager<ApplicationUser> userManager,
-        IQuoteService quoteService)
+        IQuoteService quoteService,
+        StoryVerse.Web.Services.IActiveStoryService activeStoryService)
     {
         _context = context;
         _userManager = userManager;
         _quoteService = quoteService;
+        _activeStoryService = activeStoryService;
     }
 
     [HttpGet("/dashboard")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(Guid? storyId = null)
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null)
@@ -39,27 +42,37 @@ public class DashboardController : Controller
         }
 
         var allStories = await _context.Stories
+            .AsNoTracking()
             .Where(s => s.UserId == user.Id)
-            .Include(s => s.Chapters)
             .OrderByDescending(s => s.UpdatedAt)
             .ToListAsync();
 
-        var activeStory = allStories.FirstOrDefault(s => s.Status == "InProgress") ?? allStories.FirstOrDefault();
+        var activeStoryIdGuid = await _activeStoryService.GetActiveStoryIdAsync(HttpContext, user.Id, storyId);
+        var activeStory = activeStoryIdGuid.HasValue 
+            ? allStories.FirstOrDefault(s => s.Id == activeStoryIdGuid.Value) 
+            : (allStories.FirstOrDefault(s => s.Status == "InProgress") ?? allStories.FirstOrDefault());
 
         var recentActivities = await _context.ActivityLogs
+            .AsNoTracking()
             .Where(a => a.UserId == user.Id)
             .OrderByDescending(a => a.Timestamp)
             .Take(5)
             .ToListAsync();
 
         var userGoal = await _context.UserGoals
+            .AsNoTracking()
             .FirstOrDefaultAsync(g => g.UserId == user.Id) ?? new UserGoal { UserId = user.Id };
 
-        var totalWords = allStories.Sum(s => s.CurrentWordCount);
+        var totalWords = activeStory != null ? activeStory.CurrentWordCount : allStories.Sum(s => s.CurrentWordCount);
         var activeStoriesCount = allStories.Count(s => s.Status == "InProgress");
         
-        var charactersCount = await _context.Characters.CountAsync(c => c.Story.UserId == user.Id);
-        var locationsCount = await _context.Locations.CountAsync(l => l.Story.UserId == user.Id);
+        var charactersCount = activeStory != null 
+            ? await _context.Characters.AsNoTracking().CountAsync(c => c.StoryId == activeStory.Id) 
+            : await _context.Characters.AsNoTracking().CountAsync(c => c.Story != null && c.Story.UserId == user.Id);
+
+        var locationsCount = activeStory != null 
+            ? await _context.Locations.AsNoTracking().CountAsync(l => l.StoryId == activeStory.Id) 
+            : await _context.Locations.AsNoTracking().CountAsync(l => l.Story != null && l.Story.UserId == user.Id);
 
         var viewModel = new DashboardViewModel
         {

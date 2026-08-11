@@ -268,6 +268,95 @@
         fill: #f59e0b;
         flex-shrink: 0;
     }
+
+    /* ── Slate Text & Utility Helpers ── */
+    .text-slate-900 { color: #0f172a !important; }
+    .text-slate-800 { color: #1e293b !important; }
+    .text-slate-700 { color: #334155 !important; }
+    .text-slate-600 { color: #475569 !important; }
+    .hover-text-teal:hover { color: #0d9488 !important; }
+
+    /* ── Recent Stories Sidebar List ── */
+    .recent-stories-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .recent-story-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background-color: transparent;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .recent-story-item:hover {
+        background-color: #f8fafc;
+        transform: translateX(2px);
+    }
+    .recent-story-thumb {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: #f1f5f9;
+        flex-shrink: 0;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .recent-story-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .recent-story-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #0f172a !important;
+        text-decoration: none;
+        display: block;
+        line-height: 1.35;
+        margin-bottom: 2px;
+        transition: color 0.15s ease;
+    }
+    .recent-story-title:hover {
+        color: #0d9488 !important;
+    }
+    .recent-story-date {
+        font-size: 11.5px;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .recent-story-badge {
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 4px 11px;
+        border-radius: 20px;
+        letter-spacing: 0.2px;
+        flex-shrink: 0;
+    }
+    .badge-status-planned {
+        background-color: #f0f9ff !important;
+        color: #0369a1 !important;
+        border: 1px solid #bae6fd !important;
+    }
+    .badge-status-completed {
+        background-color: #ecfdf5 !important;
+        color: #047857 !important;
+        border: 1px solid #a7f3d0 !important;
+    }
+    .badge-status-progress {
+        background-color: #f0fdfa !important;
+        color: #0f766e !important;
+        border: 1px solid #99f6e4 !important;
+    }
+    .badge-status-default {
+        background-color: #f8fafc !important;
+        color: #475569 !important;
+        border: 1px solid #e2e8f0 !important;
+    }
 </style>
 
 <div class="stories-page py-4 px-2 w-100">
@@ -459,36 +548,46 @@
             <div class="card-rounded p-4 bg-white">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold mb-0 text-slate-900" style="font-size: 15px;">Recent Stories</h6>
-                    <a href="#" class="text-teal text-decoration-none fw-semibold" style="font-size: 12.5px; color: #0d9488;">View All</a>
+                    <a href="@Url.Action("Index", "Stories")" class="text-teal text-decoration-none fw-semibold" style="font-size: 12.5px; color: #0d9488;">View All</a>
                 </div>
 
-                <div class="d-flex flex-column gap-3.5">
+                <div class="recent-stories-list">
                     @if (Model.Any())
                     {
                         foreach (var story in Model.Take(5))
                         {
-                            var statusColor = "text-primary";
-                            if (story.Status == "Completed") statusColor = "text-success";
-                            else if (story.Status == "Planned") statusColor = "text-info";
+                            var badgeClass = "badge-status-default";
+                            if (story.Status == "Completed") 
+                            {
+                                badgeClass = "badge-status-completed";
+                            }
+                            else if (story.Status == "Planned" || story.Status == "Planning") 
+                            {
+                                badgeClass = "badge-status-planned";
+                            }
+                            else if (story.Status == "In Progress" || story.Status == "Draft") 
+                            {
+                                badgeClass = "badge-status-progress";
+                            }
 
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded overflow-hidden bg-light" style="width: 40px; height: 40px;">
+                            <div class="recent-story-item">
+                                <div class="d-flex align-items-center gap-3 overflow-hidden me-2">
+                                    <div class="recent-story-thumb">
                                         <img src="@(string.IsNullOrEmpty(story.CoverImageUrl) ? "/images/empty-states/live_preview_book.png" : story.CoverImageUrl)" 
-                                             class="w-100 h-100" style="object-fit: cover;" alt="Thumbnail" />
+                                             alt="@story.Title Thumbnail" />
                                     </div>
-                                    <div>
-                                        <a href="@Url.Action("Details", "Stories", new { id = story.Id })" class="text-decoration-none text-slate-800 fw-bold hover-text-teal" style="font-size: 13.5px;">@story.Title</a>
-                                        <div class="text-muted" style="font-size: 11px;">Updated @story.UpdatedAt.ToString("d")</div>
+                                    <div class="text-truncate">
+                                        <a href="@Url.Action("Details", "Stories", new { id = story.Id })" class="recent-story-title text-truncate" title="@story.Title">@story.Title</a>
+                                        <div class="recent-story-date">Updated @story.UpdatedAt.ToString("M/d/yyyy")</div>
                                     </div>
                                 </div>
-                                <span class="badge bg-light @statusColor border rounded-pill py-1 px-2.5 fw-bold" style="font-size: 10px;">@story.Status</span>
+                                <span class="badge recent-story-badge @badgeClass">@story.Status</span>
                             </div>
                         }
                     }
                     else
                     {
-                        <p class="text-muted mb-0 fst-italic" style="font-size: 13px;">No recent story activity</p>
+                        <p class="text-muted mb-0 fst-italic p-2" style="font-size: 13px;">No recent story activity</p>
                     }
                 </div>
             </div>

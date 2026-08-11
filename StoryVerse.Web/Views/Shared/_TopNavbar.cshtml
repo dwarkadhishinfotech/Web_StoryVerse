@@ -1,3 +1,4 @@
+@using Microsoft.EntityFrameworkCore
 @inject UserManager<ApplicationUser> UserManager
 @inject StoryVerse.Infrastructure.Data.ApplicationDbContext DbContext
 @{
@@ -48,12 +49,18 @@
     Guid? activeStoryId = null;
     if (user != null)
     {
-        var activeStory = DbContext.Stories.FirstOrDefault(s => s.UserId == user.Id && s.Status == "InProgress") 
-                          ?? DbContext.Stories.FirstOrDefault(s => s.UserId == user.Id);
-        if (activeStory != null)
+        var foundId = await DbContext.Stories
+            .AsNoTracking()
+            .Where(s => s.UserId == user.Id)
+            .OrderByDescending(s => s.Status == "InProgress")
+            .ThenByDescending(s => s.UpdatedAt)
+            .Select(s => (Guid?)s.Id)
+            .FirstOrDefaultAsync();
+
+        if (foundId.HasValue)
         {
             hasStories = true;
-            activeStoryId = activeStory.Id;
+            activeStoryId = foundId.Value;
         }
     }
 }

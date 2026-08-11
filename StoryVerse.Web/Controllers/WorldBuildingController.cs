@@ -18,11 +18,16 @@ namespace StoryVerse.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly StoryVerse.Web.Services.IActiveStoryService _activeStoryService;
 
-        public WorldBuildingController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public WorldBuildingController(
+            ApplicationDbContext context, 
+            UserManager<ApplicationUser> userManager,
+            StoryVerse.Web.Services.IActiveStoryService activeStoryService)
         {
             _context = context;
             _userManager = userManager;
+            _activeStoryService = activeStoryService;
         }
 
         // GET: WorldBuilding
@@ -39,21 +44,12 @@ namespace StoryVerse.Web.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            var userStories = await _context.Stories
-                .Where(s => s.UserId == user.Id)
-                .OrderByDescending(s => s.UpdatedAt)
-                .ToListAsync();
-
-            Story? currentStory = null;
-            if (storyId.HasValue && storyId.Value != Guid.Empty)
-            {
-                currentStory = userStories.FirstOrDefault(s => s.Id == storyId.Value);
-            }
-
-            if (currentStory == null && userStories.Any())
-            {
-                currentStory = userStories.FirstOrDefault(s => s.Status == "InProgress") ?? userStories.First();
-            }
+            var userStories = await _activeStoryService.GetUserStoriesAsync(user.Id);
+            var activeStoryIdGuid = await _activeStoryService.GetActiveStoryIdAsync(HttpContext, user.Id, storyId);
+            
+            Story? currentStory = activeStoryIdGuid.HasValue
+                ? userStories.FirstOrDefault(s => s.Id == activeStoryIdGuid.Value)
+                : null;
 
             var activeStoryId = currentStory?.Id ?? Guid.Empty;
 

@@ -16,11 +16,16 @@ namespace StoryVerse.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly StoryVerse.Web.Services.IActiveStoryService _activeStoryService;
 
-        public ChaptersController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public ChaptersController(
+            ApplicationDbContext context, 
+            UserManager<ApplicationUser> userManager,
+            StoryVerse.Web.Services.IActiveStoryService activeStoryService)
         {
             _context = context;
             _userManager = userManager;
+            _activeStoryService = activeStoryService;
         }
 
         // GET: Chapters?storyId=...
@@ -29,29 +34,30 @@ namespace StoryVerse.Web.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            if (storyId.HasValue && storyId.Value != Guid.Empty)
+            var activeStoryIdGuid = await _activeStoryService.GetActiveStoryIdAsync(HttpContext, user.Id, storyId);
+
+            if (activeStoryIdGuid.HasValue && activeStoryIdGuid.Value != Guid.Empty)
             {
                 var story = await _context.Stories
                     .Include(s => s.Chapters)
-                    .FirstOrDefaultAsync(s => s.Id == storyId.Value && s.UserId == user.Id);
+                    .FirstOrDefaultAsync(s => s.Id == activeStoryIdGuid.Value && s.UserId == user.Id);
 
-                if (story == null) return NotFound();
+                if (story != null)
+                {
+                    ViewBag.Story = story;
+                    var chapters = story.Chapters.OrderBy(c => c.Order).ToList();
+                    return View(chapters);
+                }
+            }
 
-                ViewBag.Story = story;
-                var chapters = story.Chapters.OrderBy(c => c.Order).ToList();
-                return View(chapters);
-            }
-            else
-            {
-                ViewBag.Story = null;
-                var allChapters = await _context.Chapters
-                    .Include(c => c.Story)
-                    .Where(c => c.Story.UserId == user.Id)
-                    .OrderBy(c => c.Story.Title)
-                    .ThenBy(c => c.Order)
-                    .ToListAsync();
-                return View(allChapters);
-            }
+            ViewBag.Story = null;
+            var allChapters = await _context.Chapters
+                .Include(c => c.Story)
+                .Where(c => c.Story.UserId == user.Id)
+                .OrderBy(c => c.Story.Title)
+                .ThenBy(c => c.Order)
+                .ToListAsync();
+            return View(allChapters);
         }
 
         // GET: Chapters/Editor?storyId=...&chapterId=...

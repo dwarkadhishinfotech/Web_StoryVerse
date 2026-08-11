@@ -462,3 +462,48 @@ select.form-select,
     margin: 4px 0 !important;
     border-color: #f1f5f9 !important;
 }
+
+/* Dark Dropdown Menus (Sidebar Workspace Selector, etc.) */
+.dropdown-menu-dark,
+.sidebar-workspace-dropdown {
+    background-color: #0F172A !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5), 0 6px 12px -2px rgba(0, 0, 0, 0.3) !important;
+
+    .dropdown-header,
+    li.px-3 {
+        color: #94A3B8 !important;
+    }
+
+    .dropdown-divider {
+        border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    .dropdown-item {
+        color: #E2E8F0 !important;
+
+        i, svg {
+            color: #94A3B8 !important;
+        }
+
+        &:hover, &:focus {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #FFFFFF !important;
+
+            i, svg {
+                color: #13A8A6 !important;
+            }
+        }
+
+        &.active, &:active {
+            background-color: rgba(19, 168, 166, 0.2) !important;
+            color: #13A8A6 !important;
+            font-weight: 600 !important;
+
+            i, svg {
+                color: #13A8A6 !important;
+            }
+        }
+    }
+}
+

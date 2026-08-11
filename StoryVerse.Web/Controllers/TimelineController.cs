@@ -22,12 +22,18 @@ namespace StoryVerse.Web.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _env;
+        private readonly StoryVerse.Web.Services.IActiveStoryService _activeStoryService;
 
-        public TimelineController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+        public TimelineController(
+            ApplicationDbContext context, 
+            UserManager<ApplicationUser> userManager, 
+            IWebHostEnvironment env,
+            StoryVerse.Web.Services.IActiveStoryService activeStoryService)
         {
             _context = context;
             _userManager = userManager;
             _env = env;
+            _activeStoryService = activeStoryService;
         }
 
         // GET: /Timeline?storyId=...&activeTab=...&viewMode=...
@@ -36,10 +42,7 @@ namespace StoryVerse.Web.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            var userStories = await _context.Stories
-                .Where(s => s.UserId == user.Id)
-                .OrderByDescending(s => s.UpdatedAt)
-                .ToListAsync();
+            var userStories = await _activeStoryService.GetUserStoriesAsync(user.Id);
 
             if (!userStories.Any())
             {
@@ -59,8 +62,9 @@ namespace StoryVerse.Web.Controllers
                 userStories.Add(defaultStory);
             }
 
-            var currentStory = storyId.HasValue
-                ? userStories.FirstOrDefault(s => s.Id == storyId.Value) ?? userStories.First()
+            var activeStoryIdGuid = await _activeStoryService.GetActiveStoryIdAsync(HttpContext, user.Id, storyId);
+            var currentStory = activeStoryIdGuid.HasValue
+                ? userStories.FirstOrDefault(s => s.Id == activeStoryIdGuid.Value) ?? userStories.First()
                 : userStories.First();
 
             var storyGuid = currentStory.Id;
@@ -253,7 +257,19 @@ namespace StoryVerse.Web.Controllers
                 IsEdit = false,
                 StoryId = selectedStory.Id,
                 StoryTitle = selectedStory.Title,
-                Stories = userStories.Select(s => new StoryOptionDto { Id = s.Id, Title = s.Title }).ToList(),
+#pragma warning disable CS0618
+                StoryGenre = selectedStory.Genre,
+#pragma warning restore CS0618
+                StoryCoverImageUrl = selectedStory.CoverImageUrl,
+                Stories = userStories.Select(s => new StoryOptionDto 
+                { 
+                    Id = s.Id, 
+                    Title = s.Title,
+#pragma warning disable CS0618
+                    Genre = s.Genre,
+#pragma warning restore CS0618
+                    CoverImageUrl = s.CoverImageUrl 
+                }).ToList(),
                 AvailableStoryArcs = storyArcs.Select(a => new StoryArcOptionDto
                 {
                     Id = a.Id,
@@ -390,12 +406,18 @@ namespace StoryVerse.Web.Controllers
 
             var linkedArcIds = timeline.LinkedStoryArcs.Select(l => l.StoryArcId).ToList();
 
+            var selectedStory = userStories.FirstOrDefault(s => s.Id == timeline.StoryId);
+
             var model = new TimelineFormViewModel
             {
                 IsEdit = true,
                 TimelineId = timeline.Id,
                 StoryId = timeline.StoryId,
-                StoryTitle = userStories.FirstOrDefault(s => s.Id == timeline.StoryId)?.Title ?? "",
+                StoryTitle = selectedStory?.Title ?? "",
+#pragma warning disable CS0618
+                StoryGenre = selectedStory?.Genre,
+#pragma warning restore CS0618
+                StoryCoverImageUrl = selectedStory?.CoverImageUrl,
                 Name = timeline.Name,
                 Description = timeline.Description,
                 Color = timeline.Color,
@@ -423,7 +445,15 @@ namespace StoryVerse.Web.Controllers
                 ShowFutureEvents = timeline.ShowFutureEvents,
                 ShowCompletedEvents = timeline.ShowCompletedEvents,
                 SelectedStoryArcIds = linkedArcIds,
-                Stories = userStories.Select(s => new StoryOptionDto { Id = s.Id, Title = s.Title }).ToList(),
+                Stories = userStories.Select(s => new StoryOptionDto 
+                { 
+                    Id = s.Id, 
+                    Title = s.Title,
+#pragma warning disable CS0618
+                    Genre = s.Genre,
+#pragma warning restore CS0618
+                    CoverImageUrl = s.CoverImageUrl 
+                }).ToList(),
                 AvailableStoryArcs = storyArcs.Select(a => new StoryArcOptionDto
                 {
                     Id = a.Id,

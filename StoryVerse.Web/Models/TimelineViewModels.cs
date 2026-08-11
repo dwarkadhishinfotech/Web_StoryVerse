@@ -98,6 +98,8 @@ namespace StoryVerse.Web.Models
         public Guid? TimelineId { get; set; }
         public Guid StoryId { get; set; }
         public string StoryTitle { get; set; } = string.Empty;
+        public string? StoryGenre { get; set; }
+        public string? StoryCoverImageUrl { get; set; }
 
         // Step 1: Basic Information
         public string Name { get; set; } = string.Empty;
@@ -148,6 +150,8 @@ namespace StoryVerse.Web.Models
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
+        public string? Genre { get; set; }
+        public string? CoverImageUrl { get; set; }
     }
 
     public class CharacterOptionDto
