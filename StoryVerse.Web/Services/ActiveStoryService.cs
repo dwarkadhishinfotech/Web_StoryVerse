@@ -79,6 +79,7 @@ namespace StoryVerse.Web.Services
 
             return await _context.Stories
                 .AsNoTracking()
+                .Include(s => s.StoryGenres).ThenInclude(sg => sg.Genre)
                 .FirstOrDefaultAsync(s => s.Id == storyId.Value && s.UserId == userId);
         }
 
@@ -100,6 +101,7 @@ namespace StoryVerse.Web.Services
 
             return await _context.Stories
                 .AsNoTracking()
+                .Include(s => s.StoryGenres).ThenInclude(sg => sg.Genre)
                 .Where(s => s.UserId == userId)
                 .OrderByDescending(s => s.UpdatedAt)
                 .ToListAsync();

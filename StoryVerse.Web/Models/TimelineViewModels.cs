@@ -10,6 +10,8 @@ namespace StoryVerse.Web.Models
         public Guid SelectedStoryId { get; set; }
         public string StoryTitle { get; set; } = string.Empty;
         public string StoryGenre { get; set; } = string.Empty;
+        public string UserFullName { get; set; } = "Sachi Patel";
+        public string UserInitials { get; set; } = "SP";
         public List<StoryOptionDto> Stories { get; set; } = new List<StoryOptionDto>();
 
         public Guid? SelectedTimelineId { get; set; }
@@ -34,12 +36,37 @@ namespace StoryVerse.Web.Models
         public List<StoryArcDto> StoryArcs { get; set; } = new List<StoryArcDto>();
         public List<TimelineEventDto> UpcomingEvents { get; set; } = new List<TimelineEventDto>();
 
+        // Dynamic Mini Calendar Widget
+        public CalendarMonthWidgetDto MiniCalendar { get; set; } = new CalendarMonthWidgetDto();
+
+        // Dynamic Pagination Metadata
+        public int CurrentPage { get; set; } = 1;
+        public int PageSize { get; set; } = 5;
+        public int TotalPages { get; set; } = 1;
+        public int ShowingFrom { get; set; } = 1;
+        public int ShowingTo { get; set; } = 5;
+
         // Entity Select Options for Wizard / Forms
         public List<CharacterOptionDto> Characters { get; set; } = new List<CharacterOptionDto>();
         public List<WorldEntityOptionDto> WorldEntities { get; set; } = new List<WorldEntityOptionDto>();
         public List<ChapterOptionDto> Chapters { get; set; } = new List<ChapterOptionDto>();
         public List<ResearchOptionDto> ResearchNotes { get; set; } = new List<ResearchOptionDto>();
         public List<AssetOptionDto> Assets { get; set; } = new List<AssetOptionDto>();
+    }
+
+    public class CalendarMonthWidgetDto
+    {
+        public string MonthName { get; set; } = "May";
+        public int Year { get; set; } = 2025;
+        public List<CalendarDayDto> Days { get; set; } = new List<CalendarDayDto>();
+    }
+
+    public class CalendarDayDto
+    {
+        public int DayNumber { get; set; }
+        public bool IsCurrentMonth { get; set; } = true;
+        public bool IsActiveDay { get; set; } = false;
+        public bool HasEvent { get; set; } = false;
     }
 
     public class TimelineDto

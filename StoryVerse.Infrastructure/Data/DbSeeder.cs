@@ -194,6 +194,222 @@ public static class DbSeeder
         await SeedWorldBuildingDefaultsAsync(context);
     }
 
+    public static async Task SeedTimelineDataForStoryAsync(ApplicationDbContext context, Guid storyId)
+    {
+        var story = await context.Stories.FindAsync(storyId);
+        if (story == null) return;
+
+        // Check if story already has timeline events
+        if (await context.TimelineEvents.AnyAsync(e => e.StoryId == storyId))
+        {
+            return;
+        }
+
+        // Seed Characters if none exist for this story
+        var existingCharacters = await context.Characters.Where(c => c.StoryId == storyId).ToListAsync();
+        if (!existingCharacters.Any())
+        {
+            var char1 = new Character { Id = Guid.NewGuid(), StoryId = storyId, Name = "Sameer Malhotra", Role = "Protagonist", Status = "Active", OneLineDescription = "Sub-Inspector in Silverbrook Crime Branch." };
+            var char2 = new Character { Id = Guid.NewGuid(), StoryId = storyId, Name = "Riya", Role = "Protagonist", Status = "Active", OneLineDescription = "Investigative researcher at Silverbrook." };
+            var char3 = new Character { Id = Guid.NewGuid(), StoryId = storyId, Name = "Raj Malhotra", Role = "Supporting", Status = "Active", OneLineDescription = "Father of Sameer." };
+            var char4 = new Character { Id = Guid.NewGuid(), StoryId = storyId, Name = "Meera Malhotra", Role = "Supporting", Status = "Active", OneLineDescription = "Mother of Sameer." };
+            var char5 = new Character { Id = Guid.NewGuid(), StoryId = storyId, Name = "Inspector Sharma", Role = "Secondary", Status = "Active", OneLineDescription = "Senior officer at Crime Branch." };
+
+            context.Characters.AddRange(char1, char2, char3, char4, char5);
+            await context.SaveChangesAsync();
+            existingCharacters = new List<Character> { char1, char2, char3, char4, char5 };
+        }
+
+        var sameer = existingCharacters.FirstOrDefault(c => c.Name.Contains("Sameer")) ?? existingCharacters[0];
+        var riya = existingCharacters.FirstOrDefault(c => c.Name.Contains("Riya")) ?? existingCharacters.ElementAtOrDefault(1) ?? sameer;
+        var raj = existingCharacters.FirstOrDefault(c => c.Name.Contains("Raj")) ?? sameer;
+        var meera = existingCharacters.FirstOrDefault(c => c.Name.Contains("Meera")) ?? sameer;
+        var sharma = existingCharacters.FirstOrDefault(c => c.Name.Contains("Sharma")) ?? sameer;
+
+        // Seed Story Arcs
+        var arc1 = new StoryArc { Id = Guid.NewGuid(), StoryId = storyId, Title = "Main Story", ArcType = "Main Story", Color = "#0D9488", TargetCompletionPercent = 72, DisplayOrder = 1 };
+        var arc2 = new StoryArc { Id = Guid.NewGuid(), StoryId = storyId, Title = "Romance Arc", ArcType = "Romance Arc", Color = "#F43F5E", TargetCompletionPercent = 48, DisplayOrder = 2 };
+        var arc3 = new StoryArc { Id = Guid.NewGuid(), StoryId = storyId, Title = "Mystery Arc", ArcType = "Mystery Arc", Color = "#8B5CF6", TargetCompletionPercent = 63, DisplayOrder = 3 };
+        var arc4 = new StoryArc { Id = Guid.NewGuid(), StoryId = storyId, Title = "Crime Investigation", ArcType = "Crime Investigation", Color = "#F59E0B", TargetCompletionPercent = 55, DisplayOrder = 4 };
+        var arc5 = new StoryArc { Id = Guid.NewGuid(), StoryId = storyId, Title = "Past Trauma Arc", ArcType = "Past Trauma Arc", Color = "#3B82F6", TargetCompletionPercent = 38, DisplayOrder = 5 };
+        var arc6 = new StoryArc { Id = Guid.NewGuid(), StoryId = storyId, Title = "Redemption Arc", ArcType = "Redemption Arc", Color = "#10B981", TargetCompletionPercent = 20, DisplayOrder = 6 };
+
+        context.StoryArcs.AddRange(arc1, arc2, arc3, arc4, arc5, arc6);
+
+        // Seed Story Timeline metadata
+        var storyTimeline = new StoryTimeline
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Name = "Revenge for Love Master Timeline",
+            TimelineType = "Chronological Timeline",
+            Color = "Teal",
+            Status = "Active",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        context.StoryTimelines.Add(storyTimeline);
+
+        // Seed Events
+        var e1 = new TimelineEvent
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Title = "Sameer Malhotra is Born",
+            Category = "Birth",
+            EventType = "Backstory",
+            StoryDate = "12 Jan 2020",
+            RealDate = new DateTime(2020, 1, 12),
+            LocationName = "Silverbrook City, Eldoria",
+            Summary = "Sameer was born to Raj Malhotra and Meera Malhotra in Silverbrook City.",
+            Color = "#10B981",
+            Icon = "baby",
+            Importance = "Medium",
+            DisplayOrder = 1
+        };
+        e1.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e1.Id, CharacterId = sameer.Id, Role = "Protagonist" });
+        e1.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e1.Id, CharacterId = raj.Id, Role = "Participant" });
+        e1.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e1.Id, CharacterId = meera.Id, Role = "Participant" });
+
+        var e2 = new TimelineEvent
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Title = "Sameer Meets Riya",
+            Category = "Meeting",
+            EventType = "Standard",
+            StoryDate = "14 Feb 2020",
+            RealDate = new DateTime(2020, 2, 14),
+            LocationName = "Silverbrook University",
+            Summary = "A chance meeting in the library changes everything.",
+            Color = "#F43F5E",
+            Icon = "heart",
+            Importance = "High",
+            DisplayOrder = 2
+        };
+        e2.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e2.Id, CharacterId = sameer.Id, Role = "Protagonist" });
+        e2.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e2.Id, CharacterId = riya.Id, Role = "Protagonist" });
+
+        var e3 = new TimelineEvent
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Title = "Sameer Joins Crime Branch",
+            Category = "Career",
+            EventType = "Milestone",
+            StoryDate = "03 Mar 2020",
+            RealDate = new DateTime(2020, 3, 3),
+            LocationName = "Crime Branch Headquarters, Silverbrook",
+            Summary = "Sameer officially joins the Crime Branch as a Sub-Inspector.",
+            Color = "#F59E0B",
+            Icon = "shield",
+            Importance = "High",
+            DisplayOrder = 3
+        };
+        e3.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e3.Id, CharacterId = sameer.Id, Role = "Protagonist" });
+        e3.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e3.Id, CharacterId = sharma.Id, Role = "Leader" });
+        e3.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e3.Id, CharacterId = raj.Id, Role = "Participant" });
+
+        var e4 = new TimelineEvent
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Title = "First Major Case",
+            Category = "Investigation",
+            EventType = "Standard",
+            StoryDate = "21 Apr 2020",
+            RealDate = new DateTime(2020, 4, 21),
+            LocationName = "Dockside Area, Silverbrook",
+            Summary = "A mysterious murder shakes the city. Sameer leads the investigation.",
+            Color = "#8B5CF6",
+            Icon = "crosshair",
+            Importance = "Critical",
+            DisplayOrder = 4
+        };
+        e4.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e4.Id, CharacterId = sameer.Id, Role = "Detective" });
+        e4.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e4.Id, CharacterId = sharma.Id, Role = "Participant" });
+
+        var e5 = new TimelineEvent
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Title = "Bomb Blast in Old Market",
+            Category = "Incident",
+            EventType = "Climax",
+            StoryDate = "10 Jun 2020",
+            RealDate = new DateTime(2020, 6, 10),
+            LocationName = "Old Market, Silverbrook",
+            Summary = "A powerful blast injures many. The case takes a dark turn.",
+            Color = "#F97316",
+            Icon = "sun",
+            Importance = "Critical",
+            DisplayOrder = 5
+        };
+        e5.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e5.Id, CharacterId = sameer.Id, Role = "Detective" });
+        e5.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e5.Id, CharacterId = riya.Id, Role = "Witness" });
+        e5.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e5.Id, CharacterId = meera.Id, Role = "Victim" });
+
+        var e6 = new TimelineEvent
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Title = "Court Hearing",
+            Category = "Investigation",
+            EventType = "Milestone",
+            StoryDate = "21 May 2025 10:00 AM",
+            RealDate = new DateTime(2025, 5, 21, 10, 0, 0),
+            LocationName = "High Court of Silverbrook",
+            Summary = "The preliminary trial begins against the prime suspect.",
+            Color = "#3B82F6",
+            Icon = "scale",
+            Importance = "High",
+            DisplayOrder = 6
+        };
+        e6.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e6.Id, CharacterId = sameer.Id, Role = "Participant" });
+        e6.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e6.Id, CharacterId = riya.Id, Role = "Participant" });
+
+        var e7 = new TimelineEvent
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Title = "Confrontation",
+            Category = "Incident",
+            EventType = "Standard",
+            StoryDate = "23 May 2025 04:00 PM",
+            RealDate = new DateTime(2025, 5, 23, 16, 0, 0),
+            LocationName = "Dockside Area, Silverbrook",
+            Summary = "A tense face-off at the docks reveals the mastermind's identity.",
+            Color = "#EF4444",
+            Icon = "alert-triangle",
+            Importance = "Critical",
+            DisplayOrder = 7
+        };
+        e7.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e7.Id, CharacterId = sameer.Id, Role = "Protagonist" });
+        e7.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e7.Id, CharacterId = riya.Id, Role = "Participant" });
+
+        var e8 = new TimelineEvent
+        {
+            Id = Guid.NewGuid(),
+            StoryId = storyId,
+            Title = "Riya's Decision",
+            Category = "Meeting",
+            EventType = "Climax",
+            StoryDate = "25 May 2025 09:00 AM",
+            RealDate = new DateTime(2025, 5, 25, 9, 0, 0),
+            LocationName = "Silverbrook University",
+            Summary = "Riya makes a choice that will alter the course of the investigation.",
+            Color = "#EC4899",
+            Icon = "heart",
+            Importance = "High",
+            DisplayOrder = 8
+        };
+        e8.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e8.Id, CharacterId = riya.Id, Role = "Protagonist" });
+        e8.CharacterLinks.Add(new TimelineCharacter { Id = Guid.NewGuid(), TimelineEventId = e8.Id, CharacterId = sameer.Id, Role = "Participant" });
+
+        context.TimelineEvents.AddRange(e1, e2, e3, e4, e5, e6, e7, e8);
+        await context.SaveChangesAsync();
+    }
+
     private static async Task SeedWorldBuildingDefaultsAsync(ApplicationDbContext context)
     {
         if (!await context.WorldEntityTypes.AnyAsync())

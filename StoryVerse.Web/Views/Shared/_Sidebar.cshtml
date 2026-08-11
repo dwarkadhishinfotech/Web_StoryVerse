@@ -105,6 +105,20 @@
     }
 
     var dayLabels = new[] { "M", "T", "W", "T", "F", "S", "S" };
+
+    Func<Story?, string> getGenreDisplay = (s) =>
+    {
+        if (s == null) return "Romance • Mystery";
+        if (s.StoryGenres != null && s.StoryGenres.Any(sg => sg.Genre != null))
+        {
+            var names = s.StoryGenres.Where(sg => sg.Genre != null).Select(sg => sg.Genre.Name).ToList();
+            if (names.Any()) return string.Join(" • ", names);
+        }
+#pragma warning disable CS0618
+        if (!string.IsNullOrWhiteSpace(s.Genre)) return s.Genre;
+#pragma warning restore CS0618
+        return "Romance • Mystery";
+    };
 }
 
 <style>
@@ -315,26 +329,50 @@
         </div>
     </div>
 
-    <!-- Current Workspace / Story Selector -->
-    <div class="px-4 mt-4 mb-2 sidebar-workspace-wrapper flex-shrink-0 position-relative">
-        <div class="text-uppercase fw-bold text-white mb-2 sidebar-text-label" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.6; font-family: 'Inter', sans-serif;">CURRENT WORKSPACE</div>
+    <!-- Current Story Selector -->
+    <div class="px-3 mt-4 mb-2 sidebar-workspace-wrapper flex-shrink-0 position-relative">
+        <div class="text-uppercase fw-bold text-white mb-2 sidebar-text-label" style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.6; font-family: 'Inter', sans-serif; padding-left: 2px;">CURRENT STORY</div>
         
         <div class="dropdown">
             <div class="d-flex align-items-center justify-content-between p-2 rounded-3 cursor-pointer sidebar-workspace-selector" 
                  id="workspaceDropdown" 
                  data-bs-toggle="dropdown" 
                  aria-expanded="false" 
-                 style="background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); transition: all 0.2s ease;">
-                <div class="d-flex align-items-center gap-2 text-truncate me-1">
-                    <i data-lucide="book-open" style="width: 16px; height: 16px; color: #13A8A6; flex-shrink: 0;"></i>
-                    <span class="text-white fw-semibold sidebar-text-label text-truncate" style="font-size: 0.85rem; font-family: 'Inter', sans-serif;" title="@(activeStory?.Title ?? "My Workspace")">
-                        @(activeStory?.Title ?? "My Workspace")
-                    </span>
+                 style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s ease; border-radius: 12px !important;">
+                <div class="d-flex align-items-center gap-2.5 text-truncate me-1" style="min-width: 0;">
+                    @if (activeStory != null && !string.IsNullOrWhiteSpace(activeStory.CoverImageUrl))
+                    {
+                        <img src="@activeStory.CoverImageUrl" 
+                             alt="@activeStory.Title" 
+                             class="flex-shrink-0 shadow-sm" 
+                             style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" 
+                             onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />
+                        <div class="align-items-center justify-content-center flex-shrink-0 shadow-sm" 
+                             style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.15); display: none;">
+                            <i data-lucide="book-open" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" 
+                             style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.15);">
+                            <i data-lucide="book-open" style="width: 18px; height: 18px; color: #13A8A6;"></i>
+                        </div>
+                    }
+
+                    <div class="d-flex flex-column text-truncate sidebar-text-label" style="min-width: 0;">
+                        <span class="text-white fw-bold text-truncate active-story-title" style="font-size: 0.88rem; line-height: 1.25; font-family: 'Inter', sans-serif;" title="@(activeStory?.Title ?? "Select Story")">
+                            @(activeStory?.Title ?? "Select Story")
+                        </span>
+                        <span class="text-truncate" style="font-size: 0.72rem; color: #94A3B8; font-family: 'Inter', sans-serif; font-weight: 400; line-height: 1.25;" title="@getGenreDisplay(activeStory)">
+                            @getGenreDisplay(activeStory)
+                        </span>
+                    </div>
                 </div>
-                <i data-lucide="chevron-down" class="sidebar-text-label flex-shrink-0" style="width: 14px; height: 14px; color: #94A3B8;"></i>
+                <i data-lucide="chevron-down" class="sidebar-text-label flex-shrink-0 ms-1" style="width: 14px; height: 14px; color: #94A3B8;"></i>
             </div>
 
-            <ul class="dropdown-menu dropdown-menu-dark sidebar-workspace-dropdown shadow-lg border-0 mt-1 py-2" aria-labelledby="workspaceDropdown" style="width: 100%; min-width: 220px; background-color: #0F172A !important; border: 1px solid rgba(255,255,255,0.14) !important; border-radius: 12px; z-index: 1050;">
+            <ul class="dropdown-menu dropdown-menu-dark sidebar-workspace-dropdown shadow-lg border-0 mt-1 py-2" aria-labelledby="workspaceDropdown" style="width: 100%; min-width: 240px; background-color: #0F172A !important; border: 1px solid rgba(255,255,255,0.14) !important; border-radius: 12px; z-index: 1050;">
                 <li class="px-3 py-1 text-uppercase fw-bold" style="font-size: 9px; letter-spacing: 0.08em; color: #94A3B8 !important;">Select Active Story</li>
                 <li><hr class="dropdown-divider my-1" style="border-color: rgba(255, 255, 255, 0.12) !important;"></li>
                 @if (userStories != null && userStories.Any())
@@ -342,18 +380,34 @@
                     @foreach (var s in userStories)
                     {
                         var isSelected = activeStory != null && activeStory.Id == s.Id;
+                        var sGenre = getGenreDisplay(s);
                         <li>
                             <a class="dropdown-item d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none small @(isSelected ? "active" : "")"
                                href="javascript:void(0)"
                                onclick="switchGlobalStory('@s.Id', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(s.Title))')"
-                               style="@(isSelected ? "background-color: rgba(19, 168, 166, 0.2) !important; color: #13A8A6 !important;" : "color: #E2E8F0 !important;")">
-                                <div class="d-flex align-items-center gap-2 text-truncate">
-                                    <i data-lucide="book" style="width: 14px; height: 14px; color: @(isSelected ? "#13A8A6" : "#94A3B8");"></i>
-                                    <span class="text-truncate" style="font-weight: @(isSelected ? "600" : "400"); color: @(isSelected ? "#13A8A6" : "#E2E8F0");">@s.Title</span>
+                               style="@(isSelected ? "background-color: rgba(19, 168, 166, 0.18) !important; color: #13A8A6 !important;" : "color: #E2E8F0 !important;")">
+                                <div class="d-flex align-items-center gap-2.5 text-truncate me-2" style="min-width: 0;">
+                                    @if (!string.IsNullOrWhiteSpace(s.CoverImageUrl))
+                                    {
+                                        <img src="@s.CoverImageUrl" alt="" class="flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />
+                                        <div class="align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.08); display: none;">
+                                            <i data-lucide="book" style="width: 14px; height: 14px; color: @(isSelected ? "#13A8A6" : "#94A3B8");"></i>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.08);">
+                                            <i data-lucide="book" style="width: 14px; height: 14px; color: @(isSelected ? "#13A8A6" : "#94A3B8");"></i>
+                                        </div>
+                                    }
+                                    <div class="d-flex flex-column text-truncate" style="min-width: 0;">
+                                        <span class="text-truncate" style="font-weight: @(isSelected ? "600" : "500"); font-size: 0.84rem; color: @(isSelected ? "#FFFFFF" : "#E2E8F0");">@s.Title</span>
+                                        <span class="text-truncate" style="font-size: 0.72rem; color: #94A3B8; font-weight: 400;">@sGenre</span>
+                                    </div>
                                 </div>
                                 @if (isSelected)
                                 {
-                                    <i data-lucide="check" style="width: 14px; height: 14px; color: #13A8A6;"></i>
+                                    <i data-lucide="check" class="flex-shrink-0" style="width: 14px; height: 14px; color: #13A8A6;"></i>
                                 }
                             </a>
                         </li>
@@ -531,7 +585,7 @@
 
         // 1. Immediately update Sidebar Workspace Selector UI
         if (storyTitle) {
-            var label = document.querySelector('#workspaceDropdown .sidebar-text-label');
+            var label = document.querySelector('#workspaceDropdown .active-story-title') || document.querySelector('#workspaceDropdown .sidebar-text-label');
             if (label) {
                 label.textContent = storyTitle;
                 label.setAttribute('title', storyTitle);

@@ -37,7 +37,7 @@ namespace StoryVerse.Web.Controllers
         }
 
         // GET: /Timeline?storyId=...&activeTab=...&viewMode=...
-        public async Task<IActionResult> Index(Guid? storyId, string activeTab = "TimelineView", string viewMode = "Vertical", string category = "All Events", string search = "")
+        public async Task<IActionResult> Index(Guid? storyId, string activeTab = "TimelineView", string viewMode = "Vertical", string category = "All Events", string search = "", int page = 1)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
@@ -69,25 +69,38 @@ namespace StoryVerse.Web.Controllers
 
             var storyGuid = currentStory.Id;
 
-            // Load Timeline Events
-            var eventsQuery = _context.TimelineEvents
+            // Seed timeline data for story if empty
+            if (!await _context.TimelineEvents.AnyAsync(e => e.StoryId == storyGuid))
+            {
+                await DbSeeder.SeedTimelineDataForStoryAsync(_context, storyGuid);
+            }
+
+            // Load All Unfiltered Timeline Events for overall story calculations
+            var allDbTimelineEvents = await _context.TimelineEvents
                 .Include(e => e.CharacterLinks).ThenInclude(cl => cl.Character)
                 .Include(e => e.WorldEntityLinks).ThenInclude(wl => wl.WorldEntity)
                 .Include(e => e.ChapterLinks).ThenInclude(chl => chl.Chapter)
-                .Where(e => e.StoryId == storyGuid);
+                .Where(e => e.StoryId == storyGuid)
+                .OrderBy(e => e.DisplayOrder).ThenBy(e => e.CreatedAt)
+                .ToListAsync();
+
+            var allEventDtos = allDbTimelineEvents.Select(e => MapToEventDto(e)).ToList();
+
+            // Filter Timeline Events for main list display based on Category and Search Query
+            IEnumerable<TimelineEventDto> filteredEventDtos = allEventDtos;
 
             if (!string.IsNullOrWhiteSpace(category) && category != "All Events")
             {
-                eventsQuery = eventsQuery.Where(e => e.Category == category);
+                filteredEventDtos = filteredEventDtos.Where(e => e.Category == category);
             }
 
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var q = search.Trim().ToLower();
-                eventsQuery = eventsQuery.Where(e => e.Title.ToLower().Contains(q) || (e.Summary != null && e.Summary.ToLower().Contains(q)) || (e.LocationName != null && e.LocationName.ToLower().Contains(q)));
+                filteredEventDtos = filteredEventDtos.Where(e => e.Title.ToLower().Contains(q) || (e.Summary != null && e.Summary.ToLower().Contains(q)) || (e.LocationName != null && e.LocationName.ToLower().Contains(q)));
             }
 
-            var timelineEvents = await eventsQuery.OrderBy(e => e.DisplayOrder).ThenBy(e => e.CreatedAt).ToListAsync();
+            var filteredEventList = filteredEventDtos.ToList();
 
             // Load Story Arcs
             var storyArcs = await _context.StoryArcs
@@ -103,9 +116,6 @@ namespace StoryVerse.Web.Controllers
             var researchNotes = await _context.ResearchNotes.Where(r => r.StoryId == storyGuid).ToListAsync();
             var assets = await _context.Assets.Where(a => a.StoryId == storyGuid).ToListAsync();
 
-            // Transform DTOs
-            var eventDtos = timelineEvents.Select(e => MapToEventDto(e)).ToList();
-
             var arcDtos = storyArcs.Select(a => new StoryArcDto
             {
                 Id = a.Id,
@@ -116,11 +126,75 @@ namespace StoryVerse.Web.Controllers
                 EventCount = a.ArcEvents.Count
             }).ToList();
 
-            var upcomingEvents = eventDtos
-                .Where(e => e.RealDate.HasValue && e.RealDate.Value >= DateTime.UtcNow)
-                .OrderBy(e => e.RealDate)
+            // Dynamic Calculations strictly from DB data
+            int totalEventsCount = allDbTimelineEvents.Count;
+
+            int upcomingEventsCount = allEventDtos.Count(e => (e.RealDate.HasValue && e.RealDate.Value >= DateTime.Today) || e.EventType == "Upcoming" || e.Category == "Upcoming");
+
+            int historicalEventsCount = allEventDtos.Count(e => (e.RealDate.HasValue && e.RealDate.Value < DateTime.Today) || e.Category == "Historical" || e.Category == "Birth" || e.Category == "Backstory" || e.EventType == "Backstory");
+
+            int storyArcsCount = arcDtos.Count;
+
+            int charactersInvolvedCount = characters.Count;
+            if (charactersInvolvedCount == 0)
+            {
+                charactersInvolvedCount = allEventDtos.SelectMany(e => e.Characters).Select(c => c.Id).Distinct().Count();
+            }
+
+            // Locations involved: combine non-empty LocationNames from events and Location WorldEntities
+            var eventLocations = allEventDtos.Where(e => !string.IsNullOrWhiteSpace(e.LocationName)).Select(e => e.LocationName.Trim());
+            var entityLocations = worldEntities.Where(w => w.EntityType != null && w.EntityType.Category == "Locations").Select(w => w.Name.Trim());
+            int locationsInvolvedCount = eventLocations.Union(entityLocations, StringComparer.OrdinalIgnoreCase).Distinct().Count();
+
+            // Upcoming Events List for sidebar widget
+            var upcomingEvents = allEventDtos
+                .Where(e => (e.RealDate.HasValue && e.RealDate.Value >= DateTime.Today) || e.EventType == "Upcoming" || e.Category == "Upcoming")
+                .OrderBy(e => e.RealDate ?? DateTime.MaxValue)
                 .Take(5)
                 .ToList();
+
+            // Dynamic Mini Calendar Widget (current month / year)
+            var currentMonthDate = DateTime.Today;
+            if (allEventDtos.Any(e => e.RealDate.HasValue))
+            {
+                var latestEventDate = allEventDtos.Where(e => e.RealDate.HasValue).Max(e => e.RealDate!.Value);
+                currentMonthDate = latestEventDate;
+            }
+
+            int year = currentMonthDate.Year;
+            int month = currentMonthDate.Month;
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+            var firstDayOfMonth = new DateTime(year, month, 1);
+            int startDayOfWeek = ((int)firstDayOfMonth.DayOfWeek + 6) % 7; // Monday = 0
+
+            var miniCalendar = new CalendarMonthWidgetDto
+            {
+                MonthName = firstDayOfMonth.ToString("MMM"),
+                Year = year,
+                Days = new List<CalendarDayDto>()
+            };
+
+            // Days before start of month
+            int prevMonth = month == 1 ? 12 : month - 1;
+            int prevYear = month == 1 ? year - 1 : year;
+            int prevMonthDays = DateTime.DaysInMonth(prevYear, prevMonth);
+            for (int i = startDayOfWeek - 1; i >= 0; i--)
+            {
+                miniCalendar.Days.Add(new CalendarDayDto { DayNumber = prevMonthDays - i, IsCurrentMonth = false });
+            }
+
+            for (int d = 1; d <= daysInMonth; d++)
+            {
+                bool isActive = (year == DateTime.Today.Year && month == DateTime.Today.Month && d == DateTime.Today.Day);
+                bool hasEvt = allEventDtos.Any(e => e.RealDate.HasValue && e.RealDate.Value.Year == year && e.RealDate.Value.Month == month && e.RealDate.Value.Day == d);
+                miniCalendar.Days.Add(new CalendarDayDto
+                {
+                    DayNumber = d,
+                    IsCurrentMonth = true,
+                    IsActiveDay = isActive,
+                    HasEvent = hasEvt
+                });
+            }
 
             // Load Story Timelines from DB
             var dbTimelines = await _context.StoryTimelines
@@ -161,7 +235,7 @@ namespace StoryVerse.Web.Controllers
                 LockTimelineDates = st.LockTimelineDates,
                 ShowFutureEvents = st.ShowFutureEvents,
                 ShowCompletedEvents = st.ShowCompletedEvents,
-                EventCount = timelineEvents.Count,
+                EventCount = totalEventsCount,
                 StoryArcCount = st.LinkedStoryArcs.Count,
                 CreatedAt = st.CreatedAt,
                 UpdatedAt = st.UpdatedAt,
@@ -179,33 +253,57 @@ namespace StoryVerse.Web.Controllers
 
             var selectedTimeline = timelineDtos.FirstOrDefault();
 
+            // Pagination calculation for main event view
+            int pageSize = 5;
+            int totalFilteredItems = filteredEventList.Count;
+            int totalPages = totalFilteredItems > 0 ? (int)Math.Ceiling((double)totalFilteredItems / pageSize) : 1;
+            if (page < 1) page = 1;
+            if (page > totalPages) page = totalPages;
+
+            var pagedEvents = filteredEventList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            // User Name & Initials from logged in user
+            var userFullName = $"{user.FirstName} {user.LastName}".Trim();
+            if (string.IsNullOrWhiteSpace(userFullName)) userFullName = user.UserName ?? "User";
+            var initials = string.Join("", userFullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0])).ToUpper();
+            if (string.IsNullOrEmpty(initials)) initials = "U";
+
             var model = new TimelineStudioViewModel
             {
                 SelectedStoryId = storyGuid,
                 StoryTitle = currentStory.Title,
                 StoryGenre = currentStory.Genre,
+                UserFullName = userFullName,
+                UserInitials = initials,
                 Stories = userStories.Select(s => new StoryOptionDto { Id = s.Id, Title = s.Title }).ToList(),
                 SelectedTimelineId = selectedTimeline?.Id,
                 Timelines = timelineDtos,
 
-                TotalEventsCount = timelineEvents.Count,
-                UpcomingEventsCount = upcomingEvents.Count,
-                HistoricalEventsCount = timelineEvents.Count(e => e.Category == "Historical" || e.Category == "Birth" || e.Category == "Backstory"),
-                StoryArcsCount = storyArcs.Count,
-                CharactersInvolvedCount = timelineEvents.SelectMany(e => e.CharacterLinks).Select(c => c.CharacterId).Distinct().Count(),
-                LocationsInvolvedCount = timelineEvents.SelectMany(e => e.WorldEntityLinks).Select(w => w.WorldEntityId).Distinct().Count(),
+                TotalEventsCount = totalEventsCount,
+                UpcomingEventsCount = upcomingEventsCount,
+                HistoricalEventsCount = historicalEventsCount,
+                StoryArcsCount = storyArcsCount,
+                CharactersInvolvedCount = charactersInvolvedCount,
+                LocationsInvolvedCount = locationsInvolvedCount,
 
                 ActiveTab = activeTab,
                 ViewMode = viewMode,
                 SelectedCategory = category,
                 SearchQuery = search,
 
-                Events = eventDtos,
+                Events = pagedEvents,
                 StoryArcs = arcDtos,
                 UpcomingEvents = upcomingEvents,
+                MiniCalendar = miniCalendar,
+
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                ShowingFrom = totalFilteredItems > 0 ? ((page - 1) * pageSize) + 1 : 0,
+                ShowingTo = totalFilteredItems > 0 ? Math.Min(page * pageSize, totalFilteredItems) : 0,
 
                 Characters = characters.Select(c => new CharacterOptionDto { Id = c.Id, Name = c.Name, Role = c.Role, AvatarUrl = c.AvatarUrl }).ToList(),
-                WorldEntities = worldEntities.Select(w => new WorldEntityOptionDto { Id = w.Id, Name = w.Name, TypeName = w.EntityType.Name, Icon = w.Icon }).ToList(),
+                WorldEntities = worldEntities.Select(w => new WorldEntityOptionDto { Id = w.Id, Name = w.Name, TypeName = w.EntityType?.Name ?? "Location", Icon = w.Icon }).ToList(),
                 Chapters = chapters.Select(c => new ChapterOptionDto { Id = c.Id, Title = c.Title, Order = c.Order }).ToList(),
                 ResearchNotes = researchNotes.Select(r => new ResearchOptionDto { Id = r.Id, Title = r.Title, Category = r.Category }).ToList(),
                 Assets = assets.Select(a => new AssetOptionDto { Id = a.Id, Title = a.Title, Type = a.Type }).ToList()
