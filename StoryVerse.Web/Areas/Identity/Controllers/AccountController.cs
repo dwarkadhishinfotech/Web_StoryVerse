@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -113,6 +114,102 @@ public class AccountController : Controller
         }
 
         return View(model);
+    }
+
+    [HttpPost("/external-login")]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public IActionResult ExternalLogin(string provider, string? returnUrl = null)
+    {
+        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { area = "Identity", returnUrl });
+        var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return Challenge(properties, provider);
+    }
+
+    [HttpGet("/external-login-callback")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string? remoteError = null)
+    {
+        returnUrl ??= "/dashboard";
+        if (remoteError != null)
+        {
+            _logger.LogError($"Error from external provider: {remoteError}");
+            ModelState.AddModelError(string.Empty, $"Error from external provider: {remoteError}");
+            return View(nameof(Login));
+        }
+
+        var info = await _signInManager.GetExternalLoginInfoAsync();
+        if (info == null)
+        {
+            _logger.LogError("Error loading external login information.");
+            ModelState.AddModelError(string.Empty, "Error loading external login information.");
+            return View(nameof(Login));
+        }
+
+        // Sign in the user with this external login provider if the user already has a login
+        var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("{Name} logged in with {Provider} provider.", info.Principal.Identity?.Name, info.LoginProvider);
+            return LocalRedirect(returnUrl);
+        }
+        if (result.IsLockedOut)
+        {
+            return RedirectToAction(nameof(Lockout));
+        }
+        else
+        {
+            // If the user does not have an account, create an account automatically
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(email))
+            {
+                ModelState.AddModelError(string.Empty, "Email claim not received from external provider.");
+                return View(nameof(Login));
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                var firstName = info.Principal.FindFirstValue(ClaimTypes.GivenName) ?? info.Principal.Identity?.Name ?? "User";
+                var lastName = info.Principal.FindFirstValue(ClaimTypes.Surname) ?? "";
+
+                user = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    DisplayName = string.IsNullOrWhiteSpace($"{firstName} {lastName}") ? firstName : $"{firstName} {lastName}".Trim(),
+                    EmailConfirmed = true
+                };
+
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                {
+                    foreach (var error in createResult.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                    return View(nameof(Login));
+                }
+
+                await _userManager.AddToRoleAsync(user, "Author");
+            }
+
+            var addLoginResult = await _userManager.AddLoginAsync(user, info);
+            if (addLoginResult.Succeeded)
+            {
+                await _signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+                _logger.LogInformation("User created/linked account using {Provider} provider.", info.LoginProvider);
+                return LocalRedirect(returnUrl);
+            }
+
+            foreach (var error in addLoginResult.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View(nameof(Login));
+        }
     }
 
     [HttpPost("/logout")]

@@ -29,6 +29,7 @@ public class DashboardController : Controller
         _quoteService = quoteService;
     }
 
+    [HttpGet("/dashboard")]
     public async Task<IActionResult> Index()
     {
         var user = await _userManager.GetUserAsync(User);
