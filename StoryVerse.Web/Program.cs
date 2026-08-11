@@ -215,7 +215,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
 
-    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    // SET TO 1 HOUR SESSION TIMEOUT
+    options.ExpireTimeSpan = TimeSpan.FromHours(1);
 
     options.LoginPath = "/login";
 

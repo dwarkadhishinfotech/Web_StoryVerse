@@ -1,0 +1,280 @@
+@*
+    StoryVerse Luxury Theme Session Expired Modal
+*@
+<div class="modal fade" id="sessionExpiredModal" tabindex="-1" aria-labelledby="sessionExpiredModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content session-modal-card border-0 position-relative overflow-hidden">
+            <!-- Top Gradient Glow Line -->
+            <div class="session-card-top-accent"></div>
+            
+            <!-- Background Ambient Aura -->
+            <div class="session-card-bg-accent"></div>
+
+            <!-- Floating Sparkles -->
+            <span class="session-sparkle sparkle-1">✦</span>
+            <span class="session-sparkle sparkle-2">✦</span>
+            <span class="session-sparkle sparkle-3">✦</span>
+
+            <!-- Modal Header / Icon -->
+            <div class="session-modal-header pt-4 pb-2 px-4 text-center position-relative z-1">
+                <div class="session-icon-aura mx-auto d-flex align-items-center justify-content-center">
+                    <div class="session-icon-core d-flex align-items-center justify-content-center">
+                        <i data-lucide="clock" class="session-lucide-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body px-4 pb-4 pt-2 text-center position-relative z-1">
+                <h3 class="fw-bold font-serif mb-3 session-modal-title" id="sessionExpiredModalLabel">
+                    Session Expired <span class="session-title-star">✦</span>
+                </h3>
+                <p class="session-modal-desc">
+                    Your writing session has expired due to inactivity. Don't worry — your progress is preserved! Kindly log back in to pick up right where you left off.
+                </p>
+
+                <!-- Action Buttons -->
+                <div class="d-flex flex-column gap-3 mt-2">
+                    <button type="button" id="sessionReauthBtn" onclick="handleSessionReauth()" class="btn btn-session-action btn-session-confirm text-white fw-bold py-3 px-4 rounded-pill d-flex align-items-center justify-content-center">
+                        <i data-lucide="log-in" class="btn-session-icon me-2"></i>
+                        <span>Log Back In to Continue</span>
+                    </button>
+
+                    <button type="button" class="btn btn-session-action btn-session-stay fw-bold py-3 px-4 rounded-pill d-flex align-items-center justify-content-center" data-bs-dismiss="modal">
+                        <i data-lucide="x" class="btn-session-icon me-2"></i>
+                        <span>Dismiss & Stay on Page</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* =========================================================
+       StoryVerse Luxury Session Expired Modal Styling
+       ========================================================= */
+    #sessionExpiredModal + .modal-backdrop,
+    .modal-backdrop.show {
+        background-color: rgba(10, 17, 40, 0.78) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+    }
+
+    #sessionExpiredModal .modal-dialog {
+        transform: scale(0.92) translateY(20px);
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #sessionExpiredModal.show .modal-dialog {
+        transform: scale(1) translateY(0);
+    }
+
+    .session-modal-card {
+        background: #0A1128 !important;
+        border-radius: 28px !important;
+        box-shadow: 0 25px 65px -15px rgba(0, 0, 0, 0.8), 
+                    0 0 50px rgba(19, 168, 166, 0.28) !important;
+        color: #F8FAFC !important;
+        padding: 0.5rem 0.5rem 0.75rem 0.5rem !important;
+    }
+
+    .session-card-top-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #1E439B 0%, #13A8A6 50%, #D4AF37 100%);
+        z-index: 10;
+    }
+
+    .session-card-bg-accent {
+        position: absolute;
+        top: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 240px;
+        height: 240px;
+        background: radial-gradient(circle, rgba(19, 168, 166, 0.25) 0%, rgba(30, 67, 155, 0.1) 50%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .session-sparkle {
+        position: absolute;
+        color: #FCD34D;
+        font-size: 12px;
+        opacity: 0.65;
+        pointer-events: none;
+        animation: sessionSparklePulse 3s infinite ease-in-out alternate;
+        z-index: 2;
+    }
+    .session-sparkle.sparkle-1 { top: 32px; left: 36px; animation-delay: 0s; }
+    .session-sparkle.sparkle-2 { top: 48px; right: 40px; animation-delay: 1s; font-size: 15px; }
+    .session-sparkle.sparkle-3 { bottom: 36px; left: 32px; animation-delay: 1.8s; }
+
+    @@keyframes sessionSparklePulse {
+        0% { transform: scale(0.8) rotate(0deg); opacity: 0.35; }
+        100% { transform: scale(1.25) rotate(25deg); opacity: 0.95; }
+    }
+
+    .session-modal-header {
+        margin-top: 0.75rem;
+    }
+
+    .session-icon-aura {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(19, 168, 166, 0.14);
+        border: 1px solid rgba(19, 168, 166, 0.35);
+        box-shadow: 0 0 30px rgba(19, 168, 166, 0.35);
+        animation: auraGlow 3s infinite ease-in-out alternate;
+    }
+
+    .session-icon-core {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(19, 168, 166, 0.3) 0%, rgba(30, 67, 155, 0.4) 100%);
+        border: 1.5px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .session-lucide-icon {
+        width: 28px;
+        height: 28px;
+        color: #38BDF8;
+        filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+    }
+
+    .session-modal-title {
+        color: #FFFFFF !important;
+        font-family: 'Playfair Display', serif !important;
+        font-size: 1.55rem;
+        letter-spacing: -0.01em;
+        margin-top: 0.5rem;
+    }
+
+    .session-title-star {
+        color: #FCD34D;
+        font-size: 1.1rem;
+        margin-left: 3px;
+        vertical-align: middle;
+    }
+
+    .session-modal-desc {
+        color: #94A3B8 !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.88rem;
+        line-height: 1.6;
+        max-width: 350px;
+        margin: 0 auto 1.5rem auto;
+    }
+
+    .btn-session-action {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 0.92rem !important;
+        font-weight: 700 !important;
+        padding: 0.85rem 1.5rem !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .btn-session-icon {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+        flex-shrink: 0 !important;
+        transition: transform 0.25s ease;
+    }
+
+    .btn-session-confirm {
+        background: linear-gradient(135deg, #13A8A6 0%, #0E7490 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 4px 18px rgba(19, 168, 166, 0.4);
+    }
+
+    .btn-session-confirm:hover {
+        background: linear-gradient(135deg, #0F766E 0%, #155E75 100%) !important;
+        box-shadow: 0 6px 24px rgba(19, 168, 166, 0.55);
+        transform: translateY(-2px);
+    }
+
+    .btn-session-stay {
+        background: rgba(255, 255, 255, 0.05) !important;
+        color: #94A3B8 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+
+    .btn-session-stay:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #FFFFFF !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+</style>
+
+<script>
+    var currentTargetReturnUrl = '';
+
+    function showSessionExpiredModal(returnUrl) {
+        currentTargetReturnUrl = returnUrl || (window.location.pathname + window.location.search);
+        var modalEl = document.getElementById('sessionExpiredModal');
+        if (modalEl) {
+            var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+            if (window.lucide) {
+                setTimeout(function() { lucide.createIcons(); }, 50);
+            }
+        }
+    }
+
+    function handleSessionReauth() {
+        var returnUrl = currentTargetReturnUrl || (window.location.pathname + window.location.search);
+        var loginUrl = '/login?sessionExpired=true&returnUrl=' + encodeURIComponent(returnUrl);
+        window.location.href = loginUrl;
+    }
+
+    // Global AJAX 401 Interceptor & URL Query String Checker
+    (function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check if page loaded with ?sessionExpired=true
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('sessionExpired') === 'true' && window.location.pathname !== '/login') {
+                showSessionExpiredModal(urlParams.get('returnUrl'));
+            }
+
+            // Setup jQuery AJAX 401 interceptor
+            if (typeof $ !== 'undefined' && $.ajaxSetup) {
+                $(document).ajaxComplete(function (event, xhr, settings) {
+                    if (xhr.status === 401 || (xhr.responseJSON && xhr.responseJSON.sessionExpired)) {
+                        showSessionExpiredModal();
+                    }
+                });
+            }
+
+            // 1-HOUR INACTIVITY TIMER (Triggers modal after 1 hour of inactivity on any page)
+            if (window.location.pathname !== '/login') {
+                var idleTimeMs = 3600000; // 1 hour = 3,600,000 ms
+                var idleTimer;
+
+                function resetIdleTimer() {
+                    clearTimeout(idleTimer);
+                    idleTimer = setTimeout(function () {
+                        showSessionExpiredModal();
+                    }, idleTimeMs);
+                }
+
+                // Reset timer on user interaction
+                window.addEventListener('mousemove', resetIdleTimer, true);
+                window.addEventListener('keypress', resetIdleTimer, true);
+                window.addEventListener('click', resetIdleTimer, true);
+                window.addEventListener('scroll', resetIdleTimer, true);
+
+                resetIdleTimer(); // start initial timer
+            }
+        });
+    })();
+</script>
