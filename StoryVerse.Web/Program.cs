@@ -278,9 +278,43 @@ app.MapControllerRoute(
         "{controller=Home}/{action=Index}/{id?}");
 
 
-// ============================================================
-// APPLICATION STARTUP
-// ============================================================
+// Ensure database schema matches new domain columns (e.g. MonthlyWordCountGoal in DI_TRN_UserGoals, Content in DI_TRN_WebChapters)
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.ExecuteSqlRaw(@"
+            IF EXISTS (SELECT 1 FROM sys.tables WHERE name = N'DI_TRN_UserGoals')
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE object_id = OBJECT_ID(N'[DI_TRN_UserGoals]') 
+                    AND name = N'MonthlyWordCountGoal'
+                )
+                BEGIN
+                    ALTER TABLE [DI_TRN_UserGoals] ADD [MonthlyWordCountGoal] INT NOT NULL DEFAULT 50000;
+                END
+            END
+
+            IF EXISTS (SELECT 1 FROM sys.tables WHERE name = N'DI_TRN_WebChapters')
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE object_id = OBJECT_ID(N'[DI_TRN_WebChapters]') 
+                    AND name = N'Content'
+                )
+                BEGIN
+                    ALTER TABLE [DI_TRN_WebChapters] ADD [Content] NVARCHAR(MAX) NULL;
+                END
+            END
+        ");
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Automatic schema migration check for database columns failed.");
+    }
+}
 
 Log.Information("Starting StoryVerse Web Application");
 

@@ -339,28 +339,21 @@
                  data-bs-toggle="dropdown" 
                  aria-expanded="false" 
                  style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s ease; border-radius: 12px !important;">
-                <div class="d-flex align-items-center gap-2.5 text-truncate me-1" style="min-width: 0;">
-                    @if (activeStory != null && !string.IsNullOrWhiteSpace(activeStory.CoverImageUrl))
-                    {
-                        <img src="@activeStory.CoverImageUrl" 
-                             alt="@activeStory.Title" 
-                             class="flex-shrink-0 shadow-sm" 
-                             style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" 
-                             onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />
-                        <div class="align-items-center justify-content-center flex-shrink-0 shadow-sm" 
-                             style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.15); display: none;">
-                            <i data-lucide="book-open" style="width: 18px; height: 18px; color: #13A8A6;"></i>
-                        </div>
+                <div class="d-flex align-items-center text-truncate me-1" style="min-width: 0; gap: 12px;">
+                    @{
+                        var activeImgSrc = (activeStory != null && !string.IsNullOrWhiteSpace(activeStory.CoverImageUrl)) 
+                            ? activeStory.CoverImageUrl 
+                            : "/images/empty-states/live_preview_book.png";
                     }
-                    else
-                    {
-                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" 
-                             style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.15);">
-                            <i data-lucide="book-open" style="width: 18px; height: 18px; color: #13A8A6;"></i>
-                        </div>
-                    }
+                    <div class="position-relative flex-shrink-0" style="width: 40px; height: 40px; margin-right: 2px;">
+                        <img src="@activeImgSrc" 
+                             alt="@(activeStory?.Title ?? "Story Cover")" 
+                             class="w-100 h-100 shadow-sm" 
+                             style="border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15); display: block;" 
+                             onerror="this.onerror=null; this.src='/images/empty-states/live_preview_book.png';" />
+                    </div>
 
-                    <div class="d-flex flex-column text-truncate sidebar-text-label" style="min-width: 0;">
+                    <div class="d-flex flex-column text-truncate sidebar-text-label" style="min-width: 0; padding-left: 2px;">
                         <span class="text-white fw-bold text-truncate active-story-title" style="font-size: 0.88rem; line-height: 1.25; font-family: 'Inter', sans-serif;" title="@(activeStory?.Title ?? "Select Story")">
                             @(activeStory?.Title ?? "Select Story")
                         </span>
@@ -381,26 +374,19 @@
                     {
                         var isSelected = activeStory != null && activeStory.Id == s.Id;
                         var sGenre = getGenreDisplay(s);
+                        var sImgSrc = !string.IsNullOrWhiteSpace(s.CoverImageUrl) 
+                            ? s.CoverImageUrl 
+                            : "/images/empty-states/live_preview_book.png";
                         <li>
                             <a class="dropdown-item d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none small @(isSelected ? "active" : "")"
                                href="javascript:void(0)"
                                onclick="switchGlobalStory('@s.Id', '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(s.Title))')"
                                style="@(isSelected ? "background-color: rgba(19, 168, 166, 0.18) !important; color: #13A8A6 !important;" : "color: #E2E8F0 !important;")">
-                                <div class="d-flex align-items-center gap-2.5 text-truncate me-2" style="min-width: 0;">
-                                    @if (!string.IsNullOrWhiteSpace(s.CoverImageUrl))
-                                    {
-                                        <img src="@s.CoverImageUrl" alt="" class="flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />
-                                        <div class="align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.08); display: none;">
-                                            <i data-lucide="book" style="width: 14px; height: 14px; color: @(isSelected ? "#13A8A6" : "#94A3B8");"></i>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.08);">
-                                            <i data-lucide="book" style="width: 14px; height: 14px; color: @(isSelected ? "#13A8A6" : "#94A3B8");"></i>
-                                        </div>
-                                    }
-                                    <div class="d-flex flex-column text-truncate" style="min-width: 0;">
+                                <div class="d-flex align-items-center text-truncate me-2" style="min-width: 0; gap: 10px;">
+                                    <div class="position-relative flex-shrink-0" style="width: 32px; height: 32px; margin-right: 2px;">
+                                        <img src="@sImgSrc" alt="@s.Title" class="w-100 h-100 shadow-sm" style="border-radius: 6px; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='/images/empty-states/live_preview_book.png';" />
+                                    </div>
+                                    <div class="d-flex flex-column text-truncate" style="min-width: 0; padding-left: 2px;">
                                         <span class="text-truncate" style="font-weight: @(isSelected ? "600" : "500"); font-size: 0.84rem; color: @(isSelected ? "#FFFFFF" : "#E2E8F0");">@s.Title</span>
                                         <span class="text-truncate" style="font-size: 0.72rem; color: #94A3B8; font-weight: 400;">@sGenre</span>
                                     </div>
@@ -474,12 +460,11 @@
                 <a href="@Url.Action("Index", "Timeline", new { storyId = activeStory?.Id, activeTab = "TimelineView", viewMode = "Graph" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small">Timeline Views</a>
             </div>
         </div>
-        <a href="javascript:void(0)" title="Chapters (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
+        <a href="@Url.Action("Index", "Chapters", new { storyId = activeStory?.Id })" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(controller == "Chapters" ? "active" : "")">
             <div class="d-flex align-items-center gap-3">
                 <i data-lucide="file-text" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
                 <span class="sidebar-text-label" style="font-size: 0.85rem;">Chapters</span>
             </div>
-            <span class="badge-coming-soon sidebar-text-label">SOON</span>
         </a>
         <a href="javascript:void(0)" title="Research (Coming Soon)" class="sidebar-nav-link disabled-link text-decoration-none d-flex align-items-center justify-content-between mb-1">
             <div class="d-flex align-items-center gap-3">

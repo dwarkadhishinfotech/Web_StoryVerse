@@ -2,318 +2,2711 @@
 @{
     Layout = null;
     var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
+    var userStories = ViewBag.Stories as List<StoryVerse.Core.Entities.Story> ?? new List<StoryVerse.Core.Entities.Story>();
+    var storyParts = ViewBag.StoryParts as List<StoryVerse.Core.Entities.StoryPart> ?? new List<StoryVerse.Core.Entities.StoryPart>();
+    var allChapters = ViewBag.AllChapters as List<StoryVerse.Core.Entities.Chapter> ?? new List<StoryVerse.Core.Entities.Chapter>();
+    var characters = ViewBag.Characters as List<StoryVerse.Core.Entities.Character> ?? new List<StoryVerse.Core.Entities.Character>();
+    var worldEntities = ViewBag.WorldEntities as List<StoryVerse.Core.Entities.WorldEntity> ?? new List<StoryVerse.Core.Entities.WorldEntity>();
+    var timelineEvents = ViewBag.TimelineEvents as List<StoryVerse.Core.Entities.TimelineEvent> ?? new List<StoryVerse.Core.Entities.TimelineEvent>();
+    var researchNotes = ViewBag.ResearchNotes as List<StoryVerse.Core.Entities.ResearchNote> ?? new List<StoryVerse.Core.Entities.ResearchNote>();
+    var storyArcs = ViewBag.StoryArcs as List<StoryVerse.Core.Entities.StoryArc> ?? new List<StoryVerse.Core.Entities.StoryArc>();
+
+    var linkedCharacterIds = ViewBag.LinkedCharacterIds as List<Guid> ?? new List<Guid>();
+    var linkedWorldEntityIds = ViewBag.LinkedWorldEntityIds as List<Guid> ?? new List<Guid>();
+    var linkedTimelineEventIds = ViewBag.LinkedTimelineEventIds as List<Guid> ?? new List<Guid>();
+    var linkedResearchNoteIds = ViewBag.LinkedResearchNoteIds as List<Guid> ?? new List<Guid>();
+
+    var linkedCharsList = characters.Where(c => linkedCharacterIds.Contains(c.Id)).ToList();
+    var linkedWorldList = worldEntities.Where(w => linkedWorldEntityIds.Contains(w.Id)).ToList();
+    var linkedTimelineList = timelineEvents.Where(t => linkedTimelineEventIds.Contains(t.Id)).ToList();
+
+    var userInitials = "SP";
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@Model.Title - Editor - StoryVerse</title>
+    <title>@Model.Title - StoryVerse Chapter Editor</title>
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Courier+Prime&family=Garamond&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
-    
+
     <style>
         :root {
-            --parchment-bg: #FAF5ED;
-            --forest-green: #13A8A6;
-            --forest-green-dark: #1E439B;
-            --parchment-border: #EAE3D2;
-            --parchment-card: rgba(253, 251, 247, 0.95);
-            --peacock-gradient: linear-gradient(135deg, #1E439B, #13A8A6);
+            --sv-navy-dark: #0D1B2A;
+            --sv-navy: #1E439B;
+            --sv-teal: #13A8A6;
+            --sv-teal-light: #E6F7F7;
+            --sv-cyan-soft: #E0F2FE;
+            --sv-gold: #C5A880;
+            --sv-gold-light: #FEF3C7;
+            --sv-parchment: #FAF8F5;
+            --sv-card-bg: #FFFFFF;
+            --sv-border: #E2E8F0;
+            --sv-text-main: #1E293B;
+            --sv-text-muted: #64748B;
+            --left-panel-width: 290px;
+            --right-panel-width: 360px;
         }
-        body { 
-            background-color: var(--parchment-bg);
-            background-image: url('/backgrounds/SiteBgPage.png') !important;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
+
+        body {
+            background-color: #F8FAFC;
+            background-image: radial-gradient(rgba(19, 168, 166, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
             font-family: 'Inter', sans-serif;
-            color: #1C2B39;
+            color: var(--sv-text-main);
             height: 100vh;
             overflow: hidden;
             margin: 0;
         }
-        .editor-layout {
-            display: grid;
-            grid-template-rows: auto 1fr;
-            min-height: 100vh;
-            width: 100vw;
-        }
-        .sv-editor-toolbar {
-            background: rgba(253, 251, 247, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--parchment-border);
-            z-index: 1000;
-            padding-top: 10px;
-            padding-bottom: 10px;
-        }
-        .workspace-split {
-            display: grid;
-            grid-template-columns: 1fr;
-            overflow-y: auto;
-            height: 100%;
 
-            @@media (min-width: 992px) {
-                grid-template-columns: 1fr 320px;
-                overflow: hidden;
-            }
-        }
-        .writing-pane {
-            overflow-y: auto;
-            padding: 2rem 1rem;
-            display: flex;
-            justify-content: center;
-
-            @@media (min-width: 768px) {
-                padding: 4rem 2rem;
-            }
-        }
-        .canvas-container {
-            max-width: 800px;
-            width: 100%;
-        }
-        .sv-editor-title {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(1.75rem, 5vw, 2.75rem);
-            font-weight: 700;
-            border: none;
-            background: transparent;
-            width: 100%;
-            outline: none;
-            margin-bottom: 1.5rem;
-            color: var(--forest-green-dark);
-            border-bottom: 1px dashed transparent;
-            transition: all 0.2s;
-        }
-        .sv-editor-title:focus {
-            border-bottom-color: var(--forest-green);
-        }
-        .sv-editor-title::placeholder {
-            color: #CED4DA;
-        }
-        .sv-editor-content {
-            font-family: 'Merriweather', serif;
-            font-size: clamp(1rem, 2.5vw, 1.15rem);
-            line-height: 1.95;
-            color: #2D3748;
-            outline: none;
-            min-height: 60vh;
-            padding-bottom: 6rem;
-        }
-        .sv-editor-content p {
-            margin-bottom: 1.6rem;
-        }
-        .sv-editor-content[placeholder]:empty:before {
-            content: attr(placeholder);
-            color: #A0AEC0;
-            pointer-events: none;
-            display: block;
-        }
-        .sidebar-pane {
-            background: rgba(253, 251, 247, 0.95);
-            border-left: 1px solid var(--parchment-border);
-            backdrop-filter: blur(12px);
+        .editor-app-container {
             display: flex;
             flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* TOP NAVBAR */
+        .sv-top-header {
+            height: 60px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--sv-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 1000;
+        }
+
+        .back-dashboard-btn {
+            background: #F1F5F9;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .back-dashboard-btn:hover {
+            background: #E2E8F0;
+            color: #0F172A;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, #0F172A, #1E439B);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+        }
+
+        .dropdown-select-btn {
+            background: #F1F5F9;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1E293B;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .dropdown-select-btn:hover {
+            background: #E2E8F0;
+            color: var(--sv-navy);
+        }
+
+        .save-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #0D9488;
+            background: #F0FDF4;
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid #DCFCE7;
+        }
+
+        .view-mode-toggle {
+            background: #F8FAFC;
+            padding: 3px 4px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #E2E8F0;
+        }
+        .mode-btn {
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 8px;
+            color: #334155;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            position: relative;
+            cursor: pointer;
+        }
+        .mode-btn:not(:first-child) {
+            border-left: 1px solid #E2E8F0;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .mode-btn.active {
+            background: #E8F7F7;
+            color: #0E7490;
+            border-bottom: 2px solid #0E7490;
+            border-radius: 8px 8px 2px 2px;
+        }
+
+        .avatar-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #13A8A6, #1E439B);
+            color: white;
+            font-weight: 700;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 3-PANEL WORKSPACE LAYOUT */
+        .workspace-main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: var(--left-panel-width) 1fr var(--right-panel-width);
+            height: calc(100vh - 95px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Focus mode hides sidebars */
+        body.focus-mode .left-panel,
+        body.focus-mode .right-panel {
+            display: none !important;
+        }
+        body.focus-mode .workspace-main {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* READ MODE (BOOK PREVIEW MODE) STYLES */
+        body.read-mode .left-panel,
+        body.read-mode .right-panel,
+        body.read-mode .editor-formatting-toolbar,
+        body.read-mode .suggestions-dock-panel,
+        body.read-mode .selection-context-toolbar {
+            display: none !important;
+        }
+        body.read-mode .workspace-main {
+            grid-template-columns: 1fr !important;
+        }
+        body.read-mode .center-canvas-panel {
+            background: #F4F1EA !important;
+        }
+        body.read-mode .writing-paper {
+            background: #FAF8F5 !important;
+            border-radius: 14px;
+            box-shadow: 0 14px 45px rgba(15, 23, 42, 0.12);
+            padding: 4.5rem 5.5rem;
+            max-width: 840px;
+            border: 1px solid #E5E0D8;
+            margin-top: 1rem;
+        }
+        body.read-mode .manuscript-editable {
+            font-family: 'Lora', 'Georgia', 'Merriweather', serif;
+            font-size: 1.25rem;
+            line-height: 2.1;
+            color: #2B2D42;
+            pointer-events: none;
+            user-select: text;
+        }
+        body.read-mode .chapter-title-input {
+            text-align: center;
+            font-size: 2.75rem;
+            margin-bottom: 2rem;
+            color: #111827;
+            pointer-events: none;
+            border: none;
+        }
+
+        /* LEFT PANEL: MANUSCRIPT */
+        .left-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-right: 1px solid var(--sv-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .manuscript-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--sv-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chapter-tree-container {
+            flex: 1;
             overflow-y: auto;
-            padding: 1.5rem;
+            padding: 12px;
         }
-        .text-peacock {
-            color: var(--forest-green);
+        .part-header-item {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748B;
+            padding: 10px 10px 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
+        .chapter-tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #334155;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 3px;
+            transition: all 0.15s;
+        }
+        .chapter-tree-item:hover {
+            background: #F1F5F9;
+            color: var(--sv-navy);
+        }
+        .chapter-tree-item.active {
+            background: #F0FDFA;
+            border-left: 3.5px solid #13A8A6;
+            color: #0F766E;
+            font-weight: 700;
+        }
+        .chapter-word-count {
+            font-size: 11px;
+            color: #94A3B8;
+            font-weight: 500;
+        }
+        .chapter-tree-item.active .chapter-word-count {
+            color: #0D9488;
+        }
+
+        /* Literary Banner Card */
+        .literary-banner-card {
+            background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+            border: 1px solid #FDE68A;
+            border-radius: 14px;
+            padding: 14px;
+            margin: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* CENTER PANEL: WRITING CANVAS */
+        .center-canvas-panel {
+            background: var(--sv-parchment);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* MICROSOFT WORD GRADE FORMATTING TOOLBAR */
+        .editor-formatting-toolbar {
+            background: white;
+            border-bottom: 1px solid var(--sv-border);
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            z-index: 10;
+        }
+        .toolbar-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            padding: 4px 7px;
+            font-size: 12px;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            cursor: pointer;
+            height: 28px;
+        }
+        .toolbar-btn:hover {
+            background: #F1F5F9;
+            color: #0F172A;
+            border-color: #CBD5E1;
+        }
+        .toolbar-select {
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #334155;
+            background-color: white;
+            height: 28px;
+        }
+
+        .canvas-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2.5rem 2rem 4rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .writing-paper {
+            max-width: 780px;
+            width: 100%;
+            background: transparent;
+            min-height: 70vh;
+        }
+
+        .chapter-title-input {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #0F172A;
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+        .chapter-title-input::placeholder {
+            color: #CBD5E1;
+        }
+
+        .manuscript-editable {
+            font-family: 'Lora', 'Merriweather', serif;
+            font-size: 1.125rem;
+            line-height: 2;
+            color: #1E293B;
+            outline: none;
+            min-height: 500px;
+        }
+        .manuscript-editable p {
+            margin-bottom: 1.5rem;
+        }
+
+        /* ENTITY HIGHLIGHT STYLES */
+        .sv-entity-ref {
+            padding: 1px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            font-weight: 500;
+        }
+        .sv-entity-character {
+            color: #0D9488;
+            border-bottom: 1.5px dotted #0D9488;
+            background: rgba(13, 148, 136, 0.08);
+        }
+        .sv-entity-character:hover {
+            background: rgba(13, 148, 136, 0.18);
+        }
+        .sv-entity-location {
+            color: #B45309;
+            border-bottom: 1.5px dashed #D97706;
+            background: rgba(251, 191, 36, 0.15);
+        }
+        .sv-entity-location:hover {
+            background: rgba(251, 191, 36, 0.28);
+        }
+        .sv-entity-event {
+            color: #6D28D9;
+            border-bottom: 1.5px dashed #8B5CF6;
+            background: rgba(139, 92, 246, 0.12);
+        }
+        .sv-entity-event:hover {
+            background: rgba(139, 92, 246, 0.22);
+        }
+
+        /* FLOATING HOVER CARD PREVIEW */
+        .entity-hover-card {
+            position: absolute;
+            z-index: 2000;
+            width: 310px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 14px 35px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(15, 23, 42, 0.08);
+            border: 1px solid #E2E8F0;
+            padding: 16px;
+            display: none;
+            animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hover-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: #E2E8F0;
+        }
+
+        /* FLOATING SELECTION CONTEXT MENU */
+        .selection-context-toolbar {
+            position: absolute;
+            z-index: 1500;
+            display: none;
+            background: #0F172A;
+            color: white;
+            border-radius: 24px;
+            padding: 6px 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            gap: 6px;
+            align-items: center;
+        }
+        .selection-context-toolbar button {
+            background: transparent;
+            border: none;
+            color: #E2E8F0;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .selection-context-toolbar button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #38BDF8;
+        }
+
+        /* STORYVERSE SUGGESTIONS FLOATING CARD CONTAINER */
+        .suggestions-floating-card {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 18px;
+            padding: 18px 22px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            margin: 24px auto 40px;
+            max-width: 820px;
+            width: 100%;
+        }
+        .suggestion-filter-pill {
+            border: 1px solid #E2E8F0;
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: #F8FAFC;
+            color: #64748B;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            margin: 0;
+        }
+        .suggestion-filter-pill:hover {
+            background: #F1F5F9;
+            color: #334155;
+        }
+        .suggestion-filter-pill.active {
+            background: #E6F7F7;
+            color: #0D9488;
+            border-color: #99F6E4;
+        }
+
+        .suggestion-card-box {
+            background: #FAFBFD;
+            border: 1px solid #EAEFF5;
+            border-radius: 12px;
+            padding: 14px 16px;
+            min-width: 230px;
+            max-width: 250px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+        .suggestion-card-box:hover {
+            border-color: #13A8A6;
+            background: #FFFFFF;
+            box-shadow: 0 4px 14px rgba(19, 168, 166, 0.1);
+        }
+        .btn-create-suggestion {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            color: #1E293B;
+            font-weight: 600;
+            font-size: 11.5px;
+            border-radius: 8px;
+            padding: 6px 12px;
+            width: 100%;
+            transition: all 0.15s;
+        }
+        .btn-create-suggestion:hover {
+            background: #F0FDFA;
+            border-color: #13A8A6;
+            color: #0D9488;
+        }
+
+        /* RIGHT PANEL: STORY CONTEXT */
+        .right-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-left: 1px solid var(--sv-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .context-tabs-bar {
+            display: flex;
+            border-bottom: 1px solid var(--sv-border);
+            background: #F8FAFC;
+            padding: 6px 8px 0;
+            gap: 4px;
+        }
+        .context-tab-item {
+            flex: 1;
+            padding: 8px 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: #64748B;
+            border-bottom: 2.5px solid transparent;
+            transition: all 0.2s;
+        }
+        .context-tab-item.active {
+            color: #0D9488;
+            border-bottom-color: #0D9488;
+            background: white;
+            border-radius: 6px 6px 0 0;
+        }
+
+        /* Quick Action Tiles Grid */
+        .quick-action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .quick-action-tile {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 10px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            gap: 4px;
+        }
+        .quick-action-tile:hover {
+            transform: translateY(-2px);
+            background: white;
+            border-color: #13A8A6;
+            box-shadow: 0 4px 10px rgba(19, 168, 166, 0.12);
+        }
+        .quick-action-tile span {
+            font-size: 10px;
+            font-weight: 600;
+            color: #334155;
+            line-height: 1.2;
+        }
+
+        /* BOTTOM FIXED STATUS BAR */
+        .sv-bottom-status-bar {
+            height: 35px;
+            background: white;
+            border-top: 1px solid var(--sv-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 12px;
+            color: #64748B;
+            z-index: 100;
+        }
+
+        /* DRAWER SLIDE-OVER */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .drawer-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+        .drawer-content {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: min(480px, 92vw);
+            background: white;
+            z-index: 3001;
+            box-shadow: -10px 0 35px rgba(0,0,0,0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        .drawer-overlay.show .drawer-content {
+            transform: translateX(0);
+        }
+
         .btn-peacock {
-            background: var(--peacock-gradient);
+            background: linear-gradient(135deg, #1E439B, #13A8A6);
             color: white;
             border: none;
-            transition: opacity 0.2s;
+            font-weight: 600;
         }
         .btn-peacock:hover {
             opacity: 0.95;
             color: white;
         }
-        .save-indicator {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--forest-green);
-            display: flex;
-            align-items: center;
-            gap: 4px;
+
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
+
+        /* -------------------------------------------------------------
+           RESPONSIVE MOBILE, TABLET & SMALL SCREEN LAYOUT ENHANCEMENTS
+           ------------------------------------------------------------- */
+        
+        /* Mobile Overlay Backdrop */
+        .mobile-panel-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 1040;
+            transition: opacity 0.25s ease;
         }
-        ::-webkit-scrollbar-track {
-            background: transparent;
+        .mobile-panel-backdrop.show {
+            display: block;
         }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(19, 168, 166, 0.2);
-            border-radius: 10px;
+
+        /* Large Laptops / Desktop Screens (>= 1200px) */
+        @@media (min-width: 1200px) {
+            .left-panel-mobile-toggle,
+            .right-panel-mobile-toggle {
+                display: none !important;
+            }
+        }
+
+        /* Tablets & Laptops (< 1200px) */
+        @@media (max-width: 1199.98px) {
+            .workspace-main {
+                grid-template-columns: 1fr !important;
+                position: relative;
+            }
+
+            .left-panel {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 300px;
+                height: 100%;
+                z-index: 1050;
+                box-shadow: 10px 0 30px rgba(15, 23, 42, 0.15);
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .left-panel.show-mobile {
+                transform: translateX(0);
+            }
+
+            .right-panel {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 340px;
+                height: 100%;
+                z-index: 1050;
+                box-shadow: -10px 0 30px rgba(15, 23, 42, 0.15);
+                transform: translateX(100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .right-panel.show-mobile {
+                transform: translateX(0);
+            }
+        }
+
+        /* Tablets (< 992px) */
+        @@media (max-width: 991.98px) {
+            .editor-header {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+
+            .writing-paper {
+                padding: 2.5rem 2rem !important;
+                margin: 12px auto !important;
+                border-radius: 12px;
+            }
+
+            .chapter-title-input {
+                font-size: 2rem !important;
+            }
+
+            .manuscript-editable {
+                font-size: 1.05rem !important;
+                line-height: 1.8 !important;
+            }
+
+            .editor-formatting-toolbar {
+                padding: 6px 10px;
+                gap: 4px;
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+            .editor-formatting-toolbar::-webkit-scrollbar {
+                height: 3px;
+            }
+            .editor-formatting-toolbar::-webkit-scrollbar-thumb {
+                background: #CBD5E1;
+                border-radius: 4px;
+            }
+        }
+
+        /* Mobile Phones (< 768px) */
+        @@media (max-width: 767.98px) {
+            .editor-header {
+                padding: 6px 12px !important;
+                gap: 8px !important;
+                height: auto !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                white-space: nowrap !important;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .editor-header::-webkit-scrollbar {
+                display: none !important;
+            }
+
+            .brand-badge {
+                display: none !important;
+            }
+
+            .view-mode-toggle {
+                order: 0 !important;
+                width: auto !important;
+                justify-content: flex-start !important;
+                margin-top: 0 !important;
+                flex-shrink: 0 !important;
+            }
+            .view-mode-toggle .mode-btn {
+                padding: 4px 10px;
+                font-size: 11.5px;
+            }
+
+            .editor-formatting-toolbar {
+                padding: 6px 14px !important;
+                gap: 6px !important;
+                overflow-x: auto !important;
+                overflow-y: visible !important;
+                white-space: nowrap !important;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            .left-panel {
+                width: 85% !important;
+                max-width: 320px;
+            }
+
+            .right-panel {
+                width: 90% !important;
+                max-width: 360px;
+            }
+
+            .writing-paper {
+                padding: 1.25rem 0.85rem !important;
+                margin: 6px auto !important;
+                border-radius: 8px;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            .chapter-title-input {
+                font-size: 1.4rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+
+            .manuscript-editable {
+                font-size: 1rem !important;
+                line-height: 1.75 !important;
+                min-height: 300px !important;
+            }
+
+            .suggestions-floating-card {
+                padding: 10px 12px !important;
+                border-radius: 12px !important;
+                margin: 12px 4px 20px !important;
+                max-width: 100% !important;
+            }
+
+            .suggestion-filter-pill {
+                font-size: 10px !important;
+                padding: 3px 8px !important;
+            }
+
+            /* Unclip Dropdown Menus in Toolbar on Mobile */
+            .editor-formatting-toolbar {
+                position: relative;
+                overflow-x: auto;
+                overflow-y: visible !important;
+            }
+            .editor-formatting-toolbar .dropdown-menu {
+                z-index: 2500 !important;
+                box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2) !important;
+                border-color: #CBD5E1 !important;
+            }
+
+            .sv-bottom-status-bar {
+                height: 32px !important;
+                padding: 0 8px !important;
+                font-size: 11px !important;
+            }
+        }
+
+            .view-mode-toggle {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+                margin-top: 4px;
+            }
+            .view-mode-toggle .mode-btn {
+                padding: 4px 12px;
+                font-size: 11.5px;
+            }
+
+            .left-panel {
+                width: 85% !important;
+                max-width: 320px;
+            }
+
+            .right-panel {
+                width: 90% !important;
+                max-width: 360px;
+            }
+
+            .writing-paper {
+                padding: 1.5rem 1rem !important;
+                margin: 8px auto !important;
+                border-radius: 8px;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            .chapter-title-input {
+                font-size: 1.5rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            .manuscript-editable {
+                font-size: 1rem !important;
+                line-height: 1.75 !important;
+                min-height: 350px !important;
+            }
+
+            .suggestions-floating-card {
+                padding: 12px 14px !important;
+                border-radius: 14px !important;
+                margin: 16px auto !important;
+            }
+
+            .suggestion-filter-pill {
+                font-size: 10.5px !important;
+                padding: 4px 10px !important;
+            }
+
+            .quick-drawer-overlay .drawer-content {
+                width: 100% !important;
+                max-width: 100% !important;
+                border-radius: 16px 16px 0 0 !important;
+            }
+        }
+
+        /* Small Mobile Phones (< 480px) */
+        @@media (max-width: 479.98px) {
+            .writing-paper {
+                padding: 1.25rem 0.75rem !important;
+            }
         }
     </style>
 </head>
 <body>
     <partial name="_Loader" />
 
-    <div class="editor-layout">
-        <!-- Top Toolbar -->
-        <header class="sv-editor-toolbar px-3 px-md-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <div class="d-flex align-items-center me-auto">
-                <a href="@Url.Action("Index", "Chapters", new { storyId = Model.StoryId })" class="btn btn-link p-2 text-secondary hover-lift-subtle rounded-circle bg-light border me-3" title="Back to Chapters">
-                    <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+    <div class="editor-app-container">
+        <!-- 1. TOP NAVBAR HEADER -->
+        <header class="sv-top-header editor-header">
+            <div class="d-flex align-items-center gap-2">
+                <!-- Mobile Left Panel Toggle Button -->
+                <button class="btn btn-light btn-sm border d-xl-none p-1.5 rounded-3 me-1 left-panel-mobile-toggle" onclick="toggleLeftPanelMobile()" title="Manuscript Explorer">
+                    <i data-lucide="menu" style="width:16px;height:16px;color:#0E7490;"></i>
+                </button>
+
+                <!-- Back to Chapter Studio Dashboard Button -->
+                <a href="@Url.Action("Index", "Chapters", new { storyId = Model.StoryId })" class="back-dashboard-btn" title="Back to Chapter Studio Dashboard">
+                    <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
+                    <span class="d-none d-sm-inline">Chapter Studio</span>
                 </a>
-                <div>
-                    <h6 class="mb-0 fw-bold text-slate-800 uppercase" style="font-size: 0.85rem; letter-spacing: 0.05em;">@story?.Title</h6>
-                    <div class="save-indicator">
-                        <i data-lucide="cloud-check" style="width: 12px; height: 12px;"></i>
-                        <span id="saveStatus">Saved</span>
-                    </div>
+
+                <!-- Brand Badge -->
+                <div class="brand-badge ms-1 d-none d-md-inline-flex">
+                    <i data-lucide="feather" style="width:16px;height:16px;color:#13A8A6;"></i>
+                    <span>StoryVerse <span style="font-weight:400;opacity:0.8;font-size:11px;">AUTHOR OS</span></span>
+                </div>
+
+                <!-- Story Selector Dropdown -->
+                <div class="dropdown d-none d-sm-block">
+                    <button class="dropdown-select-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i data-lucide="book" style="width:14px;height:14px;color:#13A8A6;"></i>
+                        <span class="fw-bold">@(story?.Title ?? "Select Story")</span>
+                    </button>
+                    <ul class="dropdown-menu shadow-sm">
+                        @foreach (var s in userStories)
+                        {
+                            <li>
+                                <a class="dropdown-item @(s.Id == Model.StoryId ? "active" : "")" href="@Url.Action("Editor", "Chapters", new { storyId = s.Id, chapterId = s.Chapters.FirstOrDefault()?.Id })">
+                                    @s.Title
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- Chapter Selector Dropdown -->
+                <div class="dropdown">
+                    <button class="dropdown-select-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <span class="fw-bold">@Model.Title</span>
+                    </button>
+                    <ul class="dropdown-menu shadow-sm custom-scrollbar" style="max-height: 300px; overflow-y: auto;">
+                        @foreach (var ch in allChapters)
+                        {
+                            <li>
+                                <a class="dropdown-item @(ch.Id == Model.Id ? "active" : "")" href="@Url.Action("Editor", "Chapters", new { storyId = Model.StoryId, chapterId = ch.Id })">
+                                    @ch.Title <span class="text-muted ms-2" style="font-size: 11px;">(@ch.WordCount w)</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- Save Status Pill -->
+                <div class="save-status-pill" id="saveIndicatorBox">
+                    <i data-lucide="check" style="width:14px;height:14px;" id="saveIcon"></i>
+                    <span id="saveStatusText" class="d-none d-sm-inline">Saved just now</span>
                 </div>
             </div>
-            
-            <div class="d-flex align-items-center gap-2 gap-md-3 flex-wrap">
-                <div class="text-secondary small fw-bold font-monospace bg-white border rounded-3 px-3 py-1.5 shadow-xs">
-                    <span id="wordCount">0</span> words • <span id="charCount">0</span> chars
+
+            <!-- View Mode Toggles (Center) -->
+            <div class="view-mode-toggle">
+                <button class="mode-btn active" id="btnModeWrite" onclick="switchViewMode('write')">
+                    <i data-lucide="edit-3" style="width:14px;height:14px;color:#0E7490;"></i>
+                    <span>Write</span>
+                </button>
+                <button class="mode-btn" id="btnModeFocus" onclick="switchViewMode('focus')">
+                    <i data-lucide="aperture" style="width:14px;height:14px;color:#334155;"></i>
+                    <span>Focus</span>
+                </button>
+                <button class="mode-btn" id="btnModeRead" onclick="switchViewMode('read')">
+                    <i data-lucide="book-open" style="width:14px;height:14px;color:#334155;"></i>
+                    <span>Read</span>
+                </button>
+            </div>
+
+            <!-- Right Actions & Profile -->
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-light btn-sm rounded-circle p-2 border position-relative d-none d-sm-inline-flex" title="Search Manuscript (Coming Soon)" disabled style="width: 36px; height: 36px; align-items: center; justify-content: center; opacity: 0.75; cursor: not-allowed;">
+                    <i data-lucide="search" style="width:15px;height:15px;color:#64748B;"></i>
+                </button>
+                <button class="btn btn-light btn-sm rounded-circle p-2 border position-relative d-none d-md-inline-flex" title="Help & Shortcuts (Coming Soon)" disabled style="width: 36px; height: 36px; align-items: center; justify-content: center; opacity: 0.75; cursor: not-allowed;">
+                    <i data-lucide="help-circle" style="width:15px;height:15px;color:#64748B;"></i>
+                </button>
+
+                <div class="vr bg-secondary opacity-25 mx-1 d-none d-sm-block" style="height: 20px;"></div>
+
+                <div class="d-flex align-items-center gap-2" style="cursor: pointer;">
+                    <div class="avatar-circle">@userInitials</div>
+                    <div class="d-none d-lg-block text-start">
+                        <div class="fw-bold text-slate-800" style="font-size: 12px; line-height: 1.1;">Sachi Patel</div>
+                        <div class="text-muted" style="font-size: 10px;">Author</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="d-none d-sm-inline-block" style="width: 14px; height: 14px; color: #475569; margin-left: 2px;"></i>
                 </div>
-                
-                <div class="vr bg-secondary opacity-25"></div>
-                
-                <button class="btn btn-light rounded-3 p-2 shadow-xs border" onclick="execCmd('bold')" title="Bold">
-                    <i data-lucide="bold" style="width:16px;height:16px;"></i>
-                </button>
-                <button class="btn btn-light rounded-3 p-2 shadow-xs border" onclick="execCmd('italic')" title="Italic">
-                    <i data-lucide="italic" style="width:16px;height:16px;"></i>
-                </button>
-                <button class="btn btn-light rounded-3 p-2 shadow-xs border" onclick="execCmd('underline')" title="Underline">
-                    <i data-lucide="underline" style="width:16px;height:16px;"></i>
-                </button>
-                
-                <div class="vr bg-secondary opacity-25"></div>
-                
-                <button class="btn btn-peacock rounded-pill px-4 fw-bold shadow-xs hover-lift-subtle" onclick="saveContent()">
-                    <i data-lucide="save" class="me-1" style="width: 16px; height: 16px; vertical-align: middle;"></i> Save
+
+                <!-- Mobile Right Panel Toggle Button -->
+                <button class="btn btn-light btn-sm border d-xl-none p-1.5 rounded-3 ms-1 right-panel-mobile-toggle" onclick="toggleRightPanelMobile()" title="Story Context">
+                    <i data-lucide="sparkles" style="width:16px;height:16px;color:#13A8A6;"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Main Workspace -->
-        <div class="workspace-split">
-            <!-- Writing Pane -->
-            <div class="writing-pane custom-scrollbar">
-                <div class="canvas-container">
-                    <input type="text" id="chapterTitle" class="sv-editor-title" placeholder="Chapter Title" value="@Model.Title" />
-                    
-                    <div id="editorCanvas" class="sv-editor-content" contenteditable="true" placeholder="Once upon a time...">
-                        <p>Write your chapter contents here...</p>
-                    </div>
-                </div>
-            </div>
+        <!-- Mobile Panel Backdrop -->
+        <div class="mobile-panel-backdrop" id="mobilePanelBackdrop" onclick="closeMobilePanels()"></div>
 
-            <!-- Sidebar Info Panel -->
-            <div class="sidebar-pane d-flex flex-column gap-4 border-start">
-                <div>
-                    <h5 class="font-serif fw-bold text-peacock mb-3 flex items-center gap-2">
-                        <i data-lucide="compass" class="d-inline-block text-peacock align-middle" style="width:18px;height:18px;"></i>
-                        Chapter Info
-                    </h5>
-                    <div class="d-flex flex-column gap-2 bg-white p-3 rounded-4 border shadow-xs" style="font-size: 13px;">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Order</span>
-                            <span class="fw-bold">Chapter @Model.Order</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Created</span>
-                            <span class="fw-bold">@Model.CreatedAt.ToString("MM/dd/yyyy")</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Status</span>
-                            <span class="badge bg-teal-subtle text-teal-700 font-bold uppercase tracking-wider" style="font-size: 9px;">Draft</span>
-                        </div>
+        <!-- 2. WORKSPACE 3-PANEL LAYOUT -->
+        <div class="workspace-main" id="workspaceMain">
+            <!-- LEFT PANEL: MANUSCRIPT EXPLORER -->
+            <aside class="left-panel custom-scrollbar" id="leftPanel">
+                <div class="manuscript-header">
+                    <span class="fw-bold text-slate-800 text-uppercase tracking-wider" style="font-size: 11px;">
+                        MANUSCRIPT
+                    </span>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-xs btn-outline-teal rounded-pill fw-bold" onclick="createNewChapter()" style="font-size: 10.5px;" title="Create New Chapter">
+                            + Chapter
+                        </button>
+                        <button class="btn btn-xs btn-outline-secondary rounded-pill fw-bold" onclick="openCreatePartPrompt()" style="font-size: 10.5px;" title="Create New Part">
+                            + Part
+                        </button>
                     </div>
                 </div>
 
-                <hr class="text-muted opacity-25 m-0" />
+                <div class="p-2 border-bottom bg-light">
+                    <input type="text" id="manuscriptSearch" class="form-control form-control-sm rounded-3 border-0 bg-white" placeholder="Search chapters..." oninput="filterManuscript()" style="font-size: 12px;">
+                </div>
 
-                <div class="flex-grow-1">
-                    <h5 class="font-serif fw-bold text-peacock mb-3">
-                        <i data-lucide="scroll" class="d-inline-block text-peacock align-middle me-1" style="width:18px;height:18px;"></i>
-                        Workspace Notes
-                    </h5>
-                    <textarea class="form-control rounded-4 border-slate-200" rows="8" placeholder="Jot down quick reminders or character references while writing..." style="font-size: 13px; background: rgba(255,255,255,0.7); resize: none;"></textarea>
+                <div class="chapter-tree-container" id="manuscriptList">
+                    @if (storyParts.Any())
+                    {
+                        @foreach (var part in storyParts)
+                        {
+                            var partChapters = allChapters.Where(c => c.PartId == part.Id).OrderBy(c => c.Order).ToList();
+                            <div class="manuscript-part-block mb-2">
+                                <div class="part-header-item d-flex align-items-center justify-content-between py-1">
+                                    <span class="text-truncate fw-bold">▼ @part.Title</span>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="badge bg-light text-secondary border">@partChapters.Count</span>
+                                        <button type="button" class="btn btn-xs btn-teal rounded-circle p-0 ms-1 d-inline-flex align-items-center justify-content-center" style="width: 18px; height: 18px; line-height: 1; font-size: 11px;" onclick="createNewChapter('@part.Id')" title="Add Chapter to @part.Title">
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+                                @foreach (var ch in partChapters)
+                                {
+                                    var isActive = ch.Id == Model.Id;
+                                    <a href="@Url.Action("Editor", "Chapters", new { storyId = Model.StoryId, chapterId = ch.Id })" class="chapter-tree-item @(isActive ? "active" : "")">
+                                        <span class="text-truncate" style="max-width: 170px;">@ch.Title</span>
+                                        <span class="chapter-word-count">@(ch.WordCount > 0 ? ch.WordCount.ToString("N0") : "-")</span>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    }
+
+                    @{
+                        var unassigned = allChapters.Where(c => c.PartId == null).OrderBy(c => c.Order).ToList();
+                    }
+                    @if (unassigned.Any())
+                    {
+                        <div class="manuscript-part-block">
+                            @if (storyParts.Any())
+                            {
+                                <div class="part-header-item">Other Chapters</div>
+                            }
+                            @foreach (var ch in unassigned)
+                            {
+                                var isActive = ch.Id == Model.Id;
+                                <a href="@Url.Action("Editor", "Chapters", new { storyId = Model.StoryId, chapterId = ch.Id })" class="chapter-tree-item @(isActive ? "active" : "")">
+                                    <span class="text-truncate" style="max-width: 170px;">@ch.Title</span>
+                                    <span class="chapter-word-count">@(ch.WordCount > 0 ? ch.WordCount.ToString("N0") : "-")</span>
+                                </a>
+                            }
+                        </div>
+                    }
                 </div>
-                
-                <div class="p-3 bg-light rounded-4 border">
-                    <h6 class="fw-bold mb-2 small text-uppercase tracking-wider text-secondary">Tip for Authors</h6>
-                    <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.5;">Try setting a daily goal to maintain your writing momentum. Every small paragraph brings you closer to completing your manuscript.</p>
+
+                <div class="p-2 border-top d-flex align-items-center justify-content-between">
+                    <button class="btn btn-sm btn-light border text-secondary fw-semibold w-100 me-1" onclick="createNewChapter()" style="font-size: 12px;">
+                        + Add Chapter
+                    </button>
+                    <button class="btn btn-sm btn-light border p-1.5 text-secondary" title="Manuscript Settings">
+                        <i data-lucide="settings" style="width: 15px; height: 15px;"></i>
+                    </button>
                 </div>
+
+                <!-- Bottom Literary Accent Card -->
+                <div class="literary-banner-card">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i data-lucide="feather" style="width:16px;height:16px;color:#D97706;"></i>
+                        <span class="fw-bold" style="font-size: 11px; color: #92400E;">AUTHOR'S DESK</span>
+                    </div>
+                    <p class="mb-0 fst-italic text-amber-900" style="font-size: 11.5px; line-height: 1.4;">
+                        "Every great story begins with a single word. You've got this!"
+                    </p>
+                </div>
+            </aside>
+
+            <!-- CENTER PANEL: WRITING CANVAS -->
+            <main class="center-canvas-panel" id="centerPanel">
+                <!-- MICROSOFT WORD GRADE RICH FORMATTING TOOLBAR -->
+                <div class="editor-formatting-toolbar" id="wordFormattingToolbar">
+                    <!-- History -->
+                    <button class="toolbar-btn" onclick="execCmd('undo')" title="Undo (Ctrl+Z)"><i data-lucide="undo" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="execCmd('redo')" title="Redo (Ctrl+Y)"><i data-lucide="redo" style="width:14px;height:14px;"></i></button>
+
+                    <div class="vr bg-secondary opacity-25 mx-1" style="height: 18px;"></div>
+
+                    <!-- Paragraph Styles / Headings -->
+                    <select class="toolbar-select" onchange="execCmd('formatBlock', this.value)" title="Style / Heading">
+                        <option value="<p>">Normal Paragraph</option>
+                        <option value="<h1>">Title (H1)</option>
+                        <option value="<h2>">Subtitle (H2)</option>
+                        <option value="<h3>">Heading 1 (H3)</option>
+                        <option value="<h4>">Heading 2 (H4)</option>
+                        <option value="<h5>">Heading 3 (H5)</option>
+                        <option value="<blockquote>">Quote</option>
+                        <option value="<pre>">Code Block</option>
+                    </select>
+
+                    <!-- Comprehensive Font Family Picker -->
+                    <select class="toolbar-select" onchange="execCmd('fontName', this.value)" title="Font Family">
+                        <option value="Lora" selected>Lora (Serif)</option>
+                        <option value="Playfair Display">Playfair Display</option>
+                        <option value="Merriweather">Merriweather</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Garamond">Garamond</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Inter">Inter (Sans)</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Montserrat">Montserrat</option>
+                        <option value="Open Sans">Open Sans</option>
+                        <option value="Cinzel">Cinzel</option>
+                        <option value="Courier Prime">Courier Prime (Mono)</option>
+                    </select>
+
+                    <!-- Comprehensive Font Sizes -->
+                    <select class="toolbar-select" onchange="changeExactFontSize(this.value)" title="Font Size">
+                        <option value="12px">12 px</option>
+                        <option value="14px">14 px</option>
+                        <option value="16px" selected>16 px</option>
+                        <option value="18px">18 px</option>
+                        <option value="20px">20 px</option>
+                        <option value="24px">24 px</option>
+                        <option value="28px">28 px</option>
+                        <option value="32px">32 px</option>
+                        <option value="36px">36 px</option>
+                        <option value="48px">48 px</option>
+                        <option value="72px">72 px</option>
+                    </select>
+
+                    <div class="vr bg-secondary opacity-25 mx-1" style="height: 18px;"></div>
+
+                    <!-- Word Rich Formatting Buttons -->
+                    <button class="toolbar-btn" onclick="execCmd('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
+                    <button class="toolbar-btn" onclick="execCmd('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+                    <button class="toolbar-btn" onclick="execCmd('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                    <button class="toolbar-btn" onclick="execCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
+                    <button class="toolbar-btn" onclick="execCmd('subscript')" title="Subscript">x<sub>2</sub></button>
+                    <button class="toolbar-btn" onclick="execCmd('superscript')" title="Superscript">x<sup>2</sup></button>
+
+                    <div class="vr bg-secondary opacity-25 mx-1" style="height: 18px;"></div>
+
+                    <!-- Text Color & Highlight Color Pickers -->
+                    <div class="dropdown d-inline-block position-relative" title="Text Color">
+                        <button class="toolbar-btn d-inline-flex align-items-center gap-1 dropdown-toggle text-decoration-none" type="button" data-bs-toggle="dropdown" id="btnTextColor" style="border:none;background:transparent;">
+                            <i data-lucide="type" style="width:15px;height:15px;color:#1E439B;"></i>
+                            <span class="color-bar-indicator" id="textColorBar" style="display:inline-block;width:12px;height:3px;background:#1E293B;border-radius:1px;"></span>
+                        </button>
+                        <div class="dropdown-menu p-2 shadow-sm" style="min-width: 170px; z-index: 2500;">
+                            <div class="small fw-bold text-muted mb-2 px-1" style="font-size:11px;">Text Color</div>
+                            <div class="d-flex flex-wrap gap-1.5 mb-2">
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#0F172A;" onmousedown="event.preventDefault();" onclick="applyTextColor('#0F172A')" title="Dark Slate"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#1E439B;" onmousedown="event.preventDefault();" onclick="applyTextColor('#1E439B')" title="Navy Blue"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#0D9488;" onmousedown="event.preventDefault();" onclick="applyTextColor('#0D9488')" title="Teal"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#DC2626;" onmousedown="event.preventDefault();" onclick="applyTextColor('#DC2626')" title="Red"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#D97706;" onmousedown="event.preventDefault();" onclick="applyTextColor('#D97706')" title="Amber"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#7C3AED;" onmousedown="event.preventDefault();" onclick="applyTextColor('#7C3AED')" title="Purple"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#475569;" onmousedown="event.preventDefault();" onclick="applyTextColor('#475569')" title="Muted Gray"></button>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between pt-1 border-top">
+                                <span class="small text-muted" style="font-size:11px;">Custom:</span>
+                                <input type="color" id="textColorPicker" onmousedown="event.stopPropagation();" oninput="applyTextColor(this.value)" onchange="applyTextColor(this.value)" style="width:24px;height:24px;padding:0;border:none;background:none;cursor:pointer;" value="#1E293B">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dropdown d-inline-block ms-1 position-relative" title="Highlight Color">
+                        <button class="toolbar-btn d-inline-flex align-items-center gap-1 dropdown-toggle text-decoration-none" type="button" data-bs-toggle="dropdown" id="btnHighlightColor" style="border:none;background:transparent;">
+                            <i data-lucide="highlighter" style="width:15px;height:15px;color:#D97706;"></i>
+                            <span class="color-bar-indicator" id="highlightColorBar" style="display:inline-block;width:12px;height:3px;background:#FEF08A;border-radius:1px;"></span>
+                        </button>
+                        <div class="dropdown-menu p-2 shadow-sm" style="min-width: 170px; z-index: 2500;">
+                            <div class="small fw-bold text-muted mb-2 px-1" style="font-size:11px;">Highlight Color</div>
+                            <div class="d-flex flex-wrap gap-1.5 mb-2">
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#FEF08A;" onmousedown="event.preventDefault();" onclick="applyHighlightColor('#FEF08A')" title="Yellow Highlight"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#A7F3D0;" onmousedown="event.preventDefault();" onclick="applyHighlightColor('#A7F3D0')" title="Green Highlight"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#BAE6FD;" onmousedown="event.preventDefault();" onclick="applyHighlightColor('#BAE6FD')" title="Blue Highlight"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#FBCFE8;" onmousedown="event.preventDefault();" onclick="applyHighlightColor('#FBCFE8')" title="Pink Highlight"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#FED7AA;" onmousedown="event.preventDefault();" onclick="applyHighlightColor('#FED7AA')" title="Orange Highlight"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border" style="width:22px;height:22px;background:#DDD6FE;" onmousedown="event.preventDefault();" onclick="applyHighlightColor('#DDD6FE')" title="Purple Highlight"></button>
+                                <button type="button" class="btn btn-sm p-0 rounded-circle border text-muted" style="width:22px;height:22px;background:#FFFFFF;font-size:10px;line-height:1;" onmousedown="event.preventDefault();" onclick="applyHighlightColor('transparent')" title="Remove Highlight">✕</button>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between pt-1 border-top">
+                                <span class="small text-muted" style="font-size:11px;">Custom:</span>
+                                <input type="color" id="bgColorPicker" onmousedown="event.stopPropagation();" oninput="applyHighlightColor(this.value)" onchange="applyHighlightColor(this.value)" style="width:24px;height:24px;padding:0;border:none;background:none;cursor:pointer;" value="#FEF08A">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vr bg-secondary opacity-25 mx-1" style="height: 18px;"></div>
+
+                    <!-- Alignments -->
+                    <button class="toolbar-btn" onclick="execCmd('justifyLeft')" title="Align Left"><i data-lucide="align-left" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="execCmd('justifyCenter')" title="Align Center"><i data-lucide="align-center" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="execCmd('justifyRight')" title="Align Right"><i data-lucide="align-right" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="execCmd('justifyFull')" title="Justify"><i data-lucide="align-justify" style="width:14px;height:14px;"></i></button>
+
+                    <!-- Line Spacing Dropdown -->
+                    <select class="toolbar-select" onchange="setLineSpacing(this.value)" title="Line Spacing">
+                        <option value="1.2">Single (1.0)</option>
+                        <option value="1.5">1.5 Lines</option>
+                        <option value="2.0" selected>Double (2.0)</option>
+                        <option value="2.5">2.5 Lines</option>
+                    </select>
+
+                    <div class="vr bg-secondary opacity-25 mx-1" style="height: 18px;"></div>
+
+                    <!-- Lists & Indentation -->
+                    <button class="toolbar-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List"><i data-lucide="list" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="execCmd('insertOrderedList')" title="Numbered List"><i data-lucide="list-ordered" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="execCmd('outdent')" title="Decrease Indent"><i data-lucide="indent-decrease" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="execCmd('indent')" title="Increase Indent"><i data-lucide="indent-increase" style="width:14px;height:14px;"></i></button>
+
+                    <div class="vr bg-secondary opacity-25 mx-1" style="height: 18px;"></div>
+
+                    <!-- Inserts & Tools -->
+                    <button class="toolbar-btn" onclick="insertLinkPrompt()" title="Insert Link"><i data-lucide="link" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="insertImagePrompt()" title="Insert Image"><i data-lucide="image" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="insertTablePrompt()" title="Insert Table"><i data-lucide="table" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn" onclick="execCmd('insertHorizontalRule')" title="Horizontal Divider"><i data-lucide="minus" style="width:14px;height:14px;"></i></button>
+                    <button class="toolbar-btn text-danger" onclick="execCmd('removeFormat')" title="Clear Formatting"><i data-lucide="remove-formatting" style="width:14px;height:14px;"></i></button>
+                </div>
+
+                <!-- Canvas Content Area -->
+                <div class="canvas-scroll-area custom-scrollbar" id="writingPane">
+                    <div class="writing-paper" id="paperContainer">
+                        <div class="d-flex align-items-center gap-2 mb-2 text-teal-700 fw-semibold" id="chapterOrderTag" style="font-size: 14px;">
+                            <i data-lucide="pen-tool" style="width: 16px; height: 16px; color: #13A8A6;"></i>
+                            <span>Chapter @Model.Order</span>
+                        </div>
+
+                        <input type="text" id="chapterTitle" class="chapter-title-input" placeholder="Chapter Title..." value="@Model.Title" />
+
+                        <div id="editorCanvas" class="manuscript-editable" contenteditable="true" placeholder="Start writing your story here... Introduce characters, locations, or timeline events directly as you draft.">
+                            @if (!string.IsNullOrWhiteSpace(Model.Content))
+                            {
+                                @Html.Raw(Model.Content)
+                            }
+                            else
+                            {
+                                <p>Start writing your chapter here...</p>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Floating Hover Preview Card -->
+                    <div id="entityHoverCard" class="entity-hover-card">
+                        <div class="d-flex gap-3">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" id="hoverAvatar" class="hover-avatar" alt="Avatar" />
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="fw-bold text-slate-900" style="font-size: 14px;" id="hoverName">Character Name</div>
+                                </div>
+                                <div class="text-teal-700 fw-semibold" style="font-size: 11.5px;" id="hoverRole">Role</div>
+                                <div class="d-flex align-items-center gap-1.5 mt-1" style="font-size: 10.5px; color: #10B981; font-weight: 600;">
+                                    <span style="width: 7px; height: 7px; background: #10B981; border-radius: 50%;"></span>
+                                    <span id="hoverStatus">Active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-muted mt-2 mb-2" style="font-size: 11.5px; line-height: 1.45;" id="hoverDesc">
+                            Character description...
+                        </p>
+
+                        <div class="bg-light rounded-3 p-2 mb-2 d-flex align-items-center justify-content-between" style="font-size: 11px;">
+                            <span class="text-secondary fw-medium" id="hoverAppearsCount">Appears in story</span>
+                            <span class="badge bg-teal-subtle text-teal-800">Story Entity</span>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-1 border-top" style="font-size: 11.5px;">
+                            <a href="javascript:void(0)" class="text-teal-700 fw-bold text-decoration-none">
+                                👁 View Entity ↗
+                            </a>
+                            <a href="javascript:void(0)" class="text-secondary text-decoration-none" onclick="openDrawer('research')">
+                                📝 Add Note
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Selection Context Toolbar -->
+                    <div id="selectionContextMenu" class="selection-context-toolbar">
+                        <button onclick="quickCreateFromSelection('character')"><i data-lucide="user-plus" style="width:13px;height:13px;"></i> + Character</button>
+                        <button onclick="quickCreateFromSelection('location')"><i data-lucide="map-pin" style="width:13px;height:13px;"></i> + Location</button>
+                        <button onclick="quickCreateFromSelection('event')"><i data-lucide="calendar-plus" style="width:13px;height:13px;"></i> + Event</button>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC STORYVERSE SUGGESTIONS FLOATING CARD CONTAINER -->
+                <div class="suggestions-floating-card" id="suggestionsDock">
+                    <!-- Header Row -->
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="fw-bold text-slate-800 d-flex align-items-center gap-1.5" style="font-size: 14px;">
+                                <i data-lucide="sparkles" style="width: 16px; height: 16px; color: #13A8A6;"></i>
+                                StoryVerse Suggestions
+                            </span>
+                            <div class="d-flex align-items-center gap-2 flex-wrap ms-2" id="suggestionBadgesContainer">
+                                <button class="suggestion-filter-pill active" id="badgeCharCount" onclick="filterSuggestionCards('all')">0 Characters</button>
+                                <button class="suggestion-filter-pill" id="badgeLocCount" onclick="filterSuggestionCards('location')">0 Locations</button>
+                                <button class="suggestion-filter-pill" id="badgeEvtCount" onclick="filterSuggestionCards('event')">0 Events</button>
+                                <button class="suggestion-filter-pill" id="badgeWorldCount" onclick="filterSuggestionCards('world')">0 World Entities</button>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" onclick="toggleSuggestionsDock()" title="Close Suggestions">✕</button>
+                    </div>
+
+                    <!-- Dynamic suggestion cards updated live as the author writes -->
+                    <div class="d-flex gap-3 overflow-x-auto pb-2 custom-scrollbar" id="suggestionsCardContainer">
+                        <div class="text-muted py-2 px-1" style="font-size: 11.5px;" id="suggestionsPrompt">
+                            Start writing in your manuscript to discover characters, locations, and timeline events live...
+                        </div>
+                    </div>
+
+                    <!-- Footer Row -->
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top mt-2" style="font-size: 11.5px;">
+                        <label class="d-flex align-items-center gap-1.5 text-secondary fw-medium mb-0">
+                            <input type="checkbox" checked id="chkAlwaysShowSuggestions" class="form-check-input mt-0" style="width: 14px; height: 14px;">
+                            <span>Always show suggestions</span>
+                        </label>
+                        <button class="btn btn-sm btn-link text-secondary p-0 text-decoration-none d-flex align-items-center gap-1" style="font-size: 11.5px;">
+                            <i data-lucide="settings" style="width: 13px; height: 13px;"></i>
+                            <span>Settings</span>
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- RIGHT PANEL: STORY CONTEXT -->
+            <aside class="right-panel" id="rightPanel">
+                <!-- Context Tabs Header -->
+                <div class="context-tabs-bar">
+                    <button class="context-tab-item active" onclick="switchTab('characters')" id="tabBtn-characters">
+                        Characters
+                    </button>
+                    <button class="context-tab-item" onclick="switchTab('world')" id="tabBtn-world">
+                        World
+                    </button>
+                    <button class="context-tab-item" onclick="switchTab('timeline')" id="tabBtn-timeline">
+                        Timeline
+                    </button>
+                    <button class="context-tab-item" onclick="switchTab('research')" id="tabBtn-research">
+                        Research
+                    </button>
+                    <button class="context-tab-item" onclick="switchTab('notes')" id="tabBtn-notes">
+                        Notes
+                    </button>
+                    <button class="context-tab-item" onclick="switchTab('assets')" id="tabBtn-assets">
+                        Assets
+                    </button>
+                </div>
+
+                <!-- Tab Content: Characters -->
+                <div class="flex-grow-1 overflow-y-auto p-3 tab-pane-content" id="tabContent-characters">
+                    <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                        <input type="text" class="form-control form-control-sm rounded-3 border bg-white" placeholder="Search characters..." oninput="filterContextItems('characters', this.value)" style="font-size: 12px; flex: 1;">
+                        <button class="btn btn-sm btn-peacock rounded-pill fw-bold text-nowrap" onclick="openDrawer('character')" style="font-size: 11px;">
+                            + Add Character
+                        </button>
+                    </div>
+
+                    <!-- IN THIS CHAPTER -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold text-slate-800 text-uppercase tracking-wider" style="font-size: 10.5px;">
+                                IN THIS CHAPTER <span class="badge bg-teal-subtle text-teal-800 ms-1" id="inChapterCount">@linkedCharsList.Count</span>
+                            </span>
+                        </div>
+
+                        <div id="inChapterCharacters">
+                            @if (linkedCharsList.Any())
+                            {
+                                @foreach (var c in linkedCharsList)
+                                {
+                                    <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-white border mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-circle" style="width:34px;height:34px;font-size:11px;">
+                                                @(!string.IsNullOrEmpty(c.AvatarUrl) ? Html.Raw($"<img src='{c.AvatarUrl}' class='rounded-circle w-100 h-100' style='object-fit:cover;' />") : c.Name.Substring(0, Math.Min(2, c.Name.Length)).ToUpper())
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-slate-900" style="font-size: 12.5px;">@c.Name</div>
+                                                <div class="text-muted" style="font-size: 10.5px;">@(c.Role ?? "Character")</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-xs btn-link text-secondary p-0" title="Unlink Character" onclick="toggleEntityLink('character', '@c.Id')">
+                                            <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-muted p-3 text-center rounded-3 bg-light border" style="font-size: 11.5px;">
+                                    No characters linked to this chapter yet.
+                                    <div class="mt-1">
+                                        <a href="javascript:void(0)" onclick="openDrawer('character')" class="text-teal-700 font-semibold text-decoration-none">+ Add Character</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- ALL CHARACTERS IN STORY -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold text-slate-800 text-uppercase tracking-wider" style="font-size: 10.5px;">
+                                ALL CHARACTERS <span class="badge bg-light text-secondary border ms-1">@characters.Count</span>
+                            </span>
+                        </div>
+
+                        <div id="allCharactersList">
+                            @if (characters.Any())
+                            {
+                                @foreach (var c in characters)
+                                {
+                                    var isLinked = linkedCharacterIds.Contains(c.Id);
+                                    <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-white border mb-1.5" data-name="@c.Name.ToLower()">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-circle" style="width:30px;height:30px;font-size:10px;">
+                                                @(!string.IsNullOrEmpty(c.AvatarUrl) ? Html.Raw($"<img src='{c.AvatarUrl}' class='rounded-circle w-100 h-100' style='object-fit:cover;' />") : c.Name.Substring(0, Math.Min(2, c.Name.Length)).ToUpper())
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-slate-800" style="font-size: 12px;">@c.Name</div>
+                                                <div class="text-muted" style="font-size: 10px;">@(c.Role ?? "Character")</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-xs @(isLinked ? "btn-teal" : "btn-light border") rounded-pill px-2 py-0.5" onclick="toggleEntityLink('character', '@c.Id')" style="font-size: 10px;">
+                                            @(isLinked ? "Linked ✓" : "+ Link")
+                                        </button>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-muted p-3 text-center rounded-3 bg-light border" style="font-size: 11.5px;">
+                                    No characters in story database yet.
+                                </div>
+                            }
+                        </div>
+
+                        <a href="@Url.Action("Index", "Characters", new { storyId = Model.StoryId })" class="text-teal-700 fw-bold small text-decoration-none d-block mt-2">
+                            View all characters →
+                        </a>
+                    </div>
+
+                    <!-- Quick Actions Grid -->
+                    <div class="pt-2 border-top">
+                        <div class="fw-bold text-slate-800 text-uppercase tracking-wider mb-2" style="font-size: 10.5px;">
+                            Quick Actions
+                        </div>
+                        <div class="quick-action-grid">
+                            <div class="quick-action-tile" onclick="openDrawer('character')">
+                                <i data-lucide="user-plus" style="width:16px;height:16px;color:#0D9488;"></i>
+                                <span>Create Character</span>
+                            </div>
+                            <div class="quick-action-tile" onclick="openDrawer('location')">
+                                <i data-lucide="map-pin" style="width:16px;height:16px;color:#D97706;"></i>
+                                <span>Create Location</span>
+                            </div>
+                            <div class="quick-action-tile" onclick="openDrawer('world')">
+                                <i data-lucide="globe" style="width:16px;height:16px;color:#2563EB;"></i>
+                                <span>Create World Entity</span>
+                            </div>
+                            <div class="quick-action-tile" onclick="openDrawer('timeline')">
+                                <i data-lucide="clock" style="width:16px;height:16px;color:#7C3AED;"></i>
+                                <span>Create Timeline Event</span>
+                            </div>
+
+                            <div class="quick-action-tile" onclick="switchTab('notes')">
+                                <i data-lucide="sticky-note" style="width:16px;height:16px;color:#0284C7;"></i>
+                                <span>Add Note</span>
+                            </div>
+                            <div class="quick-action-tile" onclick="openDrawer('research')">
+                                <i data-lucide="flask-conical" style="width:16px;height:16px;color:#059669;"></i>
+                                <span>Add Research</span>
+                            </div>
+                            <div class="quick-action-tile">
+                                <i data-lucide="upload-cloud" style="width:16px;height:16px;color:#6366F1;"></i>
+                                <span>Upload Asset</span>
+                            </div>
+                            <div class="quick-action-tile">
+                                <i data-lucide="file-plus" style="width:16px;height:16px;color:#475569;"></i>
+                                <span>Add Reference</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: World -->
+                <div class="flex-grow-1 overflow-y-auto p-3 tab-pane-content d-none" id="tabContent-world">
+                    <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                        <input type="text" class="form-control form-control-sm rounded-3 border bg-white" placeholder="Search world..." oninput="filterContextItems('world', this.value)" style="font-size: 12px; flex: 1;">
+                        <button class="btn btn-sm btn-peacock rounded-pill fw-bold text-nowrap" onclick="openDrawer('world')" style="font-size: 11px;">
+                            + Add Entity
+                        </button>
+                    </div>
+
+                    <div id="worldEntitiesList">
+                        @if (worldEntities.Any())
+                        {
+                            @foreach (var w in worldEntities)
+                            {
+                                var isLinked = linkedWorldEntityIds.Contains(w.Id);
+                                var typeName = w.EntityType != null ? w.EntityType.Name : "Location";
+                                <div class="context-card p-2 rounded-3 bg-white border mb-2 @(isLinked ? "border-teal" : "")" data-name="@w.Name.ToLower()">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="badge bg-amber-subtle text-amber-800 fw-bold me-1" style="font-size: 9px;">@typeName</span>
+                                            <span class="fw-bold text-slate-800" style="font-size: 12.5px;">@w.Name</span>
+                                        </div>
+                                        <button class="btn btn-xs @(isLinked ? "btn-teal" : "btn-light border") rounded-pill px-2 py-0.5" onclick="toggleEntityLink('world', '@w.Id')" style="font-size: 10px;">
+                                            @(isLinked ? "Linked ✓" : "+ Link")
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted p-3 text-center rounded-3 bg-light border" style="font-size: 11.5px;">
+                                No locations or world entities created yet.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Tab Content: Timeline -->
+                <div class="flex-grow-1 overflow-y-auto p-3 tab-pane-content d-none" id="tabContent-timeline">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <input type="text" class="form-control form-control-sm rounded-3 border bg-white" placeholder="Search timeline..." oninput="filterContextItems('timeline', this.value)" style="font-size: 12px; width: 60%;">
+                        <button class="btn btn-sm btn-peacock rounded-pill fw-bold" onclick="openDrawer('timeline')" style="font-size: 11px;">
+                            + Add Event
+                        </button>
+                    </div>
+
+                    <div id="timelineEventsList">
+                        @if (timelineEvents.Any())
+                        {
+                            @foreach (var t in timelineEvents)
+                            {
+                                var isLinked = linkedTimelineEventIds.Contains(t.Id);
+                                <div class="context-card p-2 rounded-3 bg-white border mb-2" data-name="@t.Title.ToLower()">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="badge bg-purple-subtle text-purple-800 fw-bold me-1" style="font-size: 9px;">@(t.StoryDate ?? t.Category)</span>
+                                            <div class="fw-bold text-slate-800 mt-0.5" style="font-size: 12.5px;">@t.Title</div>
+                                        </div>
+                                        <button class="btn btn-xs @(isLinked ? "btn-teal" : "btn-light border") rounded-pill px-2 py-0.5" onclick="toggleEntityLink('timeline', '@t.Id')" style="font-size: 10px;">
+                                            @(isLinked ? "Linked ✓" : "+ Link")
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted p-3 text-center rounded-3 bg-light border" style="font-size: 11.5px;">
+                                No timeline events created yet.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Tab Content: Research -->
+                <div class="flex-grow-1 overflow-y-auto p-3 tab-pane-content d-none" id="tabContent-research">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <input type="text" class="form-control form-control-sm rounded-3 border bg-white" placeholder="Search notes..." oninput="filterContextItems('research', this.value)" style="font-size: 12px; width: 60%;">
+                        <button class="btn btn-sm btn-peacock rounded-pill fw-bold" onclick="openDrawer('research')" style="font-size: 11px;">
+                            + Add Note
+                        </button>
+                    </div>
+
+                    <div id="researchNotesList">
+                        @if (researchNotes.Any())
+                        {
+                            @foreach (var r in researchNotes)
+                            {
+                                <div class="p-2 rounded-3 bg-white border mb-2" data-name="@r.Title.ToLower()">
+                                    <span class="badge bg-blue-subtle text-blue-800 fw-bold" style="font-size: 9px;">@r.Category</span>
+                                    <div class="fw-bold text-slate-800 mt-1" style="font-size: 12.5px;">@r.Title</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted p-3 text-center rounded-3 bg-light border" style="font-size: 11.5px;">
+                                No research notes created yet.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Tab Content: Notes Scratchpad -->
+                <div class="flex-grow-1 p-3 tab-pane-content d-none" id="tabContent-notes">
+                    <h6 class="fw-bold mb-2 small text-uppercase tracking-wider text-secondary">Chapter Workspace Notes</h6>
+                    <textarea id="workspaceScratchpad" class="form-control rounded-3 border p-3" rows="16" placeholder="Jot down quick chapter reminders, scene ideas, or research notes..." style="font-size: 13px; background: white; resize: none;"></textarea>
+                </div>
+
+                <!-- Tab Content: Assets -->
+                <div class="flex-grow-1 p-3 tab-pane-content d-none" id="tabContent-assets">
+                    <h6 class="fw-bold mb-2 small text-uppercase tracking-wider text-secondary">Chapter Media & Assets</h6>
+                    <div class="border border-dashed rounded-3 p-4 text-center bg-white">
+                        <i data-lucide="upload-cloud" class="text-teal-600 mb-2" style="width:28px;height:28px;"></i>
+                        <div class="fw-bold text-slate-800" style="font-size: 13px;">Drag & Drop chapter images</div>
+                        <div class="text-muted" style="font-size: 11px;">Maps, mood boards, or character concept art</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- 3. BOTTOM FIXED STATUS BAR -->
+        <footer class="sv-bottom-status-bar">
+            <!-- Left: Auto-save status -->
+            <div class="d-flex align-items-center gap-2">
+                <span class="d-inline-flex align-items-center gap-1.5 text-teal-700 fw-semibold text-nowrap" style="font-size: 11px;">
+                    <span style="width:7px;height:7px;background:#10B981;border-radius:50%;"></span>
+                    Auto-save On
+                </span>
             </div>
+
+            <!-- Center: Progress & Word stats -->
+            <div class="d-flex align-items-center gap-2 flex-wrap text-nowrap" style="font-size: 11px;">
+                <div class="d-none d-md-flex align-items-center gap-2">
+                    <span>Chapter Progress</span>
+                    <div class="progress" style="width: 80px; height: 5px;">
+                        <div class="progress-bar bg-teal" role="progressbar" style="width: 32%; background-color:#13A8A6;"></div>
+                    </div>
+                    <span class="fw-bold text-slate-800">32%</span>
+                    <span>|</span>
+                </div>
+                <span><strong id="barWordCount">0</strong> words</span>
+                <span class="d-none d-sm-inline">•</span>
+                <span class="d-none d-sm-inline"><strong id="barCharCount">0</strong> chars</span>
+                <span class="d-none d-md-inline">•</span>
+                <span class="d-none d-md-inline"><strong id="barReadTime">~1 min</strong> read</span>
+            </div>
+
+            <!-- Right: Version & Sync -->
+            <div class="d-flex align-items-center gap-2 text-nowrap" style="font-size: 11px;">
+                <span class="d-none d-sm-inline">v@Model.Version</span>
+                <span class="text-teal-700 fw-semibold d-inline-flex align-items-center gap-1">
+                    <i data-lucide="check-circle" style="width:12px;height:12px;color:#10B981;"></i> Synced
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- QUICK CREATE DRAWER OVERLAY -->
+    <div class="drawer-overlay" id="drawerOverlay">
+        <div class="drawer-content" id="drawerContent">
+            <!-- Dynamic Form inserted here -->
         </div>
     </div>
 
-    <!-- Initialize Scripts -->
+    <!-- TOAST NOTIFICATION -->
+    <div class="sv-toast" id="svToast" style="position:fixed;bottom:24px;right:24px;z-index:4000;background:#0F172A;color:white;padding:12px 20px;border-radius:12px;display:none;align-items:center;gap:10px;">
+        <i data-lucide="check-circle" class="text-teal-400" style="width: 18px; height: 18px;"></i>
+        <span id="svToastMsg">Notification message</span>
+    </div>
+
+    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         lucide.createIcons();
 
+        const storyId = "@Model.StoryId";
+        const chapterId = "@Model.Id";
+        let currentVersion = parseInt("@Model.Version") || 1;
+
+        // Existing story entities for live matching
+        const existingCharactersList = @Html.Raw(Json.Serialize(characters.Select(c => c.Name.ToLower())));
+        const existingLocationsList = @Html.Raw(Json.Serialize(worldEntities.Select(w => w.Name.ToLower())));
+        const existingTimelineEventsList = @Html.Raw(Json.Serialize(timelineEvents.Select(t => t.Title.ToLower())));
+
         const titleInput = document.getElementById('chapterTitle');
         const editor = document.getElementById('editorCanvas');
-        const wordCountDisplay = document.getElementById('wordCount');
-        const charCountDisplay = document.getElementById('charCount');
-        const saveStatusText = document.getElementById('saveStatus');
+        const saveStatusText = document.getElementById('saveStatusText');
 
+        let autoSaveTimer = null;
+        let isSaving = false;
+        let saveStatus = "saved";
+
+        // Hover Card element
+        const hoverCard = document.getElementById('entityHoverCard');
+
+        // Selection Context Toolbar
+        const selectionMenu = document.getElementById('selectionContextMenu');
+        let selectedText = "";
+
+        document.addEventListener('selectionchange', () => {
+            if (document.body.classList.contains('read-mode')) return;
+            const selection = window.getSelection();
+            const text = selection.toString().trim();
+            if (text.length > 1 && editor.contains(selection.anchorNode)) {
+                selectedText = text;
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                selectionMenu.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+                selectionMenu.style.left = (rect.left + window.scrollX) + 'px';
+                selectionMenu.style.display = 'flex';
+            } else {
+                if (!selectionMenu.contains(document.activeElement)) {
+                    selectionMenu.style.display = 'none';
+                }
+            }
+        });
+
+        // Entity Reference Hover Preview Setup
+        document.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('.sv-entity-ref');
+            if (target) {
+                const name = target.getAttribute('data-name') || target.innerText;
+                const type = target.getAttribute('data-type') || 'character';
+                showEntityHoverCard(target, type, name);
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('.sv-entity-ref');
+            if (target) {
+                setTimeout(() => {
+                    if (!hoverCard.matches(':hover')) {
+                        hoverCard.style.display = 'none';
+                    }
+                }, 300);
+            }
+        });
+
+        hoverCard.addEventListener('mouseleave', () => {
+            hoverCard.style.display = 'none';
+        });
+
+        async function showEntityHoverCard(element, type, name) {
+            const rect = element.getBoundingClientRect();
+            hoverCard.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+            hoverCard.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 330) + 'px';
+
+            document.getElementById('hoverName').textContent = name;
+            document.getElementById('hoverRole').textContent = type.toUpperCase();
+            hoverCard.style.display = 'block';
+        }
+
+        // VIEW MODE SWITCHER (Write, Focus, Read/Book Preview)
+        function switchViewMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+                const icon = btn.querySelector('i');
+                if (icon) icon.style.color = '#334155';
+            });
+
+            if (mode === 'write') {
+                const btn = document.getElementById('btnModeWrite');
+                btn.classList.add('active');
+                const icon = btn.querySelector('i');
+                if (icon) icon.style.color = '#0E7490';
+                document.body.classList.remove('focus-mode', 'read-mode');
+                editor.contentEditable = "true";
+                titleInput.readOnly = false;
+                titleInput.style.pointerEvents = "auto";
+                showToast("✏️ Write mode enabled.");
+            } else if (mode === 'focus') {
+                const btn = document.getElementById('btnModeFocus');
+                btn.classList.add('active');
+                const icon = btn.querySelector('i');
+                if (icon) icon.style.color = '#0E7490';
+                document.body.classList.remove('read-mode');
+                document.body.classList.add('focus-mode');
+                editor.contentEditable = "true";
+                titleInput.readOnly = false;
+                titleInput.style.pointerEvents = "auto";
+                showToast("👁 Focus mode enabled.");
+            } else if (mode === 'read') {
+                const btn = document.getElementById('btnModeRead');
+                btn.classList.add('active');
+                const icon = btn.querySelector('i');
+                if (icon) icon.style.color = '#0E7490';
+                document.body.classList.remove('focus-mode');
+                document.body.classList.add('read-mode');
+                // DISALLOW EDITING IN READ MODE
+                editor.contentEditable = "false";
+                titleInput.readOnly = true;
+                titleInput.style.pointerEvents = "none";
+                showToast("📖 Book Chapter Preview Mode (Read Only - Editing Disabled)");
+            }
+        }
+
+        // Count Updates & Real-time Suggestion Scanning
         function updateCounts() {
-            const text = editor.innerText || editor.textContent;
-            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-            wordCountDisplay.textContent = words.length.toLocaleString();
-            charCountDisplay.textContent = text.length.toLocaleString();
+            const text = editor.innerText || editor.textContent || "";
+            const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+            const wordCount = words.length;
+            const charCount = text.length;
+            const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+            document.getElementById('barWordCount').textContent = wordCount.toLocaleString();
+            document.getElementById('barCharCount').textContent = charCount.toLocaleString();
+            document.getElementById('barReadTime').textContent = `~${readTime} min`;
+
+            return { wordCount, charCount };
+        }
+
+        // DYNAMIC REAL-TIME MANUSCRIPT SCANNER FOR SUGGESTIONS
+        function scanManuscriptAndBuildSuggestions() {
+            const container = document.getElementById('suggestionsCardContainer');
+            if (!container) return;
+
+            const text = editor.innerText || editor.textContent || "";
+            const trimmed = text.trim();
+
+            if (trimmed.length < 5) {
+                container.innerHTML = `
+                    <div class="text-muted py-3 px-2 d-flex align-items-center gap-2" style="font-size: 12px;" id="suggestionsPrompt">
+                        <i data-lucide="info" style="width: 16px; height: 16px; color: #0D9488;"></i>
+                        <span>Start typing in your manuscript to discover characters, locations, and timeline events live...</span>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+                if (document.getElementById('badgeCharCount')) document.getElementById('badgeCharCount').textContent = "0 Characters";
+                if (document.getElementById('badgeLocCount')) document.getElementById('badgeLocCount').textContent = "0 Locations";
+                if (document.getElementById('badgeEvtCount')) document.getElementById('badgeEvtCount').textContent = "0 Events";
+                if (document.getElementById('badgeWorldCount')) document.getElementById('badgeWorldCount').textContent = "0 World Entities";
+                return;
+            }
+
+            const discoveredChars = new Set();
+            const discoveredLocations = new Set();
+            const discoveredEvents = new Set();
+
+            // Set of location noun keywords
+            const locNouns = [
+                "house", "home", "mansion", "manor", "palace", "villa", "resort", "estate", "apartment", "flat",
+                "penthouse", "cottage", "cabin", "tower", "building", "office", "studio", "headquarters", "bunker",
+                "warehouse", "factory", "dockyard", "dock", "harbor", "port", "station", "airport", "hotel", "motel",
+                "inn", "cafe", "restaurant", "bar", "pub", "club", "shop", "store", "market", "mall", "hospital",
+                "clinic", "asylum", "prison", "jail", "school", "college", "university", "academy", "library", "museum",
+                "theatre", "cinema", "stadium", "park", "garden", "street", "avenue", "road", "lane", "drive",
+                "boulevard", "bridge", "alley", "square", "plaza", "river", "lake", "ocean", "sea", "bay", "beach",
+                "valley", "mountain", "hill", "peak", "cave", "cavern", "island", "forest", "woods", "jungle",
+                "desert", "swamp", "marsh", "castle", "fort", "fortress", "temple", "church", "cathedral", "shrine",
+                "hall", "room", "chamber", "dungeon", "village", "town", "city", "county", "country", "kingdom", "realm"
+            ];
+            const locNounSet = new Set(locNouns);
+            const locationWordsInLocPhrases = new Set();
+
+            // 1. SCAN FOR LOCATION PHRASES FIRST (e.g., "Kapoor house", "Baker Street", "Wayne Manor", "Grand Hotel")
+            const locNounPattern = locNouns.join("|");
+            const locPhraseRegex = new RegExp(`\\b([A-Z][a-zA-Z0-9']*(?:\\s+[A-Z][a-zA-Z0-9']*)*)\\s+(${locNounPattern})\\b`, "gi");
+
+            let locMatch;
+            while ((locMatch = locPhraseRegex.exec(text)) !== null) {
+                const prefixStr = locMatch[1].trim(); // e.g. "Kapoor"
+                const nounStr = locMatch[2].trim();   // e.g. "house"
+
+                // Format as Proper Title Case location (e.g., "Kapoor House")
+                const fullLocRaw = `${prefixStr} ${nounStr}`;
+                const formattedLoc = fullLocRaw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+                const lowerLoc = formattedLoc.toLowerCase();
+
+                if (!existingLocationsList.includes(lowerLoc) && !existingLocationsList.includes(fullLocRaw.toLowerCase())) {
+                    discoveredLocations.add(formattedLoc);
+                }
+
+                // Add words from prefix to locationWordsInLocPhrases so they won't be tagged as characters
+                prefixStr.split(/\s+/).forEach(w => locationWordsInLocPhrases.add(w.toLowerCase()));
+            }
+
+            // Also check for standalone major location terms preceded by articles/adjectives (e.g. "abandoned warehouse", "old mansion")
+            const standaloneLocRegex = new RegExp(`\\b(?:an?|the|this|that|old|new|dark|abandoned|secret|hidden|royal|ancient)\\s+(${locNounPattern})\\b`, "gi");
+            let stLocMatch;
+            while ((stLocMatch = standaloneLocRegex.exec(text)) !== null) {
+                const fullLocRaw = stLocMatch[0].trim();
+                const locNoun = stLocMatch[1].trim();
+                const formattedLoc = fullLocRaw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+                if (!existingLocationsList.includes(formattedLoc.toLowerCase()) && !existingLocationsList.includes(locNoun.toLowerCase())) {
+                    discoveredLocations.add(formattedLoc);
+                }
+            }
+
+            // 2. SCAN FOR CHARACTERS (Proper person names)
+            const stopWords = new Set([
+                "The", "There", "This", "That", "They", "Them", "Their", "He", "She", "It", "His", "Her", "Its",
+                "We", "You", "Your", "My", "Our", "When", "What", "Where", "Why", "How", "Who", "Which",
+                "Chapter", "Part", "And", "But", "Or", "So", "If", "Because", "After", "Before", "Dust", "Lights",
+                "Metal", "At", "In", "On", "Start", "Whatever", "Some", "Any", "Many", "Every", "All", "One", "Two",
+                "First", "Second", "Next", "Then", "Now", "Here", "Inside", "Outside", "Near", "Far", "Above", "Below",
+                "Under", "Over", "With", "Without", "From", "To", "Into", "Onto", "Through", "During", "About",
+                "Against", "Between", "Is", "Are", "Was", "Were", "Been", "Being", "Have", "Has", "Had", "Do",
+                "Does", "Did", "Can", "Could", "Shall", "Should", "Will", "Would", "May", "Might", "Must"
+            ]);
+
+            const nameMatches = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/g) || [];
+
+            nameMatches.forEach(name => {
+                const lowerName = name.toLowerCase();
+                const words = lowerName.split(/\s+/);
+
+                // Exclude if any word is a location noun or part of a detected location phrase
+                const containsLocWord = words.some(w => locationWordsInLocPhrases.has(w) || locNounSet.has(w));
+
+                if (name.length >= 3 && !stopWords.has(name) && !containsLocWord && !existingCharactersList.includes(lowerName)) {
+                    discoveredChars.add(name);
+                }
+            });
+
+            // 3. SCAN FOR TIMELINE EVENTS & TIME MENTIONS
+            const timeMatches = text.match(/\b\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\b|\b(?:midnight|noon|dawn|dusk)\b/gi) || [];
+            timeMatches.forEach(tm => {
+                discoveredEvents.add(tm);
+            });
+
+            const actionMatches = text.match(/\b(?:explosion|murder|fire|incident|meeting|attack|accident|argument|discovery|climax|battle|party)\b/gi) || [];
+            actionMatches.forEach(act => {
+                if (!existingTimelineEventsList.includes(act.toLowerCase())) {
+                    discoveredEvents.add(act);
+                }
+            });
+
+            // Update Badge Counts
+            document.getElementById('badgeCharCount').textContent = `${discoveredChars.size} Characters`;
+            document.getElementById('badgeLocCount').textContent = `${discoveredLocations.size} Locations`;
+            document.getElementById('badgeEvtCount').textContent = `${discoveredEvents.size} Events`;
+            if (document.getElementById('badgeWorldCount')) document.getElementById('badgeWorldCount').textContent = `0 World Entities`;
+
+            let cardsHtml = "";
+
+            discoveredChars.forEach(cName => {
+                cardsHtml += `
+                    <div class="suggestion-card-box">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-1.5">
+                                <span class="fw-bold text-slate-900" style="font-size: 13px;">👤 ${cName}</span>
+                                <span class="badge bg-teal-subtle text-teal-800 rounded-pill" style="font-size: 9.5px; font-weight: 600;">Character</span>
+                            </div>
+                            <div class="text-muted mb-3" style="font-size: 11px; line-height: 1.4;">This character doesn't exist in your story.</div>
+                        </div>
+                        <button class="btn-create-suggestion" onclick="openDrawer('character', '${cName}')">+ Create Character</button>
+                    </div>
+                `;
+            });
+
+            discoveredLocations.forEach(locName => {
+                cardsHtml += `
+                    <div class="suggestion-card-box">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-1.5">
+                                <span class="fw-bold text-slate-900" style="font-size: 13px;">🏛 ${locName}</span>
+                                <span class="badge bg-purple-subtle text-purple-800 rounded-pill" style="font-size: 9.5px; font-weight: 600;">Location</span>
+                            </div>
+                            <div class="text-muted mb-3" style="font-size: 11px; line-height: 1.4;">This location doesn't exist in your story.</div>
+                        </div>
+                        <button class="btn-create-suggestion" onclick="openDrawer('world', '${locName}')">+ Create Location</button>
+                    </div>
+                `;
+            });
+
+            discoveredEvents.forEach(evtName => {
+                cardsHtml += `
+                    <div class="suggestion-card-box">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-1.5">
+                                <span class="fw-bold text-slate-900" style="font-size: 13px;">⏰ ${evtName}</span>
+                                <span class="badge bg-info-subtle text-info-800 rounded-pill" style="font-size: 9.5px; font-weight: 600;">Event</span>
+                            </div>
+                            <div class="text-muted mb-3" style="font-size: 11px; line-height: 1.4;">This could be an important event.</div>
+                        </div>
+                        <button class="btn-create-suggestion" onclick="openDrawer('timeline', '${evtName}')">+ Create Timeline Event</button>
+                    </div>
+                `;
+            });
+
+            if (cardsHtml.trim().length > 0) {
+                container.innerHTML = cardsHtml;
+            } else {
+                container.innerHTML = `<div class="text-muted py-2 px-1" style="font-size: 11.5px;">✓ All mentioned entities match your story database!</div>`;
+            }
+        }
+
+        function filterSuggestionCards(filterType) {
+            const pills = document.querySelectorAll('.suggestion-filter-pill');
+            pills.forEach(p => p.classList.remove('active'));
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+
+            const cards = document.querySelectorAll('.suggestion-card-box');
+            cards.forEach(card => {
+                if (filterType === 'all') {
+                    card.style.display = 'flex';
+                } else {
+                    const badge = card.querySelector('.badge');
+                    if (badge && badge.textContent.toLowerCase().includes(filterType.toLowerCase())) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
         }
 
         editor.addEventListener('input', () => {
+            if (document.body.classList.contains('read-mode')) return;
             updateCounts();
-            setUnsaved();
+            setUnsavedState();
+            scheduleDebouncedAutoSave();
+            scanManuscriptAndBuildSuggestions();
         });
 
         titleInput.addEventListener('input', () => {
-            setUnsaved();
+            if (document.body.classList.contains('read-mode')) return;
+            setUnsavedState();
+            scheduleDebouncedAutoSave();
         });
 
-        function setUnsaved() {
-            saveStatusText.textContent = "Unsaved Changes";
-            saveStatusText.style.color = "#FF9F43";
+        function setUnsavedState() {
+            saveStatus = "unsaved";
+            saveStatusText.textContent = "● Unsaved changes";
+            saveStatusText.style.color = "#D97706";
         }
 
-        function saveContent() {
-            saveStatusText.textContent = "Saving...";
-            saveStatusText.style.color = "var(--forest-green)";
-            
-            // Simulating save
-            setTimeout(() => {
-                saveStatusText.textContent = "Saved";
-                saveStatusText.style.color = "var(--forest-green)";
-            }, 800);
+        function setSavedState() {
+            saveStatus = "saved";
+            saveStatusText.textContent = "✓ Saved just now";
+            saveStatusText.style.color = "#0D9488";
         }
 
-        function execCmd(command) {
-            document.execCommand(command, false, null);
-            editor.focus();
+        function scheduleDebouncedAutoSave() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                saveContent(false);
+            }, 1500);
         }
 
-        // Initialize counts
-        updateCounts();
+        async function saveContent(isManual = false) {
+            if (isSaving || document.body.classList.contains('read-mode')) return;
+            isSaving = true;
 
-        // Auto-save simulation
-        setInterval(() => {
-            if (saveStatusText.textContent === "Unsaved Changes") {
-                saveContent();
+            const counts = updateCounts();
+            const payload = {
+                chapterId: chapterId,
+                storyId: storyId,
+                title: titleInput.value,
+                content: editor.innerHTML,
+                wordCount: counts.wordCount,
+                characterCount: counts.charCount,
+                version: currentVersion
+            };
+
+            try {
+                const resp = await fetch('/Chapters/SaveDraft', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Skip-Loader': 'true'
+                    },
+                    skipLoader: true,
+                    showLoader: false,
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    currentVersion = data.version;
+                    setSavedState();
+                    if (isManual) showToast("✓ Chapter saved successfully!");
+                }
+            } catch (err) {
+                console.error("Save error:", err);
+            } finally {
+                isSaving = false;
             }
-        }, 5000);
+        }
+
+        let savedEditorRange = null;
+
+        function saveEditorSelection() {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                if (editor && editor.contains(range.commonAncestorContainer)) {
+                    savedEditorRange = range.cloneRange();
+                }
+            }
+        }
+
+        function restoreEditorSelection() {
+            if (savedEditorRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(savedEditorRange);
+            }
+        }
+
+        document.addEventListener('selectionchange', () => {
+            saveEditorSelection();
+        });
+
+        // MICROSOFT WORD GRADE COMMAND EXECUTION
+        function execCmd(command, value = null) {
+            if (document.body.classList.contains('read-mode')) return;
+            editor.focus();
+            restoreEditorSelection();
+            document.execCommand(command, false, value);
+            saveEditorSelection();
+        }
+
+        function applyTextColor(color) {
+            if (document.body.classList.contains('read-mode')) return;
+            editor.focus();
+            restoreEditorSelection();
+
+            const bar = document.getElementById('textColorBar');
+            if (bar) bar.style.background = color;
+
+            document.execCommand('styleWithCSS', false, true);
+            const success = document.execCommand('foreColor', false, color);
+            if (!success) {
+                applyStyleToSelection('color', color);
+            }
+
+            setUnsavedState();
+            scheduleDebouncedAutoSave();
+        }
+
+        function applyHighlightColor(color) {
+            if (document.body.classList.contains('read-mode')) return;
+            editor.focus();
+            restoreEditorSelection();
+
+            const bar = document.getElementById('highlightColorBar');
+            if (bar) bar.style.background = color === 'transparent' ? '#E2E8F0' : color;
+
+            try {
+                document.execCommand('styleWithCSS', false, true);
+                let success = document.execCommand('hiliteColor', false, color);
+                if (!success) {
+                    success = document.execCommand('backColor', false, color);
+                }
+                if (!success) {
+                    applyStyleToSelection('backgroundColor', color);
+                }
+            } catch (e) {
+                applyStyleToSelection('backgroundColor', color);
+            }
+
+            setUnsavedState();
+            scheduleDebouncedAutoSave();
+        }
+
+        function applyStyleToSelection(styleProp, value) {
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+
+            const range = sel.getRangeAt(0);
+            const span = document.createElement('span');
+            span.style[styleProp] = value;
+            try {
+                span.appendChild(range.extractContents());
+                range.insertNode(span);
+                sel.removeAllRanges();
+            } catch (e) {
+                console.error("Style apply error:", e);
+            }
+        }
+
+        // MOBILE & TABLET OFF-CANVAS PANEL TOGGLES
+        function toggleLeftPanelMobile() {
+            const leftPanel = document.getElementById('leftPanel');
+            const rightPanel = document.getElementById('rightPanel');
+            const backdrop = document.getElementById('mobilePanelBackdrop');
+            if (rightPanel) rightPanel.classList.remove('show-mobile');
+
+            if (leftPanel) {
+                const isOpen = leftPanel.classList.toggle('show-mobile');
+                if (backdrop) backdrop.classList.toggle('show', isOpen);
+            }
+        }
+
+        function toggleRightPanelMobile() {
+            const leftPanel = document.getElementById('leftPanel');
+            const rightPanel = document.getElementById('rightPanel');
+            const backdrop = document.getElementById('mobilePanelBackdrop');
+            if (leftPanel) leftPanel.classList.remove('show-mobile');
+
+            if (rightPanel) {
+                const isOpen = rightPanel.classList.toggle('show-mobile');
+                if (backdrop) backdrop.classList.toggle('show', isOpen);
+            }
+        }
+
+        function closeMobilePanels() {
+            const leftPanel = document.getElementById('leftPanel');
+            const rightPanel = document.getElementById('rightPanel');
+            const backdrop = document.getElementById('mobilePanelBackdrop');
+
+            if (leftPanel) leftPanel.classList.remove('show-mobile');
+            if (rightPanel) rightPanel.classList.remove('show-mobile');
+            if (backdrop) backdrop.classList.remove('show');
+        }
+
+        function changeExactFontSize(pxSize) {
+            if (document.body.classList.contains('read-mode')) return;
+            const selection = window.getSelection();
+            if (!selection.rangeCount || selection.isCollapsed) {
+                editor.style.fontSize = pxSize;
+                return;
+            }
+            const range = selection.getRangeAt(0);
+            const span = document.createElement("span");
+            span.style.fontSize = pxSize;
+            span.appendChild(range.extractContents());
+            range.insertNode(span);
+        }
+
+        function setLineSpacing(lh) {
+            if (document.body.classList.contains('read-mode')) return;
+            editor.style.lineHeight = lh;
+        }
+
+        function insertLinkPrompt() {
+            const url = prompt("Enter URL:");
+            if (url) execCmd('createLink', url);
+        }
+
+        function insertImagePrompt() {
+            const url = prompt("Enter Image URL:");
+            if (url) execCmd('insertImage', url);
+        }
+
+        function insertTablePrompt() {
+            const rows = prompt("Number of rows:", "3");
+            const cols = prompt("Number of columns:", "3");
+            if (rows && cols) {
+                let html = '<table class="table table-bordered my-3" style="width:100%; border-collapse: collapse;"><tbody>';
+                for (let i = 0; i < parseInt(rows); i++) {
+                    html += '<tr>';
+                    for (let j = 0; j < parseInt(cols); j++) {
+                        html += '<td style="border: 1px solid #CBD5E1; padding: 8px;">Cell</td>';
+                    }
+                    html += '</tr>';
+                }
+                html += '</tbody></table><p></p>';
+                execCmd('insertHTML', html);
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.context-tab-item').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane-content').forEach(pane => pane.classList.add('d-none'));
+
+            document.getElementById(`tabBtn-${tabName}`).classList.add('active');
+            document.getElementById(`tabContent-${tabName}`).classList.remove('d-none');
+        }
+
+        function toggleSuggestionsDock() {
+            const dock = document.getElementById('suggestionsDock');
+            dock.style.display = dock.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Quick Drawers
+        const drawerOverlay = document.getElementById('drawerOverlay');
+        const drawerContent = document.getElementById('drawerContent');
+
+        function openDrawer(type, prefillName = "") {
+            selectionMenu.style.display = 'none';
+            drawerOverlay.classList.add('show');
+
+            if (type === 'character') {
+                renderCharacterDrawer(prefillName);
+            } else if (type === 'world' || type === 'location') {
+                renderWorldDrawer(prefillName);
+            } else if (type === 'timeline' || type === 'event') {
+                renderTimelineDrawer(prefillName);
+            } else if (type === 'research') {
+                renderResearchDrawer(prefillName);
+            }
+            lucide.createIcons();
+        }
+
+        function closeDrawer() {
+            drawerOverlay.classList.remove('show');
+        }
+
+        function quickCreateFromSelection(type) {
+            openDrawer(type, selectedText);
+        }
+
+        function renderCharacterDrawer(prefillName = "") {
+            drawerContent.innerHTML = `
+                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
+                        <i data-lucide="user-plus" class="text-teal-600" style="width: 18px; height: 18px;"></i>
+                        Create Character
+                    </h6>
+                    <button class="btn-close" onclick="closeDrawer()"></button>
+                </div>
+                <div class="p-4 flex-grow-1 overflow-y-auto">
+                    <form onsubmit="event.preventDefault(); submitCharacter();">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Character Name *</label>
+                            <input type="text" id="qcName" class="form-control rounded-3" value="${prefillName}" required placeholder="e.g. Inspector Arjun Malhotra">
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Role</label>
+                                <select id="qcRole" class="form-select rounded-3">
+                                    <option value="Protagonist">Protagonist</option>
+                                    <option value="Antagonist">Antagonist</option>
+                                    <option value="Detective" selected>Detective</option>
+                                    <option value="Supporting">Supporting</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Occupation</label>
+                                <input type="text" id="qcOccupation" class="form-control rounded-3" placeholder="e.g. Investigator">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">One-Line Description</label>
+                            <textarea id="qcDescription" class="form-control rounded-3" rows="3" placeholder="Brief character description..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
+                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
+                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitCharacter()">Save & Link</button>
+                </div>
+            `;
+        }
+
+        async function submitCharacter() {
+            const name = document.getElementById('qcName').value;
+            if (!name) return;
+
+            const dto = {
+                storyId,
+                chapterId,
+                name: name.trim(),
+                role: document.getElementById('qcRole').value,
+                occupation: document.getElementById('qcOccupation').value,
+                oneLineDescription: document.getElementById('qcDescription').value
+            };
+
+            try {
+                const resp = await fetch('/Chapters/QuickCreateCharacter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    closeDrawer();
+                    showToast(data.notification || "Character created!");
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderWorldDrawer(prefillName = "") {
+            drawerContent.innerHTML = `
+                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
+                        <i data-lucide="map-pin" class="text-amber-600" style="width: 18px; height: 18px;"></i>
+                        Create Location / World Entity
+                    </h6>
+                    <button class="btn-close" onclick="closeDrawer()"></button>
+                </div>
+                <div class="p-4 flex-grow-1 overflow-y-auto">
+                    <form onsubmit="event.preventDefault(); submitWorldEntity();">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Location / Entity Name *</label>
+                            <input type="text" id="qwName" class="form-control rounded-3" value="${prefillName}" required placeholder="e.g. Abandoned Dockyard Warehouse">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Type</label>
+                            <select id="qwTypeName" class="form-select rounded-3">
+                                <option value="Location" selected>Location</option>
+                                <option value="City">City</option>
+                                <option value="Organization">Organization</option>
+                                <option value="Artifact">Artifact</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Summary</label>
+                            <textarea id="qwSummary" class="form-control rounded-3" rows="3" placeholder="Location description..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
+                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
+                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitWorldEntity()">Save & Link</button>
+                </div>
+            `;
+        }
+
+        async function submitWorldEntity() {
+            const name = document.getElementById('qwName').value;
+            if (!name) return;
+
+            const dto = {
+                storyId,
+                chapterId,
+                name: name.trim(),
+                typeName: document.getElementById('qwTypeName').value,
+                summary: document.getElementById('qwSummary').value
+            };
+
+            try {
+                const resp = await fetch('/Chapters/QuickCreateWorldEntity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    closeDrawer();
+                    showToast(data.notification || "Location created!");
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderTimelineDrawer(prefillTitle = "") {
+            drawerContent.innerHTML = `
+                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
+                        <i data-lucide="clock" class="text-purple-600" style="width: 18px; height: 18px;"></i>
+                        Create Timeline Event
+                    </h6>
+                    <button class="btn-close" onclick="closeDrawer()"></button>
+                </div>
+                <div class="p-4 flex-grow-1 overflow-y-auto">
+                    <form onsubmit="event.preventDefault(); submitTimelineEvent();">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Event Title *</label>
+                            <input type="text" id="qtTitle" class="form-control rounded-3" value="${prefillTitle}" required placeholder="e.g. Warehouse Explosion">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Story Date / Time</label>
+                            <input type="text" id="qtStoryDate" class="form-control rounded-3" placeholder="e.g. 12:03 AM">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Description</label>
+                            <textarea id="qtDescription" class="form-control rounded-3" rows="3" placeholder="Event details..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
+                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
+                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitTimelineEvent()">Save & Link</button>
+                </div>
+            `;
+        }
+
+        async function submitTimelineEvent() {
+            const title = document.getElementById('qtTitle').value;
+            if (!title) return;
+
+            const dto = {
+                storyId,
+                chapterId,
+                title: title.trim(),
+                storyDate: document.getElementById('qtStoryDate').value,
+                description: document.getElementById('qtDescription').value
+            };
+
+            try {
+                const resp = await fetch('/Chapters/QuickCreateTimelineEvent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    closeDrawer();
+                    showToast(data.notification || "Event created!");
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function toggleEntityLink(type, entityId) {
+            if (document.body.classList.contains('read-mode')) return;
+            let endpoint = '';
+            if (type === 'character') endpoint = '/Chapters/ToggleLinkCharacter';
+            else if (type === 'world') endpoint = '/Chapters/ToggleLinkWorldEntity';
+            else if (type === 'timeline') endpoint = '/Chapters/ToggleLinkTimelineEvent';
+
+            try {
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chapterId, entityId })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast(data.isLinked ? "Linked to chapter!" : "Unlinked from chapter.");
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function createNewChapter(partId) {
+            try {
+                let url = `/Chapters/Create?storyId=${storyId}`;
+                if (partId) {
+                    url += `&partId=${partId}`;
+                }
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await resp.json();
+                if (data.success && data.redirectUrl) {
+                    window.location.href = data.redirectUrl;
+                }
+            } catch (err) {
+                console.error("Create chapter failed:", err);
+            }
+        }
+
+        async function openCreatePartPrompt() {
+            const title = prompt("Enter Part Title (e.g. PART II — The Revelation):");
+            if (!title || !title.trim()) return;
+
+            const formData = new FormData();
+            formData.append("storyId", storyId);
+            formData.append("title", title.trim());
+
+            try {
+                const resp = await fetch('/Chapters/CreatePart', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast("✓ Part created successfully!");
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error("Create part failed:", e);
+            }
+        }
+
+        function filterManuscript() {
+            const q = document.getElementById('manuscriptSearch').value.toLowerCase().trim();
+            document.querySelectorAll('.chapter-tree-item').forEach(item => {
+                item.style.display = item.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
+            });
+        }
+
+        function filterContextItems(tabName, query) {
+            const container = document.getElementById(`${tabName}List`) || document.getElementById('allCharactersList') || document.getElementById('worldEntitiesList') || document.getElementById('timelineEventsList');
+            if (!container) return;
+            const q = query.toLowerCase().trim();
+            container.querySelectorAll('.context-card, div[data-name]').forEach(item => {
+                const name = item.getAttribute('data-name') || item.innerText.toLowerCase();
+                item.style.display = name.includes(q) ? '' : 'none';
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('svToast');
+            document.getElementById('svToastMsg').textContent = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3500);
+        }
+
+        // Keyboard Shortcut Ctrl+S
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveContent(true);
+            }
+        });
+
+        // Initialize Counts & Suggestions Scan on Load
+        updateCounts();
+        scanManuscriptAndBuildSuggestions();
     </script>
     <script src="~/js/loader.js" asp-append-version="true"></script>
 </body>

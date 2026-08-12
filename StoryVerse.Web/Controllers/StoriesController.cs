@@ -60,6 +60,8 @@ namespace StoryVerse.Web.Controllers
             if (user == null) return Challenge();
 
             var stories = await _context.Stories
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Where(s => s.UserId == user.Id)
                 .Include(s => s.Chapters)
                 .Include(s => s.Characters)
@@ -67,6 +69,65 @@ namespace StoryVerse.Web.Controllers
                 .Include(s => s.StoryGenres).ThenInclude(sg => sg.Genre)
                 .OrderByDescending(s => s.UpdatedAt)
                 .ToListAsync();
+
+            // Calculate logged-in user initials
+            string userInitials = "A";
+            if (!string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName))
+            {
+                userInitials = $"{user.FirstName[0]}{user.LastName[0]}".ToUpper();
+            }
+            else if (!string.IsNullOrWhiteSpace(user.DisplayName))
+            {
+                var parts = user.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                userInitials = parts.Length > 1 
+                    ? $"{parts[0][0]}{parts[1][0]}".ToUpper() 
+                    : (parts.Length > 0 ? parts[0][0].ToString().ToUpper() : "A");
+            }
+            else if (!string.IsNullOrWhiteSpace(user.FirstName))
+            {
+                userInitials = user.FirstName[0].ToString().ToUpper();
+            }
+            else if (!string.IsNullOrWhiteSpace(user.UserName))
+            {
+                userInitials = user.UserName[0].ToString().ToUpper();
+            }
+
+            ViewBag.UserInitials = userInitials;
+
+            // Fetch UserGoal for dynamic writing goals card
+            UserGoal? userGoal = null;
+            try
+            {
+                userGoal = await _context.UserGoals
+                    .FirstOrDefaultAsync(g => g.UserId == user.Id);
+            }
+            catch
+            {
+                userGoal = null;
+            }
+
+            if (userGoal == null)
+            {
+                userGoal = new UserGoal
+                {
+                    UserId = user.Id,
+                    DailyWordCountGoal = 1000,
+                    MonthlyWordCountGoal = 50000,
+                    LastUpdated = DateTime.UtcNow
+                };
+            }
+
+            int totalWordsWritten = stories.Sum(s => s.CurrentWordCount);
+            int monthlyGoal = userGoal.MonthlyWordCountGoal > 0 ? userGoal.MonthlyWordCountGoal : 50000;
+            int goalPercentage = (int)Math.Clamp(((double)totalWordsWritten / monthlyGoal) * 100, 0, 100);
+            int currentDayOfMonth = Math.Max(1, DateTime.UtcNow.Day);
+            int dailyAverage = (int)Math.Round((double)totalWordsWritten / currentDayOfMonth);
+
+            ViewBag.UserGoal = userGoal;
+            ViewBag.MonthlyGoal = monthlyGoal;
+            ViewBag.WordsWrittenThisMonth = totalWordsWritten;
+            ViewBag.GoalPercentage = goalPercentage;
+            ViewBag.DailyAverage = dailyAverage;
 
             return View(stories);
         }
@@ -78,14 +139,62 @@ namespace StoryVerse.Web.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
+            _context.Database.SetCommandTimeout(120);
+
             var story = await _context.Stories
-                .Include(s => s.Chapters)
+                .AsSplitQuery()
+                .Include(s => s.StoryParts.OrderBy(p => p.Order))
+                    .ThenInclude(p => p.Chapters.OrderBy(c => c.Order))
+                .Include(s => s.Chapters.OrderBy(c => c.Order))
                 .Include(s => s.Characters)
                 .Include(s => s.Locations)
+                .Include(s => s.TimelineEvents)
+                .Include(s => s.StoryArcs)
+                .Include(s => s.ResearchNotes)
+                .Include(s => s.Assets)
                 .Include(s => s.StoryGenres).ThenInclude(sg => sg.Genre)
                 .FirstOrDefaultAsync(s => s.Id == id && s.UserId == user.Id);
 
             if (story == null) return NotFound();
+
+            // Set active story in session
+            _activeStoryService.SetActiveStoryId(HttpContext, story.Id);
+
+            // Fetch UserGoal for dynamic writing goals
+            UserGoal? userGoal = await _context.UserGoals.FirstOrDefaultAsync(g => g.UserId == user.Id);
+            if (userGoal == null)
+            {
+                userGoal = new UserGoal
+                {
+                    UserId = user.Id,
+                    DailyWordCountGoal = 1000,
+                    WeeklyWordCountGoal = 5000,
+                    MonthlyWordCountGoal = 20000,
+                    WordsWrittenToday = 0,
+                    WordsWrittenThisWeek = 0,
+                    WordsWrittenThisMonth = 0,
+                    CurrentStreakDays = 0,
+                    LastUpdated = DateTime.UtcNow
+                };
+                _context.UserGoals.Add(userGoal);
+                await _context.SaveChangesAsync();
+            }
+
+            ViewBag.UserGoal = userGoal;
+
+            // Logged-in user information
+            string userName = !string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName)
+                ? $"{user.FirstName} {user.LastName}"
+                : (!string.IsNullOrWhiteSpace(user.DisplayName) ? user.DisplayName : (user.UserName ?? "Rakshesh kumar"));
+            
+            string userInitials = "RP";
+            if (!string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName))
+            {
+                userInitials = $"{user.FirstName[0]}{user.LastName[0]}".ToUpper();
+            }
+
+            ViewBag.UserName = userName;
+            ViewBag.UserInitials = userInitials;
 
             return View(story);
         }
@@ -103,8 +212,9 @@ namespace StoryVerse.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("Title,TargetWordCount,Status")] Story story,
-            IFormFile CoverFile,
+            [Bind("Title,TargetWordCount,Status,Tagline,Synopsis,StoryType,TargetAudience,Language,Tone,PointOfView,TimePeriod,Themes")] Story story,
+            IFormFile? CoverFile,
+            IFormFile? HeroBannerFile,
             List<int> SelectedGenreIds)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -113,6 +223,7 @@ namespace StoryVerse.Web.Controllers
             ModelState.Remove("User");
             ModelState.Remove("UserId");
             ModelState.Remove("CoverImageUrl");
+            ModelState.Remove("HeroBannerImageUrl");
             ModelState.Remove("Genre");
 
             if (string.IsNullOrWhiteSpace(story.Status))
@@ -155,6 +266,21 @@ namespace StoryVerse.Web.Controllers
                 else
                 {
                     story.CoverImageUrl = "/images/empty-states/live_preview_book.png";
+                }
+
+                // Handle hero banner background image if uploaded
+                if (HeroBannerFile != null && HeroBannerFile.Length > 0)
+                {
+                    var bannersFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "banners");
+                    if (!Directory.Exists(bannersFolder))
+                        Directory.CreateDirectory(bannersFolder);
+
+                    var uniqueBannerName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(HeroBannerFile.FileName);
+                    var bannerPath = Path.Combine(bannersFolder, uniqueBannerName);
+                    using (var bannerStream = new FileStream(bannerPath, FileMode.Create))
+                        await HeroBannerFile.CopyToAsync(bannerStream);
+
+                    story.HeroBannerImageUrl = "/banners/" + uniqueBannerName;
                 }
 
                 _context.Add(story);
@@ -242,8 +368,11 @@ namespace StoryVerse.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             Guid id,
-            [Bind("Id,Title,TargetWordCount,Status,CoverImageUrl,CurrentWordCount,CreatedAt")] Story story,
-            List<int> SelectedGenreIds)
+            [Bind("Id,Title,TargetWordCount,Status,CoverImageUrl,HeroBannerImageUrl,CurrentWordCount,CreatedAt,Tagline,Synopsis,PointOfView,TimePeriod,Language,TargetAudience,Themes,Tone,StoryType")] Story story,
+            List<int> SelectedGenreIds,
+            IFormFile? CoverFile,
+            IFormFile? HeroBannerFile,
+            List<string>? Themes)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
@@ -259,6 +388,7 @@ namespace StoryVerse.Web.Controllers
             ModelState.Remove("User");
             ModelState.Remove("UserId");
             ModelState.Remove("CoverImageUrl");
+            ModelState.Remove("HeroBannerImageUrl");
             ModelState.Remove("Genre");
 
             if (ModelState.IsValid)
@@ -266,9 +396,63 @@ namespace StoryVerse.Web.Controllers
                 existingStory.Title           = story.Title;
                 existingStory.TargetWordCount = story.TargetWordCount;
                 existingStory.Status          = story.Status;
-                existingStory.CoverImageUrl   = story.CoverImageUrl;
                 existingStory.CurrentWordCount = story.CurrentWordCount;
+                existingStory.Tagline         = story.Tagline;
+                existingStory.Synopsis        = story.Synopsis;
+                existingStory.PointOfView     = story.PointOfView;
+                existingStory.TimePeriod      = story.TimePeriod;
+                existingStory.Language        = story.Language;
+                existingStory.TargetAudience  = story.TargetAudience;
+                existingStory.Tone            = story.Tone;
+                existingStory.StoryType       = story.StoryType ?? existingStory.StoryType;
                 existingStory.UpdatedAt       = DateTime.UtcNow;
+
+                if (Themes != null && Themes.Count > 0)
+                {
+                    existingStory.Themes = string.Join(", ", Themes);
+                }
+                else if (!string.IsNullOrWhiteSpace(story.Themes))
+                {
+                    existingStory.Themes = story.Themes;
+                }
+
+                // Handle cover file upload if provided
+                if (CoverFile != null && CoverFile.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "covers");
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(CoverFile.FileName);
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        await CoverFile.CopyToAsync(fileStream);
+
+                    existingStory.CoverImageUrl = "/covers/" + uniqueFileName;
+                }
+                else if (!string.IsNullOrWhiteSpace(story.CoverImageUrl))
+                {
+                    existingStory.CoverImageUrl = story.CoverImageUrl;
+                }
+
+                // Handle hero banner background image upload if provided
+                if (HeroBannerFile != null && HeroBannerFile.Length > 0)
+                {
+                    var bannersFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "banners");
+                    if (!Directory.Exists(bannersFolder))
+                        Directory.CreateDirectory(bannersFolder);
+
+                    var uniqueBannerName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(HeroBannerFile.FileName);
+                    var bannerPath = Path.Combine(bannersFolder, uniqueBannerName);
+                    using (var bannerStream = new FileStream(bannerPath, FileMode.Create))
+                        await HeroBannerFile.CopyToAsync(bannerStream);
+
+                    existingStory.HeroBannerImageUrl = "/banners/" + uniqueBannerName;
+                }
+                else if (story.HeroBannerImageUrl != null)
+                {
+                    existingStory.HeroBannerImageUrl = story.HeroBannerImageUrl;
+                }
 
                 // Remove old genre associations and re-add
                 _context.StoryGenres.RemoveRange(existingStory.StoryGenres);
@@ -337,6 +521,97 @@ namespace StoryVerse.Web.Controllers
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        // ── POST: Stories/UpdateGoal ──────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateGoal(int monthlyWordCountGoal, int dailyWordCountGoal)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            try
+            {
+                var userGoal = await _context.UserGoals.FirstOrDefaultAsync(g => g.UserId == user.Id);
+                if (userGoal == null)
+                {
+                    userGoal = new UserGoal
+                    {
+                        UserId = user.Id,
+                        MonthlyWordCountGoal = monthlyWordCountGoal > 0 ? monthlyWordCountGoal : 50000,
+                        DailyWordCountGoal = dailyWordCountGoal > 0 ? dailyWordCountGoal : 1000,
+                        LastUpdated = DateTime.UtcNow
+                    };
+                    _context.UserGoals.Add(userGoal);
+                }
+                else
+                {
+                    if (monthlyWordCountGoal > 0) userGoal.MonthlyWordCountGoal = monthlyWordCountGoal;
+                    if (dailyWordCountGoal > 0) userGoal.DailyWordCountGoal = dailyWordCountGoal;
+                    userGoal.LastUpdated = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                // Fallback log error
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ── GET: Stories/CheckTitleAvailability ──────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> CheckTitleAvailability(string title, Guid? currentStoryId = null)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Json(new { isAvailable = true, suggestions = new string[0] });
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return Json(new { isAvailable = true, suggestions = new string[0] });
+            }
+
+            var trimmedTitle = title.Trim();
+            bool exists = await _context.Stories
+                .AsNoTracking()
+                .AnyAsync(s => s.UserId == user.Id &&
+                               (currentStoryId == null || s.Id != currentStoryId.Value) &&
+                               s.Title.ToLower() == trimmedTitle.ToLower());
+
+            if (!exists)
+            {
+                return Json(new { isAvailable = true, suggestions = new string[0] });
+            }
+
+            var rawSuggestions = new List<string>
+            {
+                $"{trimmedTitle}: Volume 1",
+                $"The Chronicles of {trimmedTitle}",
+                $"{trimmedTitle} II",
+                $"Tales of {trimmedTitle}",
+                $"{trimmedTitle} (2026)",
+                $"{trimmedTitle}: Part I"
+            };
+
+            var existingTitles = await _context.Stories
+                .AsNoTracking()
+                .Where(s => s.UserId == user.Id)
+                .Select(s => s.Title.ToLower())
+                .ToListAsync();
+
+            var availableSuggestions = rawSuggestions
+                .Where(s => !existingTitles.Contains(s.ToLower()))
+                .Take(4)
+                .ToList();
+
+            return Json(new {
+                isAvailable = false,
+                message = "Name is not available",
+                suggestions = availableSuggestions
+            });
         }
     }
 }

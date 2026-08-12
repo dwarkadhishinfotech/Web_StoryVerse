@@ -35,6 +35,19 @@ namespace StoryVerse.Core.Entities
 
         public int ProgressPercentage => TargetWordCount == 0 ? 0 : (int)Math.Clamp(((double)CurrentWordCount / TargetWordCount) * 100, 0, 100);
 
+        public string StoryType { get; set; } = "Novel";
+        public string? Tagline { get; set; }
+        public string? Synopsis { get; set; }
+        public string? PointOfView { get; set; }
+        public string? TimePeriod { get; set; }
+        public string? Language { get; set; }
+        public string? TargetAudience { get; set; }
+        public string? Themes { get; set; }
+        public string? Tone { get; set; }
+        public string? HeroBannerImageUrl { get; set; }
+        public bool IsBookmarked { get; set; } = false;
+
+        public ICollection<StoryPart> StoryParts { get; set; } = new List<StoryPart>();
         public ICollection<Chapter> Chapters { get; set; } = new List<Chapter>();
         public ICollection<Character> Characters { get; set; } = new List<Character>();
         public ICollection<Location> Locations { get; set; } = new List<Location>();
@@ -53,10 +66,28 @@ namespace StoryVerse.Core.Entities
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid StoryId { get; set; }
         public Story Story { get; set; } = null!;
+
+        public Guid? PartId { get; set; }
+        public StoryPart? Part { get; set; }
         
         public string Title { get; set; } = string.Empty;
+        public string? Content { get; set; }
         public int WordCount { get; set; }
+        public int CharacterCount { get; set; } = 0;
         public int Order { get; set; }
+        public string Status { get; set; } = "Planned"; // Planned, InProgress, Completed, Outlining, OnHold, Archived
+        
+        // Auto-save & Stale Version Protection
+        public int Version { get; set; } = 1;
+
+        // Step-by-Step Metadata
+        public string? Summary { get; set; }
+        public int? TargetWordCount { get; set; }
+        public string? Purpose { get; set; }
+        public string? Goal { get; set; }
+        public string? KeyEvents { get; set; }
+        public string? EmotionalTone { get; set; }
+        public string? PointOfView { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -172,7 +203,11 @@ namespace StoryVerse.Core.Entities
         public ApplicationUser User { get; set; } = null!;
         
         public int DailyWordCountGoal { get; set; } = 1000;
+        public int WeeklyWordCountGoal { get; set; } = 5000;
+        public int MonthlyWordCountGoal { get; set; } = 20000;
         public int WordsWrittenToday { get; set; } = 0;
+        public int WordsWrittenThisWeek { get; set; } = 0;
+        public int WordsWrittenThisMonth { get; set; } = 0;
         public int CurrentStreakDays { get; set; } = 0;
         
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;

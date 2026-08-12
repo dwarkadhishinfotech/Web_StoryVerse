@@ -69,12 +69,6 @@ namespace StoryVerse.Web.Controllers
 
             var storyGuid = currentStory.Id;
 
-            // Seed timeline data for story if empty
-            if (!await _context.TimelineEvents.AnyAsync(e => e.StoryId == storyGuid))
-            {
-                await DbSeeder.SeedTimelineDataForStoryAsync(_context, storyGuid);
-            }
-
             // Load All Unfiltered Timeline Events for overall story calculations
             var allDbTimelineEvents = await _context.TimelineEvents
                 .Include(e => e.CharacterLinks).ThenInclude(cl => cl.Character)

@@ -1,159 +1,1951 @@
 @model IEnumerable<StoryVerse.Core.Entities.Chapter>
 @{
     var story = ViewBag.Story as StoryVerse.Core.Entities.Story;
-    ViewData["Title"] = $"Chapters - {story?.Title}";
+    var userStories = ViewBag.Stories as List<StoryVerse.Core.Entities.Story> ?? new List<StoryVerse.Core.Entities.Story>();
+    var storyParts = ViewBag.StoryParts as List<StoryVerse.Core.Entities.StoryPart> ?? new List<StoryVerse.Core.Entities.StoryPart>();
+    var recentChapters = ViewBag.RecentChapters as List<StoryVerse.Core.Entities.Chapter> ?? new List<StoryVerse.Core.Entities.Chapter>();
+    var currentlyWriting = ViewBag.CurrentlyWritingChapter as StoryVerse.Core.Entities.Chapter;
+
+    ViewData["Title"] = $"Chapter Studio - {story?.Title ?? "StoryVerse"}";
+
+    int totalChapters = ViewBag.TotalChapters ?? 0;
+    int completedCount = ViewBag.CompletedCount ?? 0;
+    int inProgressCount = ViewBag.InProgressCount ?? 0;
+    int outliningCount = ViewBag.OutliningCount ?? 0;
+    int plannedCount = ViewBag.PlannedCount ?? 0;
+    int onHoldCount = ViewBag.OnHoldCount ?? 0;
+    int archivedCount = ViewBag.ArchivedCount ?? 0;
+
+    int totalWords = ViewBag.TotalWords ?? 0;
+    int targetWords = ViewBag.TargetWords ?? 0;
+    int progressPercent = ViewBag.ProgressPercent ?? 0;
+    int avgWordsPerChapter = ViewBag.AvgWordsPerChapter ?? 0;
+    int totalParts = ViewBag.TotalParts ?? 0;
+    int writingStreak = ViewBag.WritingStreak ?? 0;
+
+    int completedPercent = totalChapters > 0 ? (int)Math.Round((double)completedCount / totalChapters * 100) : 0;
+    int inProgressPercent = totalChapters > 0 ? (int)Math.Round((double)inProgressCount / totalChapters * 100) : 0;
+    int plannedPercent = totalChapters > 0 ? (int)Math.Round((double)plannedCount / totalChapters * 100) : 0;
+    int outliningPercent = totalChapters > 0 ? (int)Math.Round((double)outliningCount / totalChapters * 100) : 0;
+    int onHoldPercent = totalChapters > 0 ? (int)Math.Round((double)onHoldCount / totalChapters * 100) : 0;
+    int archivedPercent = totalChapters > 0 ? (int)Math.Round((double)archivedCount / totalChapters * 100) : 0;
+
+    string genresString = "";
+    if (story != null)
+    {
+        if (story.StoryGenres != null && story.StoryGenres.Any())
+        {
+            genresString = string.Join(" • ", story.StoryGenres.Select(g => g.Genre?.Name).Where(n => !string.IsNullOrEmpty(n)));
+        }
+#pragma warning disable CS0618
+        else if (!string.IsNullOrEmpty(story.Genre))
+        {
+            genresString = story.Genre;
+        }
+#pragma warning restore CS0618
+    }
+
+    int chapterTargetWords = totalChapters > 0 && targetWords > 0 ? (targetWords / totalChapters) : 3000;
 }
 
-<div class="w-full pb-5 relative z-10 font-sans text-slate-800">
-    <!-- Header Section -->
-    <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+<div class="chapter-studio-page">
+    <!-- Top Header Navigation & Action Row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
-            <h2 class="font-serif fw-bold text-slate-900 mb-1" style="font-size: 28px; color: var(--forest-green-dark);">
-                Chapters - @story?.Title <span class="text-warning fs-4">✦</span>
-            </h2>
-            <p class="text-secondary mb-0" style="font-size: 0.875rem;">Manage, order, and write the chapters of your story.</p>
+            <div class="d-flex align-items-center gap-2 text-muted small fw-medium mb-1" style="font-size: 12px;">
+                <a href="@Url.Action("Index", "Dashboard")" class="text-decoration-none text-secondary">Dashboard</a>
+                <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+                <span>Chapter Studio</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <h1 class="fw-bold mb-0 text-slate-900" style="font-size: 1.85rem; font-family: 'Playfair Display', Georgia, serif;">Chapter Studio</h1>
+                <div class="d-flex align-items-center justify-content-center rounded-circle p-1.5 ms-1" style="background-color: rgba(13, 148, 136, 0.1); color: #0d9488;">
+                    <i data-lucide="book-open" style="width: 22px; height: 22px;"></i>
+                </div>
+            </div>
+            <p class="text-secondary mb-0" style="font-size: 0.925rem;">Shape your story, one chapter at a time.</p>
         </div>
 
-        <div class="d-flex gap-2">
-            <a href="@Url.Action("Details", "Stories", new { id = story?.Id })" class="btn btn-outline-secondary rounded-pill px-4 py-2 d-flex align-items-center hover-lift-subtle" style="font-size: 0.85rem; font-weight: 700; border-color: var(--parchment-border) !important;">
-                <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Story Overview
-            </a>
-
-            <form asp-action="Create" method="post" class="d-inline">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="storyId" value="@story?.Id" />
-                <button type="submit" class="btn text-white rounded-pill px-4 py-2 d-flex align-items-center shadow-sm hover-lift-subtle" 
-                        style="background: var(--peacock-gradient); font-size: 0.85rem; font-weight: 700; border: none;">
-                    <i data-lucide="plus" class="me-1.5" style="width: 16px; height: 16px;"></i> New Chapter
+        <div class="d-flex align-items-center gap-2 flex-wrap cs-header-actions">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-white bg-white border rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm text-slate-700 hover-lift-subtle" style="font-size: 0.875rem; border-color: #e2e8f0;" onclick="openImportModal()">
+                    <i data-lucide="upload" style="width: 16px; height: 16px; color: #64748b;"></i>
+                    <span>Import Chapters</span>
                 </button>
-            </form>
+
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-teal rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm dropdown-toggle no-arrow" type="button" data-bs-toggle="dropdown" style="font-size: 0.875rem;">
+                        <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+                        <span>New Chapter</span>
+                        <i data-lucide="chevron-down" style="width: 14px; height: 14px; margin-left: 2px;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end rounded-3 shadow-lg border-0">
+                        <li>
+                            <form asp-action="Create" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="storyId" value="@story?.Id" />
+                                <button type="submit" class="dropdown-item fw-semibold py-2">
+                                    <i data-lucide="file-plus" class="me-2 text-teal-600" style="width: 15px; height: 15px;"></i> Quick New Chapter
+                                </button>
+                            </form>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item fw-semibold py-2" href="javascript:void(0)" onclick="openNewPartModal()">
+                                <i data-lucide="folder-plus" class="me-2 text-blue-600" style="width: 15px; height: 15px;"></i> New Part
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 ms-sm-1 mt-sm-0 mt-2">
+                <button class="action-btn shadow-sm position-relative" disabled title="Notifications (Coming Soon)" style="opacity: 0.65; cursor: not-allowed; width: 38px; height: 38px; border-radius: 50%; background: white; border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center;">
+                    <i data-lucide="bell" style="width: 18px; height: 18px; color: #64748b;"></i>
+                    <span class="badge-soon-light position-absolute" style="top: -5px; right: -5px; font-size: 7.5px; padding: 1px 4px; background: #64748b; color: white; border-radius: 4px; z-index: 10;">SOON</span>
+                </button>
+
+                <button class="action-btn shadow-sm position-relative" disabled title="Toggle Theme (Coming Soon)" style="opacity: 0.65; cursor: not-allowed; width: 38px; height: 38px; border-radius: 50%; background: white; border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center;">
+                    <i data-lucide="moon" style="width: 18px; height: 18px; color: #64748b;"></i>
+                    <span class="badge-soon-light position-absolute" style="top: -5px; right: -5px; font-size: 7.5px; padding: 1px 4px; background: #64748b; color: white; border-radius: 4px; z-index: 10;">SOON</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Chapters Table Container -->
-    <div class="dashboard-glass-panel border overflow-hidden mb-4" style="background: var(--parchment-card); border-color: var(--parchment-border) !important;">
-        <!-- Header row -->
-        <div class="d-none d-md-flex row g-3 px-4 py-3 border-bottom border-light align-items-center" style="font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; tracking: 0.1em;">
-            <div class="col-md-5">Chapter</div>
-            <div class="col-md-3">Word Progress</div>
-            <div class="col-md-2">Last Updated</div>
-            <div class="col-md-2 text-end">Actions</div>
+    <!-- ROW 1 — HERO METRICS BANNER (3 Cards) -->
+    <div class="row g-3 mb-4 align-items-stretch">
+        <!-- Card 1: Current Story -->
+        <div class="col-12 col-lg-4 d-flex">
+            <div class="cs-hero-card flex-grow-1 d-flex align-items-center gap-3">
+                <div class="cs-cover-box flex-shrink-0">
+                    @if (!string.IsNullOrEmpty(story?.CoverImageUrl))
+                    {
+                        <img src="@story.CoverImageUrl" alt="@story.Title" class="cs-cover-img" />
+                    }
+                    else
+                    {
+                        <div class="cs-cover-placeholder">
+                            <span>@(story?.Title != null && story.Title.Length >= 2 ? story.Title.Substring(0,2).ToUpper() : "ST")</span>
+                        </div>
+                    }
+                </div>
+                <div class="min-w-0 flex-grow-1">
+                    <span class="cs-hero-label">CURRENT STORY</span>
+                    <h5 class="cs-hero-story-title text-truncate mb-1 d-flex align-items-center gap-1.5">
+                        <span>@(story?.Title ?? "No Story Selected")</span>
+                        @if (story != null && story.IsBookmarked)
+                        {
+                            <i data-lucide="crown" style="width: 16px; height: 16px; color: #d97706;" class="flex-shrink-0"></i>
+                        }
+                    </h5>
+                    @if (!string.IsNullOrEmpty(genresString))
+                    {
+                        <div class="cs-hero-genre mb-1 text-truncate">@genresString</div>
+                    }
+                    <div class="cs-hero-meta">@totalChapters Chapters • @totalParts Parts</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Chapters List -->
-        <div class="p-3 d-flex flex-column gap-2">
-            @if (Model != null && Model.Any())
-            {
-                foreach (var chapter in Model)
-                {
-                    var storyTargetWords = story?.TargetWordCount ?? 50000;
-                    var percent = storyTargetWords > 0 ? (int)Math.Clamp(((double)chapter.WordCount / storyTargetWords) * 100, 0, 100) : 0;
+        <!-- Card 2: Manuscript Progress -->
+        <div class="col-12 col-lg-4 d-flex">
+            <div class="cs-hero-card flex-grow-1 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="cs-hero-label">MANUSCRIPT PROGRESS</span>
+                    <span class="cs-hero-percent">@progressPercent%</span>
+                </div>
+                
+                <div class="progress cs-progress-bar mb-3">
+                    <div class="progress-bar cs-progress-fill" role="progressbar" style="width: @progressPercent%;" aria-valuenow="@progressPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
 
-                    <div class="row g-3 px-3 py-3 align-items-center rounded-4 border bg-white shadow-xs transition-all hover-lift-subtle" style="border-color: #F1F5F9 !important;">
-                        <!-- Chapter info -->
-                        <div class="col-12 col-md-5 d-flex align-items-center gap-3">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center fw-bold font-serif text-white flex-shrink-0" 
-                                 style="width: 42px; height: 42px; background: var(--peacock-gradient); font-size: 1.15rem; box-shadow: 0 4px 10px rgba(19, 168, 166, 0.15);">
-                                @chapter.Order
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="cs-hero-words">
+                        @totalWords.ToString("N0") / @(targetWords > 0 ? targetWords.ToString("N0") : "--") words
+                    </span>
+                    @if (story != null)
+                    {
+                        <a href="@Url.Action("Details", "Stories", new { id = story.Id })" class="cs-hero-link">View Details</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Currently Writing -->
+        <div class="col-12 col-lg-4 d-flex">
+            <div class="cs-hero-card flex-grow-1 d-flex flex-column justify-content-between">
+                <span class="cs-hero-label mb-2">CURRENTLY WRITING</span>
+                
+                @if (currentlyWriting != null && story != null)
+                {
+                    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap flex-sm-nowrap">
+                        <div class="d-flex align-items-center gap-2.5 min-w-0">
+                            <div class="cs-writing-icon-box flex-shrink-0">
+                                <i data-lucide="pen-tool" style="width: 18px; height: 18px; color: #0d9488;"></i>
                             </div>
                             <div class="min-w-0">
-                                <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = chapter.Id })" class="text-decoration-none">
-                                    <h6 class="fw-bold mb-1 text-slate-800 text-truncate text-uppercase hover-text-teal" style="font-size: 0.9rem; transition: color 0.2s;">
-                                        @chapter.Title
-                                    </h6>
-                                </a>
-                                <div class="d-flex align-items-center text-muted gap-2" style="font-size: 11px;">
-                                    <span class="d-flex align-items-center">
-                                        <i data-lucide="calendar" class="me-1" style="width: 12px; height: 12px;"></i>
-                                        @chapter.CreatedAt.ToString("MM/dd/yyyy")
-                                    </span>
-                                    <span class="bg-light text-secondary px-2 py-0.5 rounded font-monospace" style="font-size: 9px; font-weight: 700; letter-spacing: 0.05em;">
-                                        DRAFT
-                                    </span>
+                                <div class="cs-writing-chapter-no text-truncate">Chapter @currentlyWriting.Order</div>
+                                <div class="cs-writing-chapter-title text-truncate">@currentlyWriting.Title</div>
+                                <div class="cs-writing-words">@currentlyWriting.WordCount.ToString("N0") / @chapterTargetWords.ToString("N0") words</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-1.5 flex-shrink-0 mt-sm-0 mt-2">
+                            <a href="@Url.Action("Editor", "Chapters", new { storyId = story.Id, chapterId = currentlyWriting.Id })" class="btn btn-teal btn-sm rounded-3 px-3 py-1.5 fw-bold" style="font-size: 12px;">
+                                Continue Writing
+                            </a>
+                            <a href="@Url.Action("Editor", "Chapters", new { storyId = story.Id, chapterId = currentlyWriting.Id })" class="btn btn-light btn-sm border rounded-circle p-1.5" title="Edit Chapter">
+                                <i data-lucide="edit-3" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2.5 min-w-0">
+                            <div class="cs-writing-icon-box flex-shrink-0" style="background-color: #f1f5f9; color: #64748b;">
+                                <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="cs-writing-chapter-no text-truncate">No Active Chapter</div>
+                                <div class="cs-writing-words text-muted">Create or select a chapter</div>
+                            </div>
+                        </div>
+
+                        @if (story != null)
+                        {
+                            <form asp-action="Create" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="storyId" value="@story.Id" />
+                                <button type="submit" class="btn btn-teal btn-sm rounded-3 px-3 py-1.5 fw-bold" style="font-size: 12px;">
+                                    + Start Writing
+                                </button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2 — 8 METRIC STAT CARDS GRID (4 Column Grid on Desktop) -->
+    <div class="row row-cols-2 row-cols-md-4 row-cols-xl-4 g-3 mb-4">
+        <!-- 1. TOTAL CHAPTERS -->
+        <div class="col">
+            <div class="cs-stat-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="cs-stat-icon-box" style="background-color: rgba(8, 145, 178, 0.1); color: #0891b2;">
+                        <i data-lucide="book-open" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span class="cs-stat-title">TOTAL CHAPTERS</span>
+                </div>
+                <div class="cs-stat-value">@totalChapters</div>
+                <div class="cs-stat-sub">Across @totalParts parts</div>
+            </div>
+        </div>
+
+        <!-- 2. COMPLETED -->
+        <div class="col">
+            <div class="cs-stat-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="cs-stat-icon-box" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
+                        <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span class="cs-stat-title">COMPLETED</span>
+                </div>
+                <div class="cs-stat-value">@completedCount</div>
+                <div class="cs-stat-sub">@completedPercent% completed</div>
+            </div>
+        </div>
+
+        <!-- 3. IN PROGRESS -->
+        <div class="col">
+            <div class="cs-stat-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="cs-stat-icon-box" style="background-color: rgba(37, 99, 235, 0.1); color: #2563eb;">
+                        <i data-lucide="pen-tool" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span class="cs-stat-title">IN PROGRESS</span>
+                </div>
+                <div class="cs-stat-value">@inProgressCount</div>
+                <div class="cs-stat-sub">@inProgressPercent% of total</div>
+            </div>
+        </div>
+
+        <!-- 4. PLANNED -->
+        <div class="col">
+            <div class="cs-stat-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="cs-stat-icon-box" style="background-color: rgba(249, 115, 22, 0.1); color: #f97316;">
+                        <i data-lucide="list-checks" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span class="cs-stat-title">PLANNED</span>
+                </div>
+                <div class="cs-stat-value">@plannedCount</div>
+                <div class="cs-stat-sub">@plannedPercent% remaining</div>
+            </div>
+        </div>
+
+        <!-- 5. TOTAL WORDS -->
+        <div class="col">
+            <div class="cs-stat-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="cs-stat-icon-box" style="background-color: rgba(147, 51, 234, 0.1); color: #9333ea;">
+                        <span class="fw-bold" style="font-size: 12px;">Aa</span>
+                    </div>
+                    <span class="cs-stat-title">TOTAL WORDS</span>
+                </div>
+                <div class="cs-stat-value">@totalWords.ToString("N0")</div>
+                <div class="cs-stat-sub">Total manuscript</div>
+            </div>
+        </div>
+
+        <!-- 6. TARGET WORDS -->
+        <div class="col">
+            <div class="cs-stat-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="cs-stat-icon-box" style="background-color: rgba(225, 29, 72, 0.1); color: #e11d48;">
+                        <i data-lucide="target" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span class="cs-stat-title">TARGET WORDS</span>
+                </div>
+                <div class="cs-stat-value">@(targetWords > 0 ? targetWords.ToString("N0") : "Not Set")</div>
+                <div class="cs-stat-sub">@(targetWords > 0 ? "Manuscript target" : "Set story target")</div>
+            </div>
+        </div>
+
+        <!-- 7. AVERAGE CHAPTER -->
+        <div class="col">
+            <div class="cs-stat-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="cs-stat-icon-box" style="background-color: rgba(37, 99, 235, 0.1); color: #2563eb;">
+                        <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span class="cs-stat-title">AVERAGE CHAPTER</span>
+                </div>
+                <div class="cs-stat-value">@avgWordsPerChapter.ToString("N0")</div>
+                <div class="cs-stat-sub">Words per chapter</div>
+            </div>
+        </div>
+
+        <!-- 8. WRITING STREAK -->
+        <div class="col">
+            <div class="cs-stat-card">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="cs-stat-icon-box" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <i data-lucide="flame" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <span class="cs-stat-title">WRITING STREAK</span>
+                </div>
+                <div class="cs-stat-value">@writingStreak days</div>
+                <div class="cs-stat-sub">@(writingStreak > 0 ? "Keep it up!" : "Start writing today")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 3 — MAIN CONTENT LAYOUT (Left Manuscript Explorer + Right Sidebar Widgets) -->
+    <div class="row g-4">
+        <!-- LEFT WIDE COLUMN: Manuscript Explorer -->
+        <div class="col-12 col-xl-8">
+            <div class="cs-card overflow-hidden shadow-sm border-0" style="border-radius: 16px; background: #ffffff;">
+                <!-- Header with Title, View Tabs & Search Filter -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between border-bottom p-3 gap-2" style="border-color: #e2e8f0 !important; background: #ffffff;">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center justify-content-center rounded-2 p-1.5" style="background: rgba(13, 148, 136, 0.1); color: #0d9488;">
+                            <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div>
+                            <h5 class="cs-card-title mb-0" style="font-family: 'Playfair Display', Georgia, serif; font-size: 1.15rem;">Manuscript Explorer</h5>
+                            <span class="text-muted small" style="font-size: 11px;">@totalChapters chapters across @(totalParts > 0 ? totalParts.ToString() : "1") part(s)</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <!-- VIEW SWITCHER PILLS -->
+                        <div class="cs-view-pills" id="manuscriptViewPills">
+                            <button type="button" class="cs-pill-btn active" data-view="manuscript" onclick="switchView('manuscript')">
+                                <i data-lucide="list-tree" style="width: 14px; height: 14px; margin-right: 4px;"></i> Manuscript View
+                            </button>
+                            <button type="button" class="cs-pill-btn" data-view="grid" onclick="switchView('grid')">
+                                <i data-lucide="layout-grid" style="width: 14px; height: 14px; margin-right: 4px;"></i> Grid View
+                            </button>
+                            <button type="button" class="cs-pill-btn" data-view="list" onclick="switchView('list')">
+                                <i data-lucide="table" style="width: 14px; height: 14px; margin-right: 4px;"></i> List View
+                            </button>
+                            <button type="button" class="cs-pill-btn" data-view="outline" onclick="switchView('outline')">
+                                <i data-lucide="file-text" style="width: 14px; height: 14px; margin-right: 4px;"></i> Outline View
+                            </button>
+                        </div>
+                        
+                        <button type="button" class="btn btn-light btn-sm border rounded-3 p-1.5 shadow-sm" title="Toggle Search & Filters" onclick="toggleFilterBar()" style="border-color: #e2e8f0 !important;">
+                            <i data-lucide="sliders-horizontal" style="width: 15px; height: 15px; color: #64748b;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LIVE FILTER BAR -->
+                <div id="csFilterBar" class="p-3 bg-light border-bottom" style="border-color: #e2e8f0 !important;">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-12 col-md-5">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white border-end-0 rounded-start-3 text-muted"><i data-lucide="search" style="width: 14px; height: 14px;"></i></span>
+                                <input type="text" id="csSearchInput" class="form-control border-start-0 rounded-end-3" placeholder="Search chapters by title, summary, or POV..." style="font-size: 12px; border-color: #cbd5e1;" oninput="applyFilters()" />
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <select id="csFilterPartSelect" class="form-select form-select-sm rounded-3" style="font-size: 12px; border-color: #cbd5e1;" onchange="applyFilters()">
+                                <option value="ALL" selected>All Parts</option>
+                                @foreach (var p in storyParts)
+                                {
+                                    <option value="@p.Id">@p.Title</option>
+                                }
+                                <option value="UNASSIGNED">Unassigned Chapters</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <select id="csFilterStatusSelect" class="form-select form-select-sm rounded-3" style="font-size: 12px; border-color: #cbd5e1;" onchange="applyFilters()">
+                                <option value="ALL" selected>All Statuses</option>
+                                <option value="Completed">Completed</option>
+                                <option value="InProgress">In Progress</option>
+                                <option value="Outlining">Outlining</option>
+                                <option value="Planned">Planned</option>
+                                <option value="OnHold">On Hold</option>
+                                <option value="Archived">Archived</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-1 text-end">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100 rounded-3 p-1 text-muted" title="Reset Filters" onclick="resetFilters()" style="font-size: 11px;">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 1: MANUSCRIPT VIEW (Tree / Collapsible Hierarchy View) -->
+                <!-- ========================================================================= -->
+                <div id="csViewManuscript" class="cs-view-container p-3">
+                    @if (storyParts.Any())
+                    {
+                        @foreach (var part in storyParts)
+                        {
+                            var partChapters = Model.Where(c => c.PartId == part.Id).OrderBy(c => c.Order).ToList();
+                            var partWordCount = partChapters.Sum(c => c.WordCount);
+
+                            <div class="cs-part-block mb-4" data-part-id="@part.Id">
+                                <!-- Part Header Bar -->
+                                <div class="cs-part-header d-flex align-items-center justify-content-between p-3 rounded-3 shadow-xs" 
+                                     data-bs-toggle="collapse" 
+                                     data-bs-target="#partBlock_@part.Id" 
+                                     style="cursor: pointer; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0;">
+                                    
+                                    <div class="d-flex align-items-center gap-2.5 cs-part-title-group min-w-0">
+                                        <i data-lucide="chevron-down" class="cs-part-chevron text-slate-500 flex-shrink-0" style="width: 18px; height: 18px;"></i>
+                                        <div class="d-flex align-items-center justify-content-center rounded-2 p-1.5 bg-teal-50 text-teal-700 flex-shrink-0" style="background: rgba(13, 148, 136, 0.12); color: #0d9488;">
+                                            <i data-lucide="folder" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <div class="min-w-0 flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <span class="fw-bold text-uppercase text-slate-800 tracking-wide text-truncate" style="font-size: 13px; font-family: 'Playfair Display', Georgia, serif;">@part.Title</span>
+                                                <span class="badge bg-teal-100 text-teal-800 rounded-pill px-2.5" style="font-size: 10.5px; background-color: rgba(13, 148, 136, 0.15); color: #0f766e; white-space: nowrap;">@partChapters.Count chapters</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-3 cs-part-meta-group">
+                                        <span class="text-muted small fw-medium text-nowrap" style="font-size: 11.5px;">@partWordCount.ToString("N0") words</span>
+                                        
+                                        <!-- PROMINENT "+ Add Chapter to this Part" BUTTON -->
+                                        <form asp-action="Create" method="post" class="d-inline" onclick="event.stopPropagation();">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="storyId" value="@story?.Id" />
+                                            <input type="hidden" name="partId" value="@part.Id" />
+                                            <button type="submit" class="btn btn-teal btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 shadow-sm text-nowrap" style="font-size: 11.5px;" title="Add new chapter under @part.Title">
+                                                <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
+                                                <span>+ Add Chapter</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <div class="collapse show" id="partBlock_@part.Id">
+                                    <div class="cs-part-chapters mt-2 ps-2">
+                                        @if (partChapters.Any())
+                                        {
+                                            @foreach (var ch in partChapters)
+                                            {
+                                                string statusBadgeClass = ch.Status == "Completed" ? "cs-badge-completed" : (ch.Status == "InProgress" ? "cs-badge-inprogress" : (ch.Status == "Outlining" ? "cs-badge-outlining" : (ch.Status == "OnHold" ? "cs-badge-onhold" : (ch.Status == "Archived" ? "cs-badge-archived" : "cs-badge-planned"))));
+                                                string statusText = ch.Status == "Completed" ? "Completed" : (ch.Status == "InProgress" ? "In Progress" : (ch.Status == "Outlining" ? "Outlining" : (ch.Status == "OnHold" ? "On Hold" : (ch.Status == "Archived" ? "Archived" : "Planned"))));
+                                                string statusIconClass = ch.Status == "Completed" ? "cs-icon-completed" : (ch.Status == "InProgress" ? "cs-icon-inprogress" : (ch.Status == "Outlining" ? "cs-icon-outlining" : (ch.Status == "OnHold" ? "cs-icon-onhold" : (ch.Status == "Archived" ? "cs-icon-archived" : "cs-icon-planned"))));
+
+                                                <div class="cs-chapter-item cs-chapter-row d-flex align-items-center justify-content-between p-2.5 rounded-3 mb-1.5 border hover-elevation" 
+                                                     data-title="@ch.Title.ToLower()" 
+                                                     data-summary="@((ch.Summary ?? "").ToLower())" 
+                                                     data-pov="@((ch.PointOfView ?? "").ToLower())" 
+                                                     data-part-id="@part.Id" 
+                                                     data-status="@ch.Status" 
+                                                     style="border-color: #f1f5f9 !important; background: #ffffff; transition: all 0.2s ease;">
+                                                    
+                                                    <div class="d-flex align-items-center gap-2.5 min-w-0 cs-chapter-main-info">
+                                                        <span class="cs-drag-handle text-muted cursor-grab flex-shrink-0" title="Drag to reorder"><i data-lucide="grip-vertical" style="width: 14px; height: 14px; color: #94a3b8;"></i></span>
+                                                        <div class="cs-status-indicator @statusIconClass flex-shrink-0" title="Status: @statusText"></div>
+                                                        <span class="badge bg-slate-100 text-slate-600 rounded-2 fw-bold flex-shrink-0" style="font-size: 10px; font-family: monospace;">CH @ch.Order</span>
+                                                        
+                                                        <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="fw-semibold text-slate-800 text-decoration-none text-truncate cs-chapter-link" style="font-size: 13.5px;">
+                                                            @ch.Title
+                                                        </a>
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center gap-2.5 cs-chapter-meta-info flex-shrink-0 ms-auto">
+                                                        <span class="text-muted small fw-medium text-nowrap" style="font-size: 12px;"><i data-lucide="file-text" style="width: 12px; height: 12px; margin-right: 2px; color: #94a3b8;"></i> @(ch.WordCount > 0 ? $"{ch.WordCount.ToString("N0")} words" : "0 words")</span>
+                                                        <span class="cs-status-badge @statusBadgeClass text-nowrap">@statusText</span>
+                                                        
+                                                        <div class="dropdown">
+                                                            <button class="btn btn-link text-secondary p-1 border-0 rounded-circle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                <i data-lucide="more-vertical" style="width: 16px; height: 16px;"></i>
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3">
+                                                                <li>
+                                                                    <a class="dropdown-item py-2 fw-semibold d-flex align-items-center gap-2" href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })">
+                                                                        <i data-lucide="pen-tool" class="text-teal-600" style="width: 14px; height: 14px;"></i> Open in Studio Editor
+                                                                    </a>
+                                                                </li>
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item py-2 fw-semibold text-danger d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#deleteChapterModal_@ch.Id">
+                                                                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Delete Chapter
+                                                                    </button>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+
+                                            <!-- Bottom Part Action Bar -->
+                                            <div class="mt-2 text-center py-2 border-top" style="border-color: #f1f5f9 !important;">
+                                                <form asp-action="Create" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="storyId" value="@story?.Id" />
+                                                    <input type="hidden" name="partId" value="@part.Id" />
+                                                    <button type="submit" class="btn btn-teal-subtle btn-sm rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 shadow-sm" style="font-size: 12px;">
+                                                        <i data-lucide="plus-circle" style="width: 15px; height: 15px;"></i> Add Chapter to @part.Title
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center py-4 px-3 bg-light rounded-3 border-dash my-2">
+                                                <i data-lucide="file-plus" class="text-teal-600 mb-2" style="width: 32px; height: 32px; opacity: 0.7;"></i>
+                                                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 13.5px;">No chapters in @part.Title yet</h6>
+                                                <p class="text-muted small mb-3" style="font-size: 11.5px;">Start writing this act by adding your first chapter below.</p>
+                                                
+                                                <form asp-action="Create" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="storyId" value="@story?.Id" />
+                                                    <input type="hidden" name="partId" value="@part.Id" />
+                                                    <button type="submit" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1.5" style="font-size: 12.5px;">
+                                                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Chapter to @part.Title
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    @{
+                        var unassignedChapters = Model.Where(c => c.PartId == null).OrderBy(c => c.Order).ToList();
+                    }
+                    @if (unassignedChapters.Any() || !storyParts.Any())
+                    {
+                        <div class="cs-part-block mb-3" data-part-id="UNASSIGNED">
+                            <div class="cs-part-header d-flex align-items-center justify-content-between p-3 rounded-3 bg-light border" data-bs-toggle="collapse" data-bs-target="#partBlock_unassigned" style="cursor: pointer; border-color: #e2e8f0 !important;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i data-lucide="chevron-down" class="cs-part-chevron" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    <i data-lucide="file-stack" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                    <span class="fw-bold text-uppercase text-slate-800" style="font-size: 12.5px; letter-spacing: 0.05em;">Chapters</span>
+                                    <span class="badge bg-slate-200 text-slate-700 rounded-pill px-2" style="font-size: 10px;">@unassignedChapters.Count</span>
+                                </div>
+
+                                <form asp-action="Create" method="post" class="d-inline" onclick="event.stopPropagation();">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="storyId" value="@story?.Id" />
+                                    <button type="submit" class="btn btn-teal-subtle btn-sm rounded-pill px-3 py-1 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 11.5px;">
+                                        <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Chapter
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="collapse show" id="partBlock_unassigned">
+                                <div class="cs-part-chapters mt-2 ps-2">
+                                    @foreach (var ch in unassignedChapters)
+                                    {
+                                        string statusBadgeClass = ch.Status == "Completed" ? "cs-badge-completed" : (ch.Status == "InProgress" ? "cs-badge-inprogress" : (ch.Status == "Outlining" ? "cs-badge-outlining" : (ch.Status == "OnHold" ? "cs-badge-onhold" : (ch.Status == "Archived" ? "cs-badge-archived" : "cs-badge-planned"))));
+                                        string statusText = ch.Status == "Completed" ? "Completed" : (ch.Status == "InProgress" ? "In Progress" : (ch.Status == "Outlining" ? "Outlining" : (ch.Status == "OnHold" ? "On Hold" : (ch.Status == "Archived" ? "Archived" : "Planned"))));
+                                        string statusIconClass = ch.Status == "Completed" ? "cs-icon-completed" : (ch.Status == "InProgress" ? "cs-icon-inprogress" : (ch.Status == "Outlining" ? "cs-icon-outlining" : (ch.Status == "OnHold" ? "cs-icon-onhold" : (ch.Status == "Archived" ? "cs-icon-archived" : "cs-icon-planned"))));
+
+                                        <div class="cs-chapter-item cs-chapter-row d-flex align-items-center justify-content-between p-2.5 rounded-3 mb-1.5 border hover-elevation" 
+                                             data-title="@ch.Title.ToLower()" 
+                                             data-summary="@((ch.Summary ?? "").ToLower())" 
+                                             data-pov="@((ch.PointOfView ?? "").ToLower())" 
+                                             data-part-id="UNASSIGNED" 
+                                             data-status="@ch.Status" 
+                                             style="border-color: #f1f5f9 !important; background: #ffffff; transition: all 0.2s ease;">
+                                            
+                                            <div class="d-flex align-items-center gap-3 min-w-0">
+                                                <span class="cs-drag-handle text-muted cursor-grab" title="Drag to reorder"><i data-lucide="grip-vertical" style="width: 14px; height: 14px; color: #94a3b8;"></i></span>
+                                                <div class="cs-status-indicator @statusIconClass" title="Status: @statusText"></div>
+                                                <span class="badge bg-slate-100 text-slate-600 rounded-2 fw-bold" style="font-size: 10px; font-family: monospace;">CH @ch.Order</span>
+
+                                                <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="fw-semibold text-slate-800 text-decoration-none text-truncate cs-chapter-link" style="font-size: 13.5px;">
+                                                    @ch.Title
+                                                </a>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                                                <span class="text-muted small fw-medium" style="font-size: 12px;"><i data-lucide="file-text" style="width: 12px; height: 12px; margin-right: 2px; color: #94a3b8;"></i> @(ch.WordCount > 0 ? $"{ch.WordCount.ToString("N0")} words" : "0 words")</span>
+                                                <span class="cs-status-badge @statusBadgeClass">@statusText</span>
+                                                
+                                                <div class="dropdown">
+                                                    <button class="btn btn-link text-secondary p-1 border-0 rounded-circle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i data-lucide="more-vertical" style="width: 16px; height: 16px;"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3">
+                                                        <li>
+                                                            <a class="dropdown-item py-2 fw-semibold d-flex align-items-center gap-2" href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })">
+                                                                <i data-lucide="pen-tool" class="text-teal-600" style="width: 14px; height: 14px;"></i> Open in Studio Editor
+                                                            </a>
+                                                        </li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <button type="button" class="dropdown-item py-2 fw-semibold text-danger d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#deleteChapterModal_@ch.Id">
+                                                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Delete Chapter
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </div>
+                    }
 
-                        <!-- Word Progress -->
-                        <div class="col-12 col-sm-6 col-md-3">
-                            <div class="d-flex justify-content-between align-items-baseline mb-1">
-                                <span class="fw-bold text-slate-700" style="font-size: 13px;">@chapter.WordCount.ToString("N0") <span class="text-muted fw-semibold" style="font-size: 11px;">words</span></span>
-                                <span class="text-secondary font-monospace" style="font-size: 11px;">@percent%</span>
-                            </div>
-                            <div class="progress" style="height: 6px; background-color: #F1F5F9; border-radius: 10px; overflow: hidden;">
-                                <div class="progress-bar" role="progressbar" style="width: @percent%; background: var(--peacock-gradient); border-radius: 10px;" aria-valuenow="@percent" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </div>
-
-                        <!-- Last Updated -->
-                        <div class="col-6 col-md-2 text-secondary" style="font-size: 12px; font-weight: 500;">
-                            @chapter.UpdatedAt.ToString("g")
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="col-6 col-md-2 d-flex justify-content-end gap-2">
-                            <a href="@Url.Action("Editor", "Chapters", new { storyId = chapter.StoryId, chapterId = chapter.Id })" 
-                               class="btn btn-white border rounded-3 p-2 d-flex align-items-center justify-content-center text-secondary hover-lift-subtle shadow-xs" 
-                               style="width: 36px; height: 36px; border-color: var(--parchment-border) !important;" title="Edit Chapter">
-                                <i data-lucide="pen-tool" class="text-peacock-teal" style="width: 16px; height: 16px;"></i>
-                            </a>
-
-                            <button type="button" class="btn btn-white border rounded-3 p-2 d-flex align-items-center justify-content-center text-danger hover-lift-subtle shadow-xs" 
-                                    style="width: 36px; height: 36px; border-color: var(--parchment-border) !important;" title="Delete Chapter"
-                                    data-bs-toggle="modal" data-bs-target="#deleteModal-@chapter.Id">
-                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                    <div class="mt-4 text-center py-3 border-top" style="border-color: #f1f5f9 !important;">
+                        <form asp-action="Create" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="storyId" value="@story?.Id" />
+                            <button type="submit" class="btn btn-teal rounded-pill px-4 py-2 fw-bold text-decoration-none d-inline-flex align-items-center gap-2 shadow-sm" style="font-size: 13px;">
+                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add New Chapter
                             </button>
+                        </form>
+                    </div>
+                </div>
 
-                            <!-- Delete Modal -->
-                            <div class="modal fade" id="deleteModal-@chapter.Id" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                                        <div class="p-4 text-center">
-                                            <div class="rounded-circle bg-danger-subtle text-danger mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                                <i data-lucide="alert-triangle" style="width: 32px; height: 32px;"></i>
+                <!-- ========================================================================= -->
+                <!-- VIEW 2: GRID VIEW (Card Grid Layout) -->
+                <!-- ========================================================================= -->
+                <div id="csViewGrid" class="cs-view-container p-3 d-none">
+                    <div class="row row-cols-1 row-cols-md-2 g-3">
+                        @foreach (var ch in Model)
+                        {
+                            var partObj = storyParts.FirstOrDefault(p => p.Id == ch.PartId);
+                            string partTitle = partObj != null ? partObj.Title : "Unassigned";
+                            string statusBadgeClass = ch.Status == "Completed" ? "cs-badge-completed" : (ch.Status == "InProgress" ? "cs-badge-inprogress" : (ch.Status == "Outlining" ? "cs-badge-outlining" : (ch.Status == "OnHold" ? "cs-badge-onhold" : (ch.Status == "Archived" ? "cs-badge-archived" : "cs-badge-planned"))));
+                            string statusText = ch.Status == "Completed" ? "Completed" : (ch.Status == "InProgress" ? "In Progress" : (ch.Status == "Outlining" ? "Outlining" : (ch.Status == "OnHold" ? "On Hold" : (ch.Status == "Archived" ? "Archived" : "Planned"))));
+                            
+                            int chTarget = ch.TargetWordCount > 0 ? ch.TargetWordCount.Value : chapterTargetWords;
+                            int chProgress = chTarget > 0 ? (int)Math.Clamp(((double)ch.WordCount / chTarget) * 100, 0, 100) : 0;
+                            string previewText = !string.IsNullOrWhiteSpace(ch.Summary) ? ch.Summary : (!string.IsNullOrWhiteSpace(ch.Content) ? (ch.Content.Length > 120 ? ch.Content.Substring(0, 120) + "..." : ch.Content) : "No summary written yet. Click to start editing and outlining this chapter.");
+
+                            <div class="col cs-chapter-item" 
+                                 data-title="@ch.Title.ToLower()" 
+                                 data-summary="@((ch.Summary ?? "").ToLower())" 
+                                 data-pov="@((ch.PointOfView ?? "").ToLower())" 
+                                 data-part-id="@(ch.PartId?.ToString() ?? "UNASSIGNED")" 
+                                 data-status="@ch.Status">
+                                
+                                <div class="cs-grid-card h-100 p-3.5 rounded-3 border bg-white d-flex flex-column justify-content-between position-relative shadow-sm hover-lift" style="border-color: #e2e8f0 !important; transition: all 0.25s ease;">
+                                    <div>
+                                        <!-- Top Badge Meta Bar -->
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                                <span class="badge bg-slate-100 text-slate-700 rounded-2 fw-bold" style="font-size: 10px; font-family: monospace;">CH @ch.Order</span>
+                                                <span class="badge bg-teal-50 text-teal-700 rounded-pill border border-teal-200" style="font-size: 9.5px; background: #f0fdfa; color: #0d9488; border-color: #ccfbf1 !important;">@partTitle</span>
                                             </div>
-                                            <h4 class="font-serif fw-bold text-slate-800 mb-2">Delete Chapter</h4>
-                                            <p class="text-secondary small mb-4">Are you sure you want to delete "@chapter.Title"? This action cannot be undone.</p>
                                             
-                                            <div class="d-flex justify-content-center gap-3">
-                                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                                                <form asp-action="Delete" method="post">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@chapter.Id" />
-                                                    <button type="submit" class="btn btn-danger rounded-pill px-4">Delete Chapter</button>
-                                                </form>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <span class="cs-status-badge @statusBadgeClass" style="font-size: 9.5px;">@statusText</span>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-link text-secondary p-0 border-0" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i data-lucide="more-vertical" style="width: 15px; height: 15px;"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3">
+                                                        <li>
+                                                            <a class="dropdown-item py-2 fw-semibold d-flex align-items-center gap-2" href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })">
+                                                                <i data-lucide="pen-tool" class="text-teal-600" style="width: 14px; height: 14px;"></i> Open in Editor
+                                                            </a>
+                                                        </li>
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <button type="button" class="dropdown-item py-2 fw-semibold text-danger d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#deleteChapterModal_@ch.Id">
+                                                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Delete Chapter
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
                                             </div>
+                                        </div>
+
+                                        <!-- Chapter Title -->
+                                        <h6 class="fw-bold mb-2 text-slate-900" style="font-size: 14.5px; font-family: 'Playfair Display', Georgia, serif; line-height: 1.35;">
+                                            <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="text-slate-900 text-decoration-none cs-card-title-link">
+                                                @ch.Title
+                                            </a>
+                                        </h6>
+
+                                        <!-- Summary Preview -->
+                                        <p class="text-secondary mb-3 line-clamp-3" style="font-size: 12px; line-height: 1.5; color: #64748b;">
+                                            @previewText
+                                        </p>
+
+                                        <!-- Meta Pills (POV & Tone if present) -->
+                                        <div class="d-flex flex-wrap gap-1 mb-3">
+                                            @if (!string.IsNullOrWhiteSpace(ch.PointOfView))
+                                            {
+                                                <span class="badge bg-purple-50 text-purple-700 rounded-pill" style="font-size: 9.5px; background: #faf5ff; color: #7e22ce; border: 1px solid #f3e8ff;">
+                                                    👁 POV: @ch.PointOfView
+                                                </span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(ch.EmotionalTone))
+                                            {
+                                                <span class="badge bg-amber-50 text-amber-700 rounded-pill" style="font-size: 9.5px; background: #fffbeb; color: #b45309; border: 1px solid #fef3c7;">
+                                                    🎭 @ch.EmotionalTone
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <!-- Word Count & Progress Bar -->
+                                        <div class="d-flex align-items-center justify-content-between small text-muted mb-1" style="font-size: 11px;">
+                                            <span>@ch.WordCount.ToString("N0") words</span>
+                                            <span>@chProgress% of @chTarget.ToString("N0") target</span>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px; background-color: #f1f5f9; border-radius: 4px;">
+                                            <div class="progress-bar" role="progressbar" style="width: @chProgress%; background-color: #0d9488;" aria-valuenow="@chProgress" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+
+                                        <!-- Footer Actions -->
+                                        <div class="d-flex align-items-center justify-content-between pt-2 border-top" style="border-color: #f1f5f9 !important;">
+                                            <span class="text-muted" style="font-size: 10.5px;">Updated @((DateTime.UtcNow - ch.UpdatedAt).Days == 0 ? "today" : $"{ (DateTime.UtcNow - ch.UpdatedAt).Days }d ago")</span>
+                                            
+                                            <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-1 fw-bold" style="font-size: 11.5px; border-color: #0d9488; color: #0d9488;">
+                                                Edit Chapter →
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 3: LIST VIEW (Data Table View) -->
+                <!-- ========================================================================= -->
+                <div id="csViewList" class="cs-view-container p-0 d-none">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                            <thead class="bg-light border-bottom" style="border-color: #e2e8f0 !important; background-color: #f8fafc;">
+                                <tr class="text-uppercase text-slate-500 fw-bold" style="font-size: 10.5px; letter-spacing: 0.05em;">
+                                    <th class="ps-3 py-3" style="width: 60px;">#</th>
+                                    <th class="py-3">Chapter Title & Overview</th>
+                                    <th class="py-3">Part</th>
+                                    <th class="py-3 text-end">Word Count</th>
+                                    <th class="py-3 text-center">Status</th>
+                                    <th class="py-3">Last Modified</th>
+                                    <th class="pe-3 py-3 text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var ch in Model)
+                                {
+                                    var partObj = storyParts.FirstOrDefault(p => p.Id == ch.PartId);
+                                    string partTitle = partObj != null ? partObj.Title : "Unassigned";
+                                    string statusBadgeClass = ch.Status == "Completed" ? "cs-badge-completed" : (ch.Status == "InProgress" ? "cs-badge-inprogress" : (ch.Status == "Outlining" ? "cs-badge-outlining" : (ch.Status == "OnHold" ? "cs-badge-onhold" : (ch.Status == "Archived" ? "cs-badge-archived" : "cs-badge-planned"))));
+                                    string statusText = ch.Status == "Completed" ? "Completed" : (ch.Status == "InProgress" ? "In Progress" : (ch.Status == "Outlining" ? "Outlining" : (ch.Status == "OnHold" ? "On Hold" : (ch.Status == "Archived" ? "Archived" : "Planned"))));
+
+                                    <tr class="cs-chapter-item" 
+                                        data-title="@ch.Title.ToLower()" 
+                                        data-summary="@((ch.Summary ?? "").ToLower())" 
+                                        data-pov="@((ch.PointOfView ?? "").ToLower())" 
+                                        data-part-id="@(ch.PartId?.ToString() ?? "UNASSIGNED")" 
+                                        data-status="@ch.Status"
+                                        style="border-bottom: 1px solid #f1f5f9;">
+                                        
+                                        <td class="ps-3 fw-bold text-slate-600" style="font-family: monospace;">
+                                            #@ch.Order.ToString("D2")
+                                        </td>
+                                        
+                                        <td>
+                                            <div class="fw-bold text-slate-800 mb-0.5">
+                                                <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="text-slate-800 text-decoration-none hover-teal">
+                                                    @ch.Title
+                                                </a>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(ch.Summary))
+                                            {
+                                                <div class="text-muted small text-truncate" style="max-width: 320px; font-size: 11.5px;">@ch.Summary</div>
+                                            }
+                                        </td>
+
+                                        <td>
+                                            <span class="badge bg-slate-100 text-slate-700 rounded-pill border" style="font-size: 10px; border-color: #cbd5e1 !important;">@partTitle</span>
+                                        </td>
+
+                                        <td class="text-end fw-semibold text-slate-700">
+                                            @(ch.WordCount > 0 ? $"{ch.WordCount.ToString("N0")}" : "0") <span class="text-muted font-normal small">w</span>
+                                        </td>
+
+                                        <td class="text-center">
+                                            <span class="cs-status-badge @statusBadgeClass">@statusText</span>
+                                        </td>
+
+                                        <td class="text-muted small" style="font-size: 11.5px;">
+                                            @ch.UpdatedAt.ToString("MMM dd, yyyy")
+                                        </td>
+
+                                        <td class="pe-3 text-end">
+                                            <div class="d-inline-flex align-items-center gap-1">
+                                                <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="btn btn-light btn-sm border rounded-circle p-1.5 shadow-sm" title="Edit in Editor">
+                                                    <i data-lucide="edit-3" style="width: 14px; height: 14px; color: #0d9488;"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-light btn-sm border rounded-circle p-1.5 shadow-sm text-danger" title="Delete Chapter" data-bs-toggle="modal" data-bs-target="#deleteChapterModal_@ch.Id">
+                                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 4: OUTLINE VIEW (Story Architecture & Synopsis Tree View) -->
+                <!-- ========================================================================= -->
+                <div id="csViewOutline" class="cs-view-container p-3 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style="border-color: #f1f5f9 !important;">
+                        <span class="text-muted small fw-semibold" style="font-size: 12px;">Manuscript Architecture & Plot Outline</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-light btn-sm border rounded-pill px-3" style="font-size: 11px;" onclick="toggleAllOutline(true)">
+                                <i data-lucide="chevrons-down" style="width: 13px; height: 13px;"></i> Expand All
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm border rounded-pill px-3" style="font-size: 11px;" onclick="toggleAllOutline(false)">
+                                <i data-lucide="chevrons-up" style="width: 13px; height: 13px;"></i> Collapse All
+                            </button>
                         </div>
                     </div>
-                }
-            }
-            else
-            {
-                <div class="text-center py-5">
-                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 64px; height: 64px;">
-                        <i data-lucide="scroll" class="text-secondary opacity-50" style="width: 32px; height: 32px;"></i>
+
+                    @foreach (var part in storyParts)
+                    {
+                        var partChapters = Model.Where(c => c.PartId == part.Id).OrderBy(c => c.Order).ToList();
+                        
+                        <div class="cs-outline-part mb-4" data-part-id="@part.Id">
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2 p-2.5 rounded-3 bg-teal-50 border border-teal-100" style="background: #f0fdfa; border-color: #ccfbf1 !important;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i data-lucide="bookmark" style="width: 16px; height: 16px; color: #0d9488;"></i>
+                                    <h6 class="fw-bold mb-0 text-teal-900 text-uppercase" style="font-size: 13px; letter-spacing: 0.05em; color: #0f766e;">@part.Title</h6>
+                                    <span class="badge bg-white text-teal-700 border" style="font-size: 10px; border-color: #99f6e4 !important;">@partChapters.Count chapters</span>
+                                </div>
+
+                                <form asp-action="Create" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="storyId" value="@story?.Id" />
+                                    <input type="hidden" name="partId" value="@part.Id" />
+                                    <button type="submit" class="btn btn-teal btn-sm rounded-pill px-3 py-1 fw-bold" style="font-size: 11px;">
+                                        + Add Chapter
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="cs-outline-nodes ms-2 border-start ps-3" style="border-color: #cbd5e1 !important;">
+                                @foreach (var ch in partChapters)
+                                {
+                                    string statusBadgeClass = ch.Status == "Completed" ? "cs-badge-completed" : (ch.Status == "InProgress" ? "cs-badge-inprogress" : (ch.Status == "Outlining" ? "cs-badge-outlining" : (ch.Status == "OnHold" ? "cs-badge-onhold" : (ch.Status == "Archived" ? "cs-badge-archived" : "cs-badge-planned"))));
+                                    string statusText = ch.Status == "Completed" ? "Completed" : (ch.Status == "InProgress" ? "In Progress" : (ch.Status == "Outlining" ? "Outlining" : (ch.Status == "OnHold" ? "On Hold" : (ch.Status == "Archived" ? "Archived" : "Planned"))));
+
+                                    <div class="cs-chapter-item cs-outline-card mb-3 p-3 rounded-3 border bg-white shadow-sm" 
+                                         data-title="@ch.Title.ToLower()" 
+                                         data-summary="@((ch.Summary ?? "").ToLower())" 
+                                         data-pov="@((ch.PointOfView ?? "").ToLower())" 
+                                         data-part-id="@part.Id" 
+                                         data-status="@ch.Status"
+                                         style="border-color: #e2e8f0 !important;">
+                                        
+                                        <div class="d-flex align-items-center justify-content-between mb-2 cursor-pointer" data-bs-toggle="collapse" data-bs-target="#outlineDetails_@ch.Id">
+                                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                                <i data-lucide="chevron-down" class="cs-outline-chevron" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                                <span class="badge bg-slate-900 text-white rounded-2 fw-bold" style="font-size: 10px; font-family: monospace;">CH @ch.Order</span>
+                                                <h6 class="fw-bold mb-0 text-slate-800 text-truncate" style="font-size: 14px; font-family: 'Playfair Display', Georgia, serif;">@ch.Title</h6>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                                <span class="text-muted small" style="font-size: 11px;">@ch.WordCount.ToString("N0") words</span>
+                                                <span class="cs-status-badge @statusBadgeClass">@statusText</span>
+                                                <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="btn btn-sm btn-teal rounded-3 py-1 px-2.5 fw-semibold ms-2" style="font-size: 11px;" onclick="event.stopPropagation();">
+                                                    Edit <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div class="collapse show mt-2 pt-2 border-top" id="outlineDetails_@ch.Id" style="border-color: #f1f5f9 !important;">
+                                            <!-- Summary Callout Box -->
+                                            <div class="p-2.5 rounded-3 mb-2" style="background-color: #f8fafc; border-left: 3px solid #0d9488;">
+                                                <div class="d-flex align-items-center gap-1.5 text-teal-700 fw-bold small mb-1" style="font-size: 11px;">
+                                                    <i data-lucide="feather" style="width: 13px; height: 13px;"></i> Chapter Synopsis
+                                                </div>
+                                                <p class="text-secondary mb-0" style="font-size: 12px; line-height: 1.55;">
+                                                    @(!string.IsNullOrWhiteSpace(ch.Summary) ? ch.Summary : "No synopsis added for this chapter yet. You can add goals, POV, and summary notes in the Chapter Studio Editor.")
+                                                </p>
+                                            </div>
+
+                                            <!-- Metadata Elements Grid -->
+                                            <div class="row g-2">
+                                                @if (!string.IsNullOrWhiteSpace(ch.Goal) || !string.IsNullOrWhiteSpace(ch.Purpose))
+                                                {
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="p-2 rounded-2 border bg-light" style="font-size: 11.5px; border-color: #e2e8f0 !important;">
+                                                            <span class="fw-bold text-slate-700 d-block mb-0.5">🎯 Goal / Purpose:</span>
+                                                            <span class="text-slate-600">@(ch.Goal ?? ch.Purpose)</span>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(ch.PointOfView) || !string.IsNullOrWhiteSpace(ch.EmotionalTone))
+                                                {
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="p-2 rounded-2 border bg-light d-flex flex-wrap gap-2" style="font-size: 11.5px; border-color: #e2e8f0 !important;">
+                                                            @if (!string.IsNullOrWhiteSpace(ch.PointOfView))
+                                                            {
+                                                                <div><span class="fw-bold text-slate-700">👁 POV:</span> <span class="text-slate-600">@ch.PointOfView</span></div>
+                                                            }
+                                                            @if (!string.IsNullOrWhiteSpace(ch.EmotionalTone))
+                                                            {
+                                                                <div><span class="fw-bold text-slate-700">🎭 Tone:</span> <span class="text-slate-600">@ch.EmotionalTone</span></div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @{
+                        var unassignedOutline = Model.Where(c => c.PartId == null).OrderBy(c => c.Order).ToList();
+                    }
+                    @if (unassignedOutline.Any())
+                    {
+                        <div class="cs-outline-part mb-4" data-part-id="UNASSIGNED">
+                            <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-3 bg-slate-100 border border-slate-200">
+                                <i data-lucide="file-stack" style="width: 16px; height: 16px; color: #475569;"></i>
+                                <h6 class="fw-bold mb-0 text-slate-800 text-uppercase" style="font-size: 13px; letter-spacing: 0.05em;">Unassigned Chapters</h6>
+                                <span class="badge bg-white text-slate-700 border ms-auto" style="font-size: 10px;">@unassignedOutline.Count chapters</span>
+                            </div>
+
+                            <div class="cs-outline-nodes ms-2 border-start ps-3" style="border-color: #cbd5e1 !important;">
+                                @foreach (var ch in unassignedOutline)
+                                {
+                                    string statusBadgeClass = ch.Status == "Completed" ? "cs-badge-completed" : (ch.Status == "InProgress" ? "cs-badge-inprogress" : (ch.Status == "Outlining" ? "cs-badge-outlining" : (ch.Status == "OnHold" ? "cs-badge-onhold" : (ch.Status == "Archived" ? "cs-badge-archived" : "cs-badge-planned"))));
+                                    string statusText = ch.Status == "Completed" ? "Completed" : (ch.Status == "InProgress" ? "In Progress" : (ch.Status == "Outlining" ? "Outlining" : (ch.Status == "OnHold" ? "On Hold" : (ch.Status == "Archived" ? "Archived" : "Planned"))));
+
+                                    <div class="cs-chapter-item cs-outline-card mb-3 p-3 rounded-3 border bg-white shadow-sm" 
+                                         data-title="@ch.Title.ToLower()" 
+                                         data-summary="@((ch.Summary ?? "").ToLower())" 
+                                         data-pov="@((ch.PointOfView ?? "").ToLower())" 
+                                         data-part-id="UNASSIGNED" 
+                                         data-status="@ch.Status"
+                                         style="border-color: #e2e8f0 !important;">
+                                        
+                                        <div class="d-flex align-items-center justify-content-between mb-2 cursor-pointer" data-bs-toggle="collapse" data-bs-target="#outlineDetails_@ch.Id">
+                                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                                <i data-lucide="chevron-down" class="cs-outline-chevron" style="width: 16px; height: 16px; color: #64748b;"></i>
+                                                <span class="badge bg-slate-900 text-white rounded-2 fw-bold" style="font-size: 10px; font-family: monospace;">CH @ch.Order</span>
+                                                <h6 class="fw-bold mb-0 text-slate-800 text-truncate" style="font-size: 14px; font-family: 'Playfair Display', Georgia, serif;">@ch.Title</h6>
+                                            </div>
+
+                                            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                                <span class="text-muted small" style="font-size: 11px;">@ch.WordCount.ToString("N0") words</span>
+                                                <span class="cs-status-badge @statusBadgeClass">@statusText</span>
+                                                <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="btn btn-sm btn-teal rounded-3 py-1 px-2.5 fw-semibold ms-2" style="font-size: 11px;" onclick="event.stopPropagation();">
+                                                    Edit <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div class="collapse show mt-2 pt-2 border-top" id="outlineDetails_@ch.Id" style="border-color: #f1f5f9 !important;">
+                                            <div class="p-2.5 rounded-3 mb-2" style="background-color: #f8fafc; border-left: 3px solid #0d9488;">
+                                                <div class="d-flex align-items-center gap-1.5 text-teal-700 fw-bold small mb-1" style="font-size: 11px;">
+                                                    <i data-lucide="feather" style="width: 13px; height: 13px;"></i> Chapter Synopsis
+                                                </div>
+                                                <p class="text-secondary mb-0" style="font-size: 12px; line-height: 1.55;">
+                                                    @(!string.IsNullOrWhiteSpace(ch.Summary) ? ch.Summary : "No synopsis added for this chapter yet. You can add goals, POV, and summary notes in the Chapter Studio Editor.")
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- GLOBAL EMPTY SEARCH / FILTER STATE -->
+                <div id="csEmptySearchState" class="p-5 text-center d-none">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(13, 148, 136, 0.1); color: #0d9488;">
+                        <i data-lucide="search-x" style="width: 28px; height: 28px;"></i>
                     </div>
-                    <h5 class="fw-bold text-slate-700 mb-1">No Chapters Created</h5>
-                    <p class="text-secondary small mb-4">Start organizing your story structure by adding your first chapter.</p>
-                    <form asp-action="Create" method="post" class="d-inline">
+                    <h5 class="fw-bold text-slate-800 mb-1" style="font-family: 'Playfair Display', Georgia, serif;">No Matching Chapters</h5>
+                    <p class="text-muted small mb-3" style="max-width: 360px; margin: 0 auto;">No chapters match your current search query or filter selections.</p>
+                    <button type="button" class="btn btn-outline-teal rounded-pill px-4 py-1.5 fw-semibold" style="font-size: 12.5px;" onclick="resetFilters()">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDEBAR COLUMN: Widgets Stack -->
+        <div class="col-12 col-xl-4 d-flex flex-column gap-4">
+            <!-- Widget 1: Chapter Status Donut Chart & Legend -->
+            <div class="cs-card p-3">
+                <h6 class="cs-widget-title mb-3">Chapter Status</h6>
+                
+                <div class="d-flex align-items-center justify-content-between gap-3">
+                    <!-- SVG Donut Chart -->
+                    <div class="cs-donut-wrapper flex-shrink-0">
+                        <svg width="120" height="120" viewBox="0 0 42 42" class="cs-donut-svg">
+                            <circle class="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
+                            <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#E2E8F0" stroke-width="5"></circle>
+
+                            <!-- Segment Completed (Green) -->
+                            <circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#10B981" stroke-width="5" stroke-dasharray="@completedPercent @(100 - completedPercent)" stroke-dashoffset="25"></circle>
+                            <!-- Segment In Progress (Blue) -->
+                            <circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#2563EB" stroke-width="5" stroke-dasharray="@inProgressPercent @(100 - inProgressPercent)" stroke-dashoffset="@(25 - completedPercent)"></circle>
+                            <!-- Segment Planned (Orange) -->
+                            <circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#F97316" stroke-width="5" stroke-dasharray="@plannedPercent @(100 - plannedPercent)" stroke-dashoffset="@(25 - completedPercent - inProgressPercent)"></circle>
+                        </svg>
+                    </div>
+
+                    <!-- Legend List -->
+                    <div class="flex-grow-1 cs-legend-list" style="font-size: 12.5px;">
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span class="cs-dot" style="background-color: #10B981;"></span>
+                                <span class="text-slate-700 fw-medium">Completed</span>
+                            </div>
+                            <span class="fw-bold text-slate-900">@completedCount (@completedPercent%)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span class="cs-dot" style="background-color: #2563EB;"></span>
+                                <span class="text-slate-700 fw-medium">In Progress</span>
+                            </div>
+                            <span class="fw-bold text-slate-900">@inProgressCount (@inProgressPercent%)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span class="cs-dot" style="background-color: #9333EA;"></span>
+                                <span class="text-slate-700 fw-medium">Outlining</span>
+                            </div>
+                            <span class="fw-bold text-slate-900">@outliningCount (@outliningPercent%)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span class="cs-dot" style="background-color: #F97316;"></span>
+                                <span class="text-slate-700 fw-medium">Planned</span>
+                            </div>
+                            <span class="fw-bold text-slate-900">@plannedCount (@plannedPercent%)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span class="cs-dot" style="background-color: #94A3B8;"></span>
+                                <span class="text-slate-700 fw-medium">On Hold</span>
+                            </div>
+                            <span class="fw-bold text-slate-900">@onHoldCount (@onHoldPercent%)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span class="cs-dot" style="background-color: #475569;"></span>
+                                <span class="text-slate-700 fw-medium">Archived</span>
+                            </div>
+                            <span class="fw-bold text-slate-900">@archivedCount (@archivedPercent%)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widget 2: Recent Chapters -->
+            <div class="cs-card p-3">
+                <h6 class="cs-widget-title mb-3">Recent Chapters</h6>
+                <div class="d-flex flex-column gap-2 mb-3">
+                    @if (recentChapters.Any())
+                    {
+                        foreach (var ch in recentChapters)
+                        {
+                            var timeAgo = (DateTime.UtcNow - ch.UpdatedAt).Days == 0 ? "Updated today" : $"{ (DateTime.UtcNow - ch.UpdatedAt).Days }d ago";
+                            string badgeClass = ch.Status == "Completed" ? "cs-badge-completed" : (ch.Status == "InProgress" ? "cs-badge-inprogress" : "cs-badge-planned");
+
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-3 hover-bg-light">
+                                <div class="d-flex align-items-center gap-2 min-w-0">
+                                    <i data-lucide="check-circle-2" style="width: 16px; height: 16px; color: #0d9488;"></i>
+                                    <div class="min-w-0">
+                                        <a href="@Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = ch.Id })" class="fw-bold text-slate-800 text-decoration-none text-truncate d-block" style="font-size: 13px;">
+                                            @ch.Title
+                                        </a>
+                                        <div class="text-muted" style="font-size: 11px;">Chapter @ch.Order • @timeAgo</div>
+                                    </div>
+                                </div>
+                                <span class="cs-status-badge @badgeClass" style="font-size: 9.5px;">@ch.Status</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-muted small py-2 text-center">No recent chapters</div>
+                    }
+                </div>
+                <div class="text-center pt-2 border-top" style="border-color: #e2e8f0 !important;">
+                    <a href="@Url.Action("Index", "Chapters", new { storyId = story?.Id })" class="fw-bold text-decoration-none small" style="color: #0d9488;">
+                        View All Chapters →
+                    </a>
+                </div>
+            </div>
+
+            <!-- Widget 3: Quick Actions -->
+            <div class="cs-card p-3">
+                <h6 class="cs-widget-title mb-3">Quick Actions</h6>
+                <div class="d-flex flex-column gap-1.5">
+                    <form asp-action="Create" method="post" class="w-100">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="storyId" value="@story?.Id" />
-                        <button type="submit" class="btn text-white rounded-pill px-4 py-2" style="background: var(--peacock-gradient); border: none;">
-                            Add First Chapter
+                        <button type="submit" class="cs-quick-action-link w-100 border-0 bg-transparent text-start">
+                            <span class="d-flex align-items-center gap-2"><i data-lucide="plus" style="width: 15px; height: 15px;"></i> New Chapter</span>
+                            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
                         </button>
                     </form>
+                    <a href="javascript:void(0)" onclick="openNewPartModal()" class="cs-quick-action-link">
+                        <span class="d-flex align-items-center gap-2"><i data-lucide="folder-plus" style="width: 15px; height: 15px;"></i> New Part</span>
+                        <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                    </a>
+                    @if (currentlyWriting != null && story != null)
+                    {
+                        <a href="@Url.Action("Editor", "Chapters", new { storyId = story.Id, chapterId = currentlyWriting.Id })" class="cs-quick-action-link">
+                            <span class="d-flex align-items-center gap-2"><i data-lucide="pen-tool" style="width: 15px; height: 15px;"></i> Continue Writing</span>
+                            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                        </a>
+                    }
+                    <a href="javascript:void(0)" onclick="openImportModal()" class="cs-quick-action-link">
+                        <span class="d-flex align-items-center gap-2"><i data-lucide="upload" style="width: 15px; height: 15px;"></i> Chapter Import</span>
+                        <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                    </a>
                 </div>
-            }
+            </div>
+
+            <!-- Widget 4: Quick Filters Sidebar -->
+            <div class="cs-card p-3">
+                <h6 class="cs-widget-title mb-3">Quick Filters</h6>
+                <div class="d-flex flex-column gap-2 mb-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start rounded-3 d-flex align-items-center justify-content-between" style="font-size: 12px;" onclick="filterByStatus('Completed')">
+                        <span><i data-lucide="check-circle" class="me-1.5 text-success" style="width: 14px; height: 14px;"></i> Completed Only</span>
+                        <span class="badge bg-slate-200 text-slate-700">@completedCount</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start rounded-3 d-flex align-items-center justify-content-between" style="font-size: 12px;" onclick="filterByStatus('InProgress')">
+                        <span><i data-lucide="pen-tool" class="me-1.5 text-primary" style="width: 14px; height: 14px;"></i> In Progress Only</span>
+                        <span class="badge bg-slate-200 text-slate-700">@inProgressCount</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start rounded-3 d-flex align-items-center justify-content-between" style="font-size: 12px;" onclick="filterByStatus('Planned')">
+                        <span><i data-lucide="clock" class="me-1.5 text-warning" style="width: 14px; height: 14px;"></i> Planned Only</span>
+                        <span class="badge bg-slate-200 text-slate-700">@plannedCount</span>
+                    </button>
+                </div>
+                <button type="button" class="btn btn-link p-0 text-muted small text-decoration-none" style="font-size: 11px;" onclick="resetFilters()">
+                    ↺ Show All Chapters
+                </button>
+            </div>
+
+            <!-- Widget 5: Motivational Quote Card -->
+            <div class="cs-card cs-quote-card p-4 text-center">
+                <div class="d-flex align-items-center justify-content-center mx-auto mb-2 text-teal-600 rounded-circle" style="width: 40px; height: 40px; background-color: rgba(13, 148, 136, 0.1); color: #0d9488;">
+                    <i data-lucide="feather" style="width: 22px; height: 22px;"></i>
+                </div>
+                <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 14px;">Every great story begins with words.</h6>
+                <p class="text-muted mb-0" style="font-size: 12px;">You've got this!</p>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- DELETE MODALS FOR EACH CHAPTER (Rendered once at bottom) -->
+<!-- ========================================================================= -->
+@foreach (var ch in Model)
+{
+    <div class="modal fade" id="deleteChapterModal_@ch.Id" tabindex="-1" aria-labelledby="deleteChapterModalLabel_@ch.Id" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden position-relative p-4" style="background: linear-gradient(165deg, #FFFFFF 0%, #FAF6F0 60%, #F5EFE6 100%);">
+                <div class="position-absolute top-0 start-0 end-0" style="height: 4px; background: linear-gradient(90deg, #E11D48 0%, #D4AF37 50%, #13A8A6 100%);"></div>
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                
+                <div class="text-center pt-2">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(254, 226, 226, 0.65); border: 1px solid rgba(225, 29, 72, 0.2);">
+                        <i data-lucide="alert-triangle" style="width: 30px; height: 30px; color: #E11D48;"></i>
+                    </div>
+                    <h4 class="fw-bold font-serif text-slate-900 mb-2" style="font-family: 'Playfair Display', serif; font-size: 1.45rem;">Delete Chapter?</h4>
+                    <p class="text-secondary small mb-4" style="font-size: 0.9rem; line-height: 1.55;">
+                        Are you sure you want to delete <strong>"@ch.Title"</strong>? All written text and chapter data will be permanently removed.
+                    </p>
+                    
+                    <div class="d-flex flex-column gap-2">
+                        <form asp-action="Delete" method="post" class="w-100">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@ch.Id" />
+                            <button type="submit" class="btn text-white w-100 rounded-pill py-2.5 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%); border: none; font-size: 0.925rem;">
+                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                <span>Delete Chapter</span>
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-outline-secondary w-100 rounded-pill py-2.5 fw-bold" data-bs-dismiss="modal" style="font-size: 0.9rem; border-color: #E2E8F0;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- CREATE NEW PART MODAL -->
+<div class="modal fade" id="newPartModal" tabindex="-1" aria-labelledby="newPartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-slate-900 d-flex align-items-center gap-2" id="newPartModalLabel">
+                    <i data-lucide="folder-plus" class="text-teal-600" style="width: 20px; height: 20px;"></i>
+                    Create New Manuscript Part
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="CreatePart" asp-controller="Chapters" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="storyId" value="@story?.Id" />
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-slate-700 small">Part Title *</label>
+                        <input type="text" name="title" class="form-control rounded-3 border-slate-300" placeholder="e.g. PART II — The Revelation" required />
+                        <div class="form-text text-muted small">Parts help organize chapters into major acts, arcs, or books.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-3 fw-semibold px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-teal rounded-3 fw-bold px-4">Create Part</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- IMPORT MANUSCRIPT MODAL -->
+<div class="modal fade" id="importChapterModal" tabindex="-1" aria-labelledby="importChapterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-slate-900 d-flex align-items-center gap-2" id="importChapterModalLabel">
+                    <i data-lucide="upload" class="text-teal-600" style="width: 20px; height: 20px;"></i>
+                    Import Manuscript Chapters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="border border-2 border-dashed rounded-3 p-4 text-center bg-light mb-3">
+                    <i data-lucide="file-text" class="text-slate-400 mb-2" style="width: 40px; height: 40px;"></i>
+                    <h6 class="fw-bold text-slate-800 mb-1">Drag & Drop Manuscript File</h6>
+                    <p class="text-muted small mb-2" style="font-size: 11.5px;">Supports .docx, .txt, .md, .epub</p>
+                    <input type="file" id="importFileInput" class="d-none" accept=".txt,.docx,.md,.epub" />
+                    <button type="button" class="btn btn-outline-teal btn-sm rounded-pill px-3" onclick="document.getElementById('importFileInput').click()">
+                        Browse File
+                    </button>
+                </div>
+                <div class="alert alert-info py-2 px-3 mb-0 border-0 rounded-3" style="font-size: 11.5px; background-color: rgba(13, 148, 136, 0.08); color: #0f766e;">
+                    <i data-lucide="info" class="me-1" style="width: 14px; height: 14px;"></i> Imported text will be split into chapters automatically based on "Chapter" headings.
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light rounded-3 fw-semibold px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-teal rounded-3 fw-bold px-4" data-bs-dismiss="modal" onclick="alert('Import feature initialized. Ready for file processing!')">Import Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- STYLES -->
+<!-- ========================================================================= -->
 <style>
-    .hover-text-teal:hover {
-        color: var(--forest-green) !important;
+    .chapter-studio-page {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #0f172a;
+        width: 100%;
+        padding: 0;
+    }
+
+    .btn-teal {
+        background-color: #0d9488;
+        color: #ffffff;
+        border: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .btn-teal:hover {
+        background-color: #0f766e;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    }
+    .btn-teal-subtle {
+        background-color: rgba(13, 148, 136, 0.1);
+        color: #0d9488;
+        border: 1px solid rgba(13, 148, 136, 0.2);
+    }
+    .btn-teal-subtle:hover {
+        background-color: #0d9488;
+        color: #ffffff;
+    }
+    .btn-outline-teal {
+        border-color: #0d9488;
+        color: #0d9488;
+    }
+    .btn-outline-teal:hover {
+        background-color: #0d9488;
+        color: #ffffff;
+    }
+
+    .no-arrow::after,
+    .dropdown-toggle.no-arrow::after {
+        display: none !important;
+    }
+
+    /* Hero Cards */
+    .cs-hero-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 18px 20px;
+        min-height: 115px;
+        box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.03);
+        transition: all 0.25s ease;
+    }
+    .cs-hero-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px -4px rgba(0,0,0,0.06);
+    }
+    .cs-cover-box {
+        width: 54px;
+        height: 72px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+    }
+    .cs-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .cs-cover-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1E439B, #13A8A6);
+        color: white;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+    }
+    .cs-hero-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        text-transform: uppercase;
+        display: block;
+    }
+    .cs-hero-story-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 17px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .cs-hero-genre {
+        font-size: 12px;
+        color: #64748b;
+    }
+    .cs-hero-meta {
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+    }
+    .cs-hero-percent {
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .cs-progress-bar {
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .cs-progress-fill {
+        background: #0d9488;
+        border-radius: 10px;
+    }
+    .cs-hero-words {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .cs-hero-link {
+        font-size: 12px;
+        font-weight: 600;
+        color: #0d9488;
+        text-decoration: none;
+    }
+    .cs-writing-icon-box {
+        width: 36px;
+        height: 36px;
+        background: rgba(13, 148, 136, 0.1);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cs-writing-chapter-no {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .cs-writing-chapter-title {
+        font-size: 12px;
+        color: #64748b;
+    }
+    .cs-writing-words {
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    /* Stat Metric Cards Grid */
+    .cs-stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px 16px;
+        min-height: 102px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        transition: all 0.2s ease;
+    }
+    .cs-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        border-color: #cbd5e1;
+    }
+    .cs-stat-icon-box {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .cs-stat-title {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    .cs-stat-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+    .cs-stat-sub {
+        font-size: 10.5px;
+        color: #64748b;
+    }
+
+    /* Cards & Manuscript */
+    .cs-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.03);
+    }
+    .cs-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    
+    /* View Switcher Pills */
+    .cs-view-pills {
+        display: inline-flex;
+        background: #f1f5f9;
+        padding: 3px;
+        border-radius: 10px;
+        gap: 2px;
+    }
+    .cs-pill-btn {
+        font-size: 11.5px;
+        font-weight: 600;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        padding: 5px 12px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    .cs-pill-btn:hover {
+        color: #0f172a;
+        background: rgba(255, 255, 255, 0.5);
+    }
+    .cs-pill-btn.active {
+        background: #ffffff;
+        color: #0d9488;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Chapter View Containers */
+    .cs-view-container {
+        animation: fadeIn 0.25s ease-in-out;
+    }
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hover Elevation */
+    .hover-elevation:hover {
+        background-color: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06) !important;
+        border-color: #0d9488 !important;
+    }
+    .hover-teal:hover {
+        color: #0d9488 !important;
+    }
+
+    /* Line Clamp */
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Chapter row statuses */
+    .cs-status-badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 12px;
+    }
+    .cs-badge-completed {
+        background: #dcfce7;
+        color: #15803d;
+    }
+    .cs-badge-inprogress {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+    .cs-badge-outlining {
+        background: #f3e8ff;
+        color: #7e22ce;
+    }
+    .cs-badge-planned {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+    .cs-badge-onhold {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .cs-badge-archived {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    /* Indicator Dots */
+    .cs-status-indicator {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .cs-icon-completed { background: #10b981; }
+    .cs-icon-inprogress { background: #2563eb; }
+    .cs-icon-outlining { background: #9333ea; }
+    .cs-icon-planned { background: #f97316; }
+    .cs-icon-onhold { background: #94a3b8; }
+    .cs-icon-archived { background: #475569; }
+
+    .cs-widget-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .cs-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    .cs-quick-action-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-radius: 8px;
+        color: #334155;
+        font-size: 12.5px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background 0.15s;
+    }
+    .cs-quick-action-link:hover {
+        background: rgba(13, 148, 136, 0.08);
+        color: #0d9488;
+    }
+    .cs-quote-card {
+        background: linear-gradient(135deg, #f0fdfa, #f8fafc);
+        border: 1px solid #ccfbf1;
+    }
+    .border-dash {
+        border: 2px dashed #cbd5e1;
+    }
+    .cursor-grab {
+        cursor: grab;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    /* ========================================================================= */
+    /* RESPONSIVE MOBILE & TABLET ENHANCEMENTS FOR CHAPTER STUDIO DASHBOARD     */
+    /* ========================================================================= */
+
+    @@media (max-width: 991.98px) {
+        .chapter-studio-page h1 {
+            font-size: 1.5rem !important;
+        }
+
+        .cs-part-header {
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            padding: 12px 14px !important;
+        }
+
+        .cs-part-title-group {
+            flex: 1 1 100% !important;
+            min-width: 0 !important;
+        }
+
+        .cs-part-meta-group {
+            width: 100% !important;
+            justify-content: space-between !important;
+            padding-top: 6px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .cs-view-pills {
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+            max-width: 100% !important;
+            -webkit-overflow-scrolling: touch;
+            padding: 4px;
+        }
+
+        .cs-pill-btn {
+            padding: 4px 10px !important;
+            font-size: 11px !important;
+            flex-shrink: 0 !important;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .chapter-studio-page {
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+
+        .cs-part-chapters {
+            padding-left: 0 !important;
+        }
+
+        .cs-chapter-row {
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            padding: 10px 12px !important;
+        }
+
+        .cs-chapter-main-info {
+            flex: 1 1 100% !important;
+            min-width: 0 !important;
+        }
+
+        .cs-chapter-meta-info {
+            width: 100% !important;
+            justify-content: space-between !important;
+            padding-top: 6px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .cs-part-header {
+            border-radius: 12px !important;
+        }
+
+        .cs-stat-card {
+            padding: 10px 12px !important;
+            min-height: auto !important;
+        }
+
+        .cs-stat-value {
+            font-size: 16px !important;
+        }
+
+        .cs-hero-card {
+            padding: 14px !important;
+        }
+
+        .cs-hero-story-title {
+            font-size: 15px !important;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .cs-chapter-link {
+            max-width: 180px !important;
+        }
     }
 </style>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT: VIEW SWITCHING & INTERACTIVE FILTERING -->
+<!-- ========================================================================= -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Load saved view from localStorage or default to 'manuscript'
+        var savedView = localStorage.getItem('storyverse_chapter_view') || 'manuscript';
+        switchView(savedView);
+    });
+
+    function switchView(viewName) {
+        // Update active tab buttons
+        var buttons = document.querySelectorAll('#manuscriptViewPills .cs-pill-btn');
+        buttons.forEach(function (btn) {
+            if (btn.getAttribute('data-view') === viewName) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Hide all views
+        var manuscriptView = document.getElementById('csViewManuscript');
+        var gridView = document.getElementById('csViewGrid');
+        var listView = document.getElementById('csViewList');
+        var outlineView = document.getElementById('csViewOutline');
+
+        if (manuscriptView) manuscriptView.classList.add('d-none');
+        if (gridView) gridView.classList.add('d-none');
+        if (listView) listView.classList.add('d-none');
+        if (outlineView) outlineView.classList.add('d-none');
+
+        // Show selected view
+        if (viewName === 'manuscript' && manuscriptView) manuscriptView.classList.remove('d-none');
+        if (viewName === 'grid' && gridView) gridView.classList.remove('d-none');
+        if (viewName === 'list' && listView) listView.classList.remove('d-none');
+        if (viewName === 'outline' && outlineView) outlineView.classList.remove('d-none');
+
+        // Save preference
+        localStorage.setItem('storyverse_chapter_view', viewName);
+
+        // Re-initialize Lucide Icons if available
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+
+        // Apply filters to newly visible view
+        applyFilters();
+    }
+
+    function toggleFilterBar() {
+        var filterBar = document.getElementById('csFilterBar');
+        if (filterBar) {
+            filterBar.classList.toggle('d-none');
+        }
+    }
+
+    function applyFilters() {
+        var searchVal = (document.getElementById('csSearchInput')?.value || '').toLowerCase().trim();
+        var partVal = document.getElementById('csFilterPartSelect')?.value || 'ALL';
+        var statusVal = document.getElementById('csFilterStatusSelect')?.value || 'ALL';
+
+        var chapterItems = document.querySelectorAll('.cs-chapter-item');
+        var totalVisible = 0;
+
+        chapterItems.forEach(function (item) {
+            var title = item.getAttribute('data-title') || '';
+            var summary = item.getAttribute('data-summary') || '';
+            var pov = item.getAttribute('data-pov') || '';
+            var partId = item.getAttribute('data-part-id') || '';
+            var status = item.getAttribute('data-status') || '';
+
+            var matchesSearch = !searchVal || title.includes(searchVal) || summary.includes(searchVal) || pov.includes(searchVal);
+            var matchesPart = partVal === 'ALL' || partId === partVal;
+            var matchesStatus = statusVal === 'ALL' || status === statusVal;
+
+            if (matchesSearch && matchesPart && matchesStatus) {
+                item.classList.remove('d-none');
+                totalVisible++;
+            } else {
+                item.classList.add('d-none');
+            }
+        });
+
+        // Hide empty part headers in manuscript & outline view if all chapters inside are hidden
+        var partBlocks = document.querySelectorAll('.cs-part-block, .cs-outline-part');
+        partBlocks.forEach(function (block) {
+            var visibleChildren = block.querySelectorAll('.cs-chapter-item:not(.d-none)');
+            if (visibleChildren.length === 0 && (searchVal || partVal !== 'ALL' || statusVal !== 'ALL')) {
+                block.classList.add('d-none');
+            } else {
+                block.classList.remove('d-none');
+            }
+        });
+
+        // Toggle Empty State UI
+        var emptyState = document.getElementById('csEmptySearchState');
+        if (emptyState) {
+            if (totalVisible === 0 && chapterItems.length > 0) {
+                emptyState.classList.remove('d-none');
+            } else {
+                emptyState.classList.add('d-none');
+            }
+        }
+    }
+
+    function resetFilters() {
+        var searchInput = document.getElementById('csSearchInput');
+        var partSelect = document.getElementById('csFilterPartSelect');
+        var statusSelect = document.getElementById('csFilterStatusSelect');
+
+        if (searchInput) searchInput.value = '';
+        if (partSelect) partSelect.value = 'ALL';
+        if (statusSelect) statusSelect.value = 'ALL';
+
+        applyFilters();
+    }
+
+    function filterByStatus(statusName) {
+        var statusSelect = document.getElementById('csFilterStatusSelect');
+        if (statusSelect) {
+            statusSelect.value = statusName;
+            applyFilters();
+        }
+    }
+
+    function toggleAllOutline(expand) {
+        var collapses = document.querySelectorAll('#csViewOutline .collapse');
+        collapses.forEach(function (el) {
+            if (window.bootstrap) {
+                var bsCollapse = bootstrap.Collapse.getInstance(el) || new bootstrap.Collapse(el, { toggle: false });
+                if (expand) bsCollapse.show();
+                else bsCollapse.hide();
+            }
+        });
+    }
+
+    function openNewPartModal() {
+        var modalEl = document.getElementById('newPartModal');
+        if (modalEl && window.bootstrap) {
+            var modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    }
+
+    function openImportModal() {
+        var modalEl = document.getElementById('importChapterModal');
+        if (modalEl && window.bootstrap) {
+            var modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    }
+
+    function openNewChapterForPart(partId, storyId) {
+        var sid = storyId || '@story?.Id';
+        if (!sid) return;
+        
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '@Url.Action("Create", "Chapters")';
+        
+        var csrfToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (csrfToken) {
+            var tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = '__RequestVerificationToken';
+            tokenInput.value = csrfToken;
+            form.appendChild(tokenInput);
+        }
+        
+        var storyInput = document.createElement('input');
+        storyInput.type = 'hidden';
+        storyInput.name = 'storyId';
+        storyInput.value = sid;
+        form.appendChild(storyInput);
+        
+        if (partId) {
+            var partInput = document.createElement('input');
+            partInput.type = 'hidden';
+            partInput.name = 'partId';
+            partInput.value = partId;
+            form.appendChild(partInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>

@@ -1,0 +1,828 @@
+@using StoryVerse.Core.Entities
+@{
+    ViewData["Title"] = "Create New Chapter - StoryVerse";
+    var userStories = ViewBag.Stories as List<Story> ?? new List<Story>();
+    var selectedStory = ViewBag.Story as Story;
+    var storyParts = ViewBag.StoryParts as List<StoryPart> ?? new List<StoryPart>();
+    int nextChapterNumber = ViewBag.NextChapterNumber ?? 1;
+
+    string genresString = "";
+    if (selectedStory != null)
+    {
+        if (selectedStory.StoryGenres != null && selectedStory.StoryGenres.Any())
+        {
+            genresString = string.Join(" • ", selectedStory.StoryGenres.Select(g => g.Genre?.Name).Where(n => !string.IsNullOrEmpty(n)));
+        }
+#pragma warning disable CS0618
+        else if (!string.IsNullOrEmpty(selectedStory.Genre))
+        {
+            genresString = selectedStory.Genre;
+        }
+#pragma warning restore CS0618
+    }
+}
+
+<style>
+    .create-chapter-page {
+        padding-bottom: 3rem;
+    }
+
+    /* Stepper Styling */
+    .chapter-stepper-wrapper {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .stepper-list {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        position: relative;
+    }
+    .stepper-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        position: relative;
+        z-index: 1;
+        background: white;
+        padding: 4px 6px;
+        border-radius: 20px;
+        transition: all 0.2s ease;
+    }
+    .stepper-item:hover {
+        background: #f8fafc;
+    }
+    .stepper-circle {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        border: 1px solid #cbd5e1;
+    }
+    .stepper-item.active .stepper-circle {
+        background: #0d9488;
+        color: #ffffff;
+        border-color: #0d9488;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+    }
+    .stepper-item.completed .stepper-circle {
+        background: #0f766e;
+        color: #ffffff;
+        border-color: #0f766e;
+    }
+    .stepper-label {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #64748b;
+        white-space: nowrap;
+    }
+    .stepper-item.active .stepper-label {
+        color: #0f172a;
+        font-weight: 700;
+    }
+    .stepper-divider {
+        flex: 1;
+        height: 2px;
+        background: #e2e8f0;
+        margin: 0 8px;
+    }
+
+    /* Main Form Card */
+    .step-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 28px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        position: relative;
+    }
+    .step-badge {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+    .step-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+    .step-subtitle {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-bottom: 24px;
+    }
+
+    /* Custom Input Control Styling */
+    .sv-input-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+    .sv-input-label span.req {
+        color: #ef4444;
+    }
+    .sv-control {
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #0f172a;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        background-color: #ffffff;
+    }
+    .sv-control:focus {
+        border-color: #0d9488;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+        outline: none;
+    }
+    .sv-hint {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 6px;
+    }
+
+    /* Live Preview Card */
+    .preview-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+    }
+    .preview-header {
+        background: #091e3a; /* Deep Navy */
+        color: #ffffff;
+        padding: 24px;
+        position: relative;
+    }
+    .preview-chapter-no {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 4px;
+    }
+    .preview-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0;
+    }
+    .preview-status-tag {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: #fbbf24;
+        color: #78350f;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .preview-body {
+        padding: 20px 24px;
+    }
+    .preview-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .preview-item:last-child {
+        margin-bottom: 0;
+    }
+    .preview-icon {
+        color: #64748b;
+        width: 16px;
+        height: 16px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    .preview-item-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        margin-bottom: 2px;
+    }
+    .preview-item-val {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    /* What's Next Box */
+    .whats-next-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    .whats-next-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+    .whats-next-sub {
+        font-size: 12.5px;
+        color: #64748b;
+        margin-bottom: 14px;
+    }
+    .checklist-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #0d9488;
+        margin-bottom: 8px;
+    }
+    .quill-illustration {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 90px;
+        opacity: 0.85;
+        pointer-events: none;
+    }
+
+    .btn-teal-primary {
+        background-color: #0d9488;
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 22px;
+        font-weight: 700;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    .btn-teal-primary:hover {
+        background-color: #0f766e;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    }
+</style>
+
+<div class="create-chapter-page">
+    <!-- Top Header / Navigation -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <a href="@Url.Action("Index", "Chapters", new { storyId = selectedStory?.Id })" class="text-decoration-none text-secondary small fw-semibold d-inline-flex align-items-center gap-1 mb-2 hover-teal">
+                <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+                <span>Back to Chapters</span>
+            </a>
+            <h1 class="fw-bold mb-1 text-slate-900 d-flex align-items-center gap-2" style="font-size: 1.85rem; font-family: 'Playfair Display', serif;">
+                Create New Chapter
+                <span style="font-size: 1.5rem;">✍️</span>
+            </h1>
+            <p class="text-secondary mb-0" style="font-size: 0.925rem;">Build your chapter step by step. You can save as draft and continue anytime.</p>
+        </div>
+    </div>
+
+    <!-- 8-Step Progress Stepper -->
+    <div class="chapter-stepper-wrapper">
+        <ul class="stepper-list">
+            <li class="stepper-item active" id="stepIndicator-1" onclick="goToStep(1)">
+                <div class="stepper-circle">1</div>
+                <span class="stepper-label">Basic Info</span>
+            </li>
+            <div class="stepper-divider"></div>
+            <li class="stepper-item" id="stepIndicator-2" onclick="goToStep(2)">
+                <div class="stepper-circle">2</div>
+                <span class="stepper-label">Planning</span>
+            </li>
+            <div class="stepper-divider"></div>
+            <li class="stepper-item" id="stepIndicator-3" onclick="goToStep(3)">
+                <div class="stepper-circle">3</div>
+                <span class="stepper-label">Characters</span>
+            </li>
+            <div class="stepper-divider"></div>
+            <li class="stepper-item" id="stepIndicator-4" onclick="goToStep(4)">
+                <div class="stepper-circle">4</div>
+                <span class="stepper-label">World</span>
+            </li>
+            <div class="stepper-divider"></div>
+            <li class="stepper-item" id="stepIndicator-5" onclick="goToStep(5)">
+                <div class="stepper-circle">5</div>
+                <span class="stepper-label">Timeline</span>
+            </li>
+            <div class="stepper-divider"></div>
+            <li class="stepper-item" id="stepIndicator-6" onclick="goToStep(6)">
+                <div class="stepper-circle">6</div>
+                <span class="stepper-label">POV & Narrative</span>
+            </li>
+            <div class="stepper-divider"></div>
+            <li class="stepper-item" id="stepIndicator-7" onclick="goToStep(7)">
+                <div class="stepper-circle">7</div>
+                <span class="stepper-label">Goals & Conflict</span>
+            </li>
+            <div class="stepper-divider"></div>
+            <li class="stepper-item" id="stepIndicator-8" onclick="goToStep(8)">
+                <div class="stepper-circle">8</div>
+                <span class="stepper-label">Review</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN: Step Content Form -->
+        <div class="col-12 col-lg-8">
+            <div class="step-card">
+                <!-- STEP 1: Basic Info -->
+                <div id="stepForm-1" class="step-pane">
+                    <div class="step-badge">Step 1 of 8</div>
+                    <h2 class="step-title">Basic Information</h2>
+                    <p class="step-subtitle">Start with the basic information about your chapter.</p>
+
+                    <form id="createChapterForm" onsubmit="event.preventDefault(); handleStepSubmit(1);">
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label class="sv-input-label">Story <span class="req">*</span></label>
+                                <select id="inputStoryId" class="form-select sv-control" required onchange="updateLivePreview()">
+                                    @foreach (var s in userStories)
+                                    {
+                                        <option value="@s.Id" selected="@(s.Id == selectedStory?.Id ? "selected" : null)">
+                                            @s.Title
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="sv-input-label">Part (Optional)</label>
+                                <select id="inputPartId" class="form-select sv-control" onchange="updateLivePreview()">
+                                    <option value="">Select a part (optional)</option>
+                                    @foreach (var p in storyParts)
+                                    {
+                                        <option value="@p.Id">@p.Title</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label class="sv-input-label">Chapter Number <span class="req">*</span></label>
+                                <input type="number" id="inputOrder" class="form-control sv-control" value="@nextChapterNumber" required min="1" oninput="updateLivePreview()" />
+                                <div class="sv-hint">Chapter number within the story.</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="sv-input-label">Chapter Title <span class="req">*</span></label>
+                                <input type="text" id="inputTitle" class="form-control sv-control" value="The Secret" placeholder="Give your chapter a working title." required oninput="updateLivePreview()" />
+                                <div class="sv-hint">Give your chapter a working title.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="sv-input-label">Short Description</label>
+                            <textarea id="inputSummary" class="form-control sv-control" rows="4" placeholder="A brief description of what this chapter is about." oninput="updateLivePreview()">Riya discovers a hidden truth that changes everything.</textarea>
+                            <div class="sv-hint">A brief description of what this chapter is about.</div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-md-6">
+                                <label class="sv-input-label">Status <span class="req">*</span></label>
+                                <select id="inputStatus" class="form-select sv-control" required onchange="updateLivePreview()">
+                                    <option value="Planned" selected>● Planned</option>
+                                    <option value="Outlining">● Outlining</option>
+                                    <option value="InProgress">● In Progress</option>
+                                    <option value="Completed">● Completed</option>
+                                    <option value="OnHold">● On Hold</option>
+                                </select>
+                                <div class="sv-hint">Current status of this chapter.</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="sv-input-label">Target Word Count (Optional)</label>
+                                <input type="text" id="inputTargetWords" class="form-control sv-control" value="3,000" placeholder="3,000" oninput="updateLivePreview()" />
+                                <div class="sv-hint">Set a target word count for this chapter.</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end align-items-center">
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-teal-primary d-inline-flex align-items-center gap-2">
+                                    <span>Save & Continue</span>
+                                    <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                                </button>
+                                <div class="sv-hint mt-1 text-secondary" style="font-size: 11.5px;">Press <strong>Ctrl + S</strong> to save draft</div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- STEP 2: Planning -->
+                <div id="stepForm-2" class="step-pane d-none">
+                    <div class="step-badge">Step 2 of 8</div>
+                    <h2 class="step-title">Planning & Purpose</h2>
+                    <p class="step-subtitle">Define the chapter purpose, goals, and key scene outline.</p>
+
+                    <div class="mb-3">
+                        <label class="sv-input-label">Chapter Purpose</label>
+                        <textarea id="inputPurpose" class="form-control sv-control" rows="3" placeholder="Why does this chapter exist in the story arc?"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="sv-input-label">Chapter Goal</label>
+                        <textarea id="inputGoal" class="form-control sv-control" rows="3" placeholder="What must be accomplished by the protagonist by the end of this chapter?"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="sv-input-label">Key Events Outline</label>
+                        <textarea id="inputKeyEvents" class="form-control sv-control" rows="4" placeholder="1. Arjun meets Riya at the cafe&#10;2. A mysterious file is handed over&#10;3. Discovery of the key revelation"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button class="btn btn-light border rounded-3 px-3 py-2 fw-semibold" onclick="goToStep(1)">← Back</button>
+                        <button class="btn btn-teal-primary d-inline-flex align-items-center gap-2" onclick="handleStepSubmit(2)">
+                            <span>Save & Continue</span>
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3 to 7 Placeholders -->
+                <div id="stepForm-3" class="step-pane d-none">
+                    <div class="step-badge">Step 3 of 8</div>
+                    <h2 class="step-title">Characters</h2>
+                    <p class="step-subtitle">Select characters present or mentioned in this chapter.</p>
+                    <p class="text-secondary small">You can also link and create characters directly inside the Chapter Editor writing workspace.</p>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <button class="btn btn-light border rounded-3 px-3 py-2 fw-semibold" onclick="goToStep(2)">← Back</button>
+                        <button class="btn btn-teal-primary d-inline-flex align-items-center gap-2" onclick="handleStepSubmit(3)">
+                            <span>Save & Continue</span>
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="stepForm-4" class="step-pane d-none">
+                    <div class="step-badge">Step 4 of 8</div>
+                    <h2 class="step-title">World & Setting</h2>
+                    <p class="step-subtitle">Specify primary location or world entity setting.</p>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <button class="btn btn-light border rounded-3 px-3 py-2 fw-semibold" onclick="goToStep(3)">← Back</button>
+                        <button class="btn btn-teal-primary d-inline-flex align-items-center gap-2" onclick="handleStepSubmit(4)">
+                            <span>Save & Continue</span>
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="stepForm-5" class="step-pane d-none">
+                    <div class="step-badge">Step 5 of 8</div>
+                    <h2 class="step-title">Timeline</h2>
+                    <p class="step-subtitle">Associate timeline events with this chapter.</p>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <button class="btn btn-light border rounded-3 px-3 py-2 fw-semibold" onclick="goToStep(4)">← Back</button>
+                        <button class="btn btn-teal-primary d-inline-flex align-items-center gap-2" onclick="handleStepSubmit(5)">
+                            <span>Save & Continue</span>
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="stepForm-6" class="step-pane d-none">
+                    <div class="step-badge">Step 6 of 8</div>
+                    <h2 class="step-title">POV & Narrative</h2>
+                    <p class="step-subtitle">Define Point of View character and narrative tone.</p>
+                    <div class="mb-3">
+                        <label class="sv-input-label">Point of View (POV)</label>
+                        <input type="text" id="inputPOV" class="form-control sv-control" placeholder="e.g. Arjun (First Person) / Third Person Limited" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="sv-input-label">Emotional Tone</label>
+                        <input type="text" id="inputTone" class="form-control sv-control" placeholder="e.g. Suspenseful, Tense, Emotional" />
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <button class="btn btn-light border rounded-3 px-3 py-2 fw-semibold" onclick="goToStep(5)">← Back</button>
+                        <button class="btn btn-teal-primary d-inline-flex align-items-center gap-2" onclick="handleStepSubmit(6)">
+                            <span>Save & Continue</span>
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="stepForm-7" class="step-pane d-none">
+                    <div class="step-badge">Step 7 of 8</div>
+                    <h2 class="step-title">Goals & Conflict</h2>
+                    <p class="step-subtitle">Review scene stakes and obstacles.</p>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <button class="btn btn-light border rounded-3 px-3 py-2 fw-semibold" onclick="goToStep(6)">← Back</button>
+                        <button class="btn btn-teal-primary d-inline-flex align-items-center gap-2" onclick="handleStepSubmit(7)">
+                            <span>Save & Continue</span>
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="stepForm-8" class="step-pane d-none">
+                    <div class="step-badge">Step 8 of 8</div>
+                    <h2 class="step-title">Review & Launch Editor</h2>
+                    <p class="step-subtitle">Your chapter structure is ready! Save and start drafting in the Chapter Editor.</p>
+
+                    <div class="alert alert-success border-success-subtle bg-teal-50 p-3 rounded-3 mb-4">
+                        <div class="d-flex align-items-center gap-2 text-teal-800 fw-bold">
+                            <i data-lucide="check-circle-2" style="width: 20px; height: 20px;"></i>
+                            <span>Chapter outline successfully saved as draft to database.</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <button class="btn btn-light border rounded-3 px-3 py-2 fw-semibold" onclick="goToStep(7)">← Back</button>
+                        <button class="btn btn-teal-primary btn-lg d-inline-flex align-items-center gap-2" onclick="launchEditor()">
+                            <span>Open Chapter Editor</span>
+                            <i data-lucide="pen-tool" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Footer Action Bar -->
+                <div class="pt-4 mt-4 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <a href="@Url.Action("Index", "Chapters", new { storyId = selectedStory?.Id })" class="btn btn-light border rounded-3 px-3 py-2 fw-semibold text-secondary">
+                        Cancel
+                    </a>
+
+                    <div class="d-flex align-items-center gap-2 text-teal-700 fw-semibold" style="font-size: 13px;" id="autoSaveIndicator">
+                        <i data-lucide="check-circle-2" style="width: 16px; height: 16px; color: #0d9488;"></i>
+                        <span id="autoSaveText">All changes are automatically saved as draft</span>
+                    </div>
+
+                    <button type="button" class="btn btn-white border rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="saveDraftOnly()">
+                        <i data-lucide="bookmark" style="width: 15px; height: 15px; color: #0d9488;"></i>
+                        <span>Save as Draft</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Live Preview & What's Next -->
+        <div class="col-12 col-lg-4">
+            <!-- Card 1: Live Preview Card -->
+            <div class="preview-card">
+                <div class="preview-header">
+                    <div class="preview-status-tag" id="previewStatusBadge">
+                        <span id="previewStatusDot">●</span>
+                        <span id="previewStatusText">Planned</span>
+                    </div>
+                    <div class="preview-chapter-no" id="previewChapterNo">CHAPTER 5</div>
+                    <h3 class="preview-title" id="previewChapterTitle">The Secret</h3>
+                </div>
+
+                <div class="preview-body">
+                    <div class="preview-item">
+                        <i data-lucide="book-open" class="preview-icon"></i>
+                        <div>
+                            <div class="preview-item-label">Story</div>
+                            <div class="preview-item-val" id="previewStoryTitle">@(selectedStory?.Title ?? "Revenge for Love")</div>
+                        </div>
+                    </div>
+
+                    <div class="preview-item">
+                        <i data-lucide="folder" class="preview-icon"></i>
+                        <div>
+                            <div class="preview-item-label">Part</div>
+                            <div class="preview-item-val text-muted" id="previewPartTitle">Not assigned</div>
+                        </div>
+                    </div>
+
+                    <div class="preview-item">
+                        <i data-lucide="hash" class="preview-icon"></i>
+                        <div>
+                            <div class="preview-item-label">Chapter Number</div>
+                            <div class="preview-item-val" id="previewOrderVal">5</div>
+                        </div>
+                    </div>
+
+                    <div class="preview-item">
+                        <i data-lucide="file-text" class="preview-icon"></i>
+                        <div>
+                            <div class="preview-item-label">Short Description</div>
+                            <div class="preview-item-val text-secondary fw-normal" style="font-size: 13px;" id="previewSummary">
+                                Riya discovers a hidden truth that changes everything.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="preview-item">
+                        <i data-lucide="target" class="preview-icon"></i>
+                        <div>
+                            <div class="preview-item-label">Target Word Count</div>
+                            <div class="preview-item-val" id="previewTargetWords">3,000 words</div>
+                        </div>
+                    </div>
+
+                    <div class="preview-item">
+                        <i data-lucide="circle-dot" class="preview-icon"></i>
+                        <div>
+                            <div class="preview-item-label">Status</div>
+                            <div class="preview-item-val text-amber-600" id="previewStatusVal">Planned</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: What's Next Card -->
+            <div class="whats-next-card">
+                <div class="whats-next-title">What's Next?</div>
+                <div class="whats-next-sub">In the next step, you'll define the purpose, goals, and key events of this chapter.</div>
+
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        <span>Chapter Purpose</span>
+                    </div>
+                    <div class="checklist-item">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        <span>Chapter Goal</span>
+                    </div>
+                    <div class="checklist-item">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        <span>Summary</span>
+                    </div>
+                    <div class="checklist-item">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        <span>Key Events</span>
+                    </div>
+                    <div class="checklist-item">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        <span>Emotional Tone</span>
+                    </div>
+                </div>
+
+                <!-- Feather / Quill Graphic -->
+                <svg class="quill-illustration" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M70 10C50 30 40 60 20 80" stroke="#0d9488" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M20 80L10 90L25 85L20 80Z" fill="#d97706"/>
+                    <path d="M70 10C75 15 80 25 75 35C70 45 55 55 45 60" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="3 3"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        let currentChapterId = null;
+        let currentStep = 1;
+
+        function updateLivePreview() {
+            const storySelect = document.getElementById('inputStoryId');
+            const storyTitle = storySelect.options[storySelect.selectedIndex]?.text || "Current Story";
+            
+            const partSelect = document.getElementById('inputPartId');
+            const partTitle = partSelect.options[partSelect.selectedIndex]?.value ? partSelect.options[partSelect.selectedIndex].text : "Not assigned";
+
+            const order = document.getElementById('inputOrder').value || "1";
+            const title = document.getElementById('inputTitle').value || "Untitled Chapter";
+            const summary = document.getElementById('inputSummary').value || "No description provided.";
+            const status = document.getElementById('inputStatus').value || "Planned";
+            const targetWords = document.getElementById('inputTargetWords').value || "3,000";
+
+            document.getElementById('previewChapterNo').innerText = `CHAPTER ${order}`;
+            document.getElementById('previewChapterTitle').innerText = title;
+            document.getElementById('previewStoryTitle').innerText = storyTitle;
+            document.getElementById('previewPartTitle').innerText = partTitle;
+            document.getElementById('previewOrderVal').innerText = order;
+            document.getElementById('previewSummary').innerText = summary;
+            document.getElementById('previewTargetWords').innerText = targetWords.includes('words') ? targetWords : `${targetWords} words`;
+            document.getElementById('previewStatusText').innerText = status;
+            document.getElementById('previewStatusVal').innerText = status;
+        }
+
+        function goToStep(stepNo) {
+            currentStep = stepNo;
+
+            // Update stepper active state
+            document.querySelectorAll('.stepper-item').forEach((item, index) => {
+                const i = index + 1;
+                item.classList.remove('active', 'completed');
+                if (i === stepNo) {
+                    item.classList.add('active');
+                } else if (i < stepNo) {
+                    item.classList.add('completed');
+                }
+            });
+
+            // Toggle form panes
+            document.querySelectorAll('.step-pane').forEach(pane => pane.classList.add('d-none'));
+            const activePane = document.getElementById(`stepForm-${stepNo}`);
+            if (activePane) activePane.classList.remove('d-none');
+        }
+
+        async function handleStepSubmit(stepNo) {
+            await saveWizardDraft();
+            if (stepNo < 8) {
+                goToStep(stepNo + 1);
+            } else {
+                launchEditor();
+            }
+        }
+
+        async function saveWizardDraft() {
+            const autoSaveText = document.getElementById('autoSaveText');
+            if (autoSaveText) autoSaveText.innerText = "Saving draft...";
+
+            const storyId = document.getElementById('inputStoryId').value;
+            const partId = document.getElementById('inputPartId').value || null;
+            const order = parseInt(document.getElementById('inputOrder').value) || 1;
+            const title = document.getElementById('inputTitle').value;
+            const summary = document.getElementById('inputSummary').value;
+            const status = document.getElementById('inputStatus').value;
+            const targetWordsClean = document.getElementById('inputTargetWords').value.replace(/[^0-9]/g, '');
+            const targetWords = parseInt(targetWordsClean) || 3000;
+
+            const purpose = document.getElementById('inputPurpose')?.value || "";
+            const goal = document.getElementById('inputGoal')?.value || "";
+            const keyEvents = document.getElementById('inputKeyEvents')?.value || "";
+            const pov = document.getElementById('inputPOV')?.value || "";
+            const tone = document.getElementById('inputTone')?.value || "";
+
+            const payload = {
+                chapterId: currentChapterId,
+                storyId: storyId,
+                partId: partId,
+                order: order,
+                title: title,
+                summary: summary,
+                status: status,
+                targetWordCount: targetWords,
+                purpose: purpose,
+                goal: goal,
+                keyEvents: keyEvents,
+                pointOfView: pov,
+                emotionalTone: tone
+            };
+
+            try {
+                const resp = await fetch('/Chapters/SaveWizardStep', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    currentChapterId = data.chapterId;
+                    if (autoSaveText) autoSaveText.innerText = `Saved as draft (${data.savedAt})`;
+                }
+            } catch (err) {
+                console.error("Failed saving wizard step:", err);
+                if (autoSaveText) autoSaveText.innerText = "Saved locally";
+            }
+        }
+
+        async function saveDraftOnly() {
+            await saveWizardDraft();
+            const storyId = document.getElementById('inputStoryId').value;
+            window.location.href = `/Chapters?storyId=${storyId}`;
+        }
+
+        async function launchEditor() {
+            if (!currentChapterId) {
+                await saveWizardDraft();
+            }
+            const storyId = document.getElementById('inputStoryId').value;
+            if (currentChapterId) {
+                window.location.href = `/Chapters/Editor?storyId=${storyId}&chapterId=${currentChapterId}`;
+            }
+        }
+
+        // Ctrl + S shortcut listener
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveWizardDraft();
+            }
+        });
+
+        // Initialize live preview on load
+        updateLivePreview();
+    </script>
+}

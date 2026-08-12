@@ -25,6 +25,8 @@ public static class DbSeeder
 
     public static async Task SeedDataAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
+        await EnsureDatabaseSchemaAsync(context);
+
         var authorEmail = "author@storyverse.com";
         var user = await userManager.FindByEmailAsync(authorEmail);
         
@@ -46,151 +48,8 @@ public static class DbSeeder
             }
         }
 
-        if (user != null)
-        {
-            // Check if user has any stories
-            var existingStories = await context.Stories.Where(s => s.UserId == user.Id).ToListAsync();
-            if (!existingStories.Any())
-            {
-                var story1 = new Story
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    Title = "The Shadows of Arcanis",
-                    Genre = "Fantasy • Adventure",
-                    CoverImageUrl = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&auto=format&fit=crop&q=80",
-                    Status = "InProgress",
-                    CreatedAt = DateTime.UtcNow.AddDays(-30),
-                    UpdatedAt = DateTime.UtcNow.AddHours(-2)
-                };
-
-                var story2 = new Story
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    Title = "Whispers of the Heart",
-                    Genre = "Romance • Drama",
-                    CoverImageUrl = "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=300&auto=format&fit=crop&q=80",
-                    Status = "Draft",
-                    CreatedAt = DateTime.UtcNow.AddDays(-20),
-                    UpdatedAt = DateTime.UtcNow.AddDays(-5)
-                };
-
-                var story3 = new Story
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    Title = "Echoes of Yesterday",
-                    Genre = "Historical • Fiction",
-                    CoverImageUrl = "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=300&auto=format&fit=crop&q=80",
-                    Status = "Draft",
-                    CreatedAt = DateTime.UtcNow.AddDays(-15),
-                    UpdatedAt = DateTime.UtcNow.AddDays(-7)
-                };
-
-                var story4 = new Story
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    Title = "Beyond the Horizon",
-                    Genre = "Sci-Fi • Thriller",
-                    CoverImageUrl = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&auto=format&fit=crop&q=80",
-                    Status = "Draft",
-                    CreatedAt = DateTime.UtcNow.AddDays(-10),
-                    UpdatedAt = DateTime.UtcNow.AddDays(-7)
-                };
-
-                context.Stories.AddRange(story1, story2, story3, story4);
-
-                var char1 = new Character
-                {
-                    Id = Guid.NewGuid(),
-                    StoryId = story1.Id,
-                    Name = "Alaric Vayne",
-                    Role = "Protagonist",
-                    ArcType = "Main",
-                    Status = "Active",
-                    OneLineDescription = "A loyal warrior torn between duty and destiny.",
-                    AvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-                    CreatedAt = DateTime.UtcNow.AddDays(-25),
-                    UpdatedAt = DateTime.UtcNow.AddHours(-2)
-                };
-
-                var char2 = new Character
-                {
-                    Id = Guid.NewGuid(),
-                    StoryId = story1.Id,
-                    Name = "Seraphina Lorne",
-                    Role = "Mentor",
-                    ArcType = "Supporting",
-                    Status = "Active",
-                    OneLineDescription = "A wise mentor with a mysterious past.",
-                    AvatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-                    CreatedAt = DateTime.UtcNow.AddDays(-20),
-                    UpdatedAt = DateTime.UtcNow.AddDays(-1)
-                };
-
-                var char3 = new Character
-                {
-                    Id = Guid.NewGuid(),
-                    StoryId = story1.Id,
-                    Name = "Kael Draven",
-                    Role = "Antagonist",
-                    ArcType = "Main",
-                    Status = "Active",
-                    OneLineDescription = "A rival with ambition and a hidden agenda.",
-                    AvatarUrl = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-                    CreatedAt = DateTime.UtcNow.AddDays(-15),
-                    UpdatedAt = DateTime.UtcNow.AddDays(-3)
-                };
-
-                var char4 = new Character
-                {
-                    Id = Guid.NewGuid(),
-                    StoryId = story2.Id,
-                    Name = "Elara Moonwhisper",
-                    Role = "Supporter",
-                    ArcType = "Supporting",
-                    Status = "Active",
-                    OneLineDescription = "A healer with a deep connection to nature.",
-                    AvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-                    CreatedAt = DateTime.UtcNow.AddDays(-10),
-                    UpdatedAt = DateTime.UtcNow.AddDays(-5)
-                };
-
-                var char5 = new Character
-                {
-                    Id = Guid.NewGuid(),
-                    StoryId = story3.Id,
-                    Name = "Lord Marshall Eldric",
-                    Role = "Authority",
-                    ArcType = "Minor",
-                    Status = "Draft",
-                    OneLineDescription = "The ruling lord of Eldoria.",
-                    AvatarUrl = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
-                    CreatedAt = DateTime.UtcNow.AddDays(-7),
-                    UpdatedAt = DateTime.UtcNow.AddDays(-7)
-                };
-
-                var char6 = new Character
-                {
-                    Id = Guid.NewGuid(),
-                    StoryId = story4.Id,
-                    Name = "Lira Dashwood",
-                    Role = "Supporting",
-                    ArcType = "Supporting",
-                    Status = "Draft",
-                    OneLineDescription = "The younger sister with big dreams.",
-                    AvatarUrl = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-                    CreatedAt = DateTime.UtcNow.AddDays(-7),
-                    UpdatedAt = DateTime.UtcNow.AddDays(-7)
-                };
-
-                context.Characters.AddRange(char1, char2, char3, char4, char5, char6);
-                await context.SaveChangesAsync();
-            }
-        }
-
+        // Seed language options if missing
+        await SeedLanguageOptionsAsync(context);
         await SeedWorldBuildingDefaultsAsync(context);
     }
 
@@ -517,5 +376,441 @@ public static class DbSeeder
             context.WorldTemplates.AddRange(templates);
             await context.SaveChangesAsync();
         }
+    }
+
+    private static bool _isSchemaEnsured = false;
+
+    public static async Task EnsureDatabaseSchemaAsync(ApplicationDbContext context)
+    {
+        if (_isSchemaEnsured) return;
+        try
+        {
+            context.Database.SetCommandTimeout(120);
+            await context.Database.ExecuteSqlRawAsync(@"
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'StoryType')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD StoryType NVARCHAR(100) NOT NULL DEFAULT 'Novel'; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'Tagline')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD Tagline NVARCHAR(500) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'Synopsis')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD Synopsis NVARCHAR(MAX) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'PointOfView')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD PointOfView NVARCHAR(100) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'TimePeriod')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD TimePeriod NVARCHAR(100) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'Language')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD Language NVARCHAR(100) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'TargetAudience')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD TargetAudience NVARCHAR(100) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'Themes')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD Themes NVARCHAR(500) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'Tone')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD Tone NVARCHAR(200) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'HeroBannerImageUrl')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD HeroBannerImageUrl NVARCHAR(500) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebStories') AND name = 'IsBookmarked')
+                BEGIN ALTER TABLE DI_TRN_WebStories ADD IsBookmarked BIT NOT NULL DEFAULT 0; END
+
+                IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('DI_TRN_WebStoryParts') AND type in (N'U'))
+                BEGIN
+                    CREATE TABLE DI_TRN_WebStoryParts (
+                        Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY DEFAULT NEWID(),
+                        StoryId UNIQUEIDENTIFIER NOT NULL,
+                        Title NVARCHAR(200) NOT NULL,
+                        [Order] INT NOT NULL DEFAULT 1,
+                        CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                        UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                        CONSTRAINT FK_DI_TRN_WebStoryParts_DI_TRN_WebStories_StoryId FOREIGN KEY (StoryId) REFERENCES DI_TRN_WebStories(Id) ON DELETE CASCADE
+                    );
+                END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'PartId')
+                BEGIN
+                    ALTER TABLE DI_TRN_WebChapters ADD PartId UNIQUEIDENTIFIER NULL;
+                    ALTER TABLE DI_TRN_WebChapters ADD CONSTRAINT FK_DI_TRN_WebChapters_DI_TRN_WebStoryParts_PartId FOREIGN KEY (PartId) REFERENCES DI_TRN_WebStoryParts(Id) ON DELETE SET NULL;
+                END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'Status')
+                BEGIN
+                    ALTER TABLE DI_TRN_WebChapters ADD Status NVARCHAR(50) NOT NULL DEFAULT 'Planned';
+                END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'CharacterCount')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD CharacterCount INT NOT NULL DEFAULT 0; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'Version')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD Version INT NOT NULL DEFAULT 1; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'Summary')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD Summary NVARCHAR(MAX) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'TargetWordCount')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD TargetWordCount INT NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'Purpose')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD Purpose NVARCHAR(MAX) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'Goal')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD Goal NVARCHAR(MAX) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'KeyEvents')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD KeyEvents NVARCHAR(MAX) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'EmotionalTone')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD EmotionalTone NVARCHAR(500) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_WebChapters') AND name = 'PointOfView')
+                BEGIN ALTER TABLE DI_TRN_WebChapters ADD PointOfView NVARCHAR(200) NULL; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_UserGoals') AND name = 'WeeklyWordCountGoal')
+                BEGIN ALTER TABLE DI_TRN_UserGoals ADD WeeklyWordCountGoal INT NOT NULL DEFAULT 5000; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_UserGoals') AND name = 'WordsWrittenThisWeek')
+                BEGIN ALTER TABLE DI_TRN_UserGoals ADD WordsWrittenThisWeek INT NOT NULL DEFAULT 0; END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DI_TRN_UserGoals') AND name = 'WordsWrittenThisMonth')
+                BEGIN ALTER TABLE DI_TRN_UserGoals ADD WordsWrittenThisMonth INT NOT NULL DEFAULT 0; END
+            ");
+            _isSchemaEnsured = true;
+        }
+        catch
+        {
+            // Ignore if columns already exist
+        }
+    }
+
+    public static async Task<Story> SeedDilHaiKiMaantaNahiAsync(ApplicationDbContext context, string userId)
+    {
+        await EnsureDatabaseSchemaAsync(context);
+
+        var story = await context.Stories
+            .Include(s => s.StoryParts)
+            .Include(s => s.Chapters)
+            .FirstOrDefaultAsync(s => s.Title == "Dil Hai Ki Maanta Nahi" && s.UserId == userId);
+
+        if (story == null)
+        {
+            story = new Story
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Title = "Dil Hai Ki Maanta Nahi",
+                StoryType = "Novel",
+                Genre = "Fantasy • Romance • Drama",
+                Tagline = "Some hearts write their own destiny.",
+                Synopsis = "When destiny brings two broken souls together, the lines between love, loyalty and revenge blur.\n\nIn a world where secrets run deeper than blood, Sameer's quest for justice collides with Riya's fight for survival. As truth and betrayals surface, they must choose between the past that haunts them and the future they dare to dream.",
+                PointOfView = "Third Person Limited",
+                TimePeriod = "Modern",
+                Language = "English",
+                TargetAudience = "Young Adult",
+                Themes = "Love, Fate, Sacrifice, Revenge",
+                Tone = "Emotional, Intense, Romantic",
+                CoverImageUrl = "/images/dil_hai_ki_cover.png",
+                HeroBannerImageUrl = "/images/dil_hai_ki_hero_bg.png",
+                TargetWordCount = 128828,
+                CurrentWordCount = 82450,
+                Status = "InProgress",
+                CreatedAt = new DateTime(2026, 10, 25, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 11, 8, 0, 0, 0, DateTimeKind.Utc)
+            };
+            context.Stories.Add(story);
+            await context.SaveChangesAsync();
+        }
+        else
+        {
+            story.StoryType = "Novel";
+            story.Genre = "Fantasy • Romance • Drama";
+            story.Tagline = "Some hearts write their own destiny.";
+            story.Synopsis = "When destiny brings two broken souls together, the lines between love, loyalty and revenge blur.\n\nIn a world where secrets run deeper than blood, Sameer's quest for justice collides with Riya's fight for survival. As truth and betrayals surface, they must choose between the past that haunts them and the future they dare to dream.";
+            story.PointOfView = "Third Person Limited";
+            story.TimePeriod = "Modern";
+            story.Language = "English";
+            story.TargetAudience = "Young Adult";
+            story.Themes = "Love, Fate, Sacrifice, Revenge";
+            story.Tone = "Emotional, Intense, Romantic";
+            story.CoverImageUrl = "/images/dil_hai_ki_cover.png";
+            story.HeroBannerImageUrl = "/images/dil_hai_ki_hero_bg.png";
+            story.TargetWordCount = 128828;
+            story.CurrentWordCount = 82450;
+            story.Status = "InProgress";
+            story.UpdatedAt = new DateTime(2026, 11, 8, 0, 0, 0, DateTimeKind.Utc);
+            await context.SaveChangesAsync();
+        }
+
+        // Link Genres
+        var fantasyGenre = await context.Genres.FirstOrDefaultAsync(g => g.Slug == "fantasy");
+        var romanceGenre = await context.Genres.FirstOrDefaultAsync(g => g.Slug == "romance");
+        var dramaGenre = await context.Genres.FirstOrDefaultAsync(g => g.Slug == "drama");
+
+        if (fantasyGenre != null && !await context.StoryGenres.AnyAsync(sg => sg.StoryId == story.Id && sg.GenreId == fantasyGenre.Id))
+            context.StoryGenres.Add(new StoryGenre { StoryId = story.Id, GenreId = fantasyGenre.Id, IsPrimary = true, SortOrder = 0 });
+        if (romanceGenre != null && !await context.StoryGenres.AnyAsync(sg => sg.StoryId == story.Id && sg.GenreId == romanceGenre.Id))
+            context.StoryGenres.Add(new StoryGenre { StoryId = story.Id, GenreId = romanceGenre.Id, IsPrimary = false, SortOrder = 1 });
+        if (dramaGenre != null && !await context.StoryGenres.AnyAsync(sg => sg.StoryId == story.Id && sg.GenreId == dramaGenre.Id))
+            context.StoryGenres.Add(new StoryGenre { StoryId = story.Id, GenreId = dramaGenre.Id, IsPrimary = false, SortOrder = 2 });
+
+        await context.SaveChangesAsync();
+
+        // Seed Parts & Chapters if chapters count < 32
+        var currentChaptersCount = await context.Chapters.CountAsync(c => c.StoryId == story.Id);
+        if (currentChaptersCount < 32)
+        {
+            // Remove existing chapters/parts to re-seed cleanly
+            var existingChs = await context.Chapters.Where(c => c.StoryId == story.Id).ToListAsync();
+            context.Chapters.RemoveRange(existingChs);
+
+            var existingParts = await context.StoryParts.Where(p => p.StoryId == story.Id).ToListAsync();
+            context.StoryParts.RemoveRange(existingParts);
+
+            await context.SaveChangesAsync();
+
+            var p1 = new StoryPart { Id = Guid.NewGuid(), StoryId = story.Id, Title = "PART I - The Beginning", Order = 1 };
+            var p2 = new StoryPart { Id = Guid.NewGuid(), StoryId = story.Id, Title = "PART II - The Revelation", Order = 2 };
+            var p3 = new StoryPart { Id = Guid.NewGuid(), StoryId = story.Id, Title = "PART III - The Turning Point", Order = 3 };
+            var p4 = new StoryPart { Id = Guid.NewGuid(), StoryId = story.Id, Title = "PART IV - The Truth", Order = 4 };
+            var p5 = new StoryPart { Id = Guid.NewGuid(), StoryId = story.Id, Title = "PART V - The Destiny", Order = 5 };
+
+            context.StoryParts.AddRange(p1, p2, p3, p4, p5);
+            await context.SaveChangesAsync();
+
+            // Seed Chapters
+            var chapters = new List<Chapter>
+            {
+                // Part I (3 completed, 1 in progress, 1 planned)
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p1.Id, Order = 1, Title = "The First Night", WordCount = 2450, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p1.Id, Order = 2, Title = "A Stranger Arrives", WordCount = 3120, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p1.Id, Order = 3, Title = "The Letter", WordCount = 1840, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p1.Id, Order = 4, Title = "Beneath the Surface", WordCount = 1250, Status = "InProgress" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p1.Id, Order = 5, Title = "Whispers in the Dark", WordCount = 0, Status = "Planned" },
+
+                // Part II (3 completed, 1 in progress)
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p2.Id, Order = 6, Title = "Unspoken Vows", WordCount = 2900, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p2.Id, Order = 7, Title = "Echoes of Betrayal", WordCount = 3400, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p2.Id, Order = 8, Title = "The Shadows Deepen", WordCount = 2800, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p2.Id, Order = 9, Title = "Fragments of Truth", WordCount = 1150, Status = "InProgress" },
+
+                // Part III (4 completed, 1 in progress)
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p3.Id, Order = 10, Title = "Crossroads of Fate", WordCount = 3600, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p3.Id, Order = 11, Title = "Shattered Trust", WordCount = 3200, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p3.Id, Order = 12, Title = "The Hidden Cipher", WordCount = 2950, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p3.Id, Order = 13, Title = "Midnight Confessions", WordCount = 3100, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p3.Id, Order = 14, Title = "The Turning Tide", WordCount = 1100, Status = "InProgress" },
+
+                // Part IV (6 completed)
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p4.Id, Order = 15, Title = "Veil of Deception", WordCount = 3500, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p4.Id, Order = 16, Title = "Trial by Fire", WordCount = 3800, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p4.Id, Order = 17, Title = "Bound by Blood", WordCount = 3300, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p4.Id, Order = 18, Title = "The Storm Gathers", WordCount = 3150, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p4.Id, Order = 19, Title = "Reckoning at Dawn", WordCount = 3650, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p4.Id, Order = 20, Title = "Masks Fall Away", WordCount = 3700, Status = "Completed" },
+
+                // Part V (2 completed, 1 in progress, 9 planned)
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 21, Title = "Fires of Vengeance", WordCount = 3900, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 22, Title = "Sacrifice", WordCount = 3850, Status = "Completed" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 23, Title = "The Final Stand", WordCount = 1240, Status = "InProgress" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 24, Title = "Shadows in the Mist", WordCount = 0, Status = "Planned" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 25, Title = "The Silent Promise", WordCount = 0, Status = "Planned" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 26, Title = "Echoes of Eternity", WordCount = 0, Status = "Planned" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 27, Title = "Beyond the Veil", WordCount = 0, Status = "Planned" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 28, Title = "The Lost Kingdom", WordCount = 0, Status = "Planned" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 29, Title = "Dawn of Hope", WordCount = 0, Status = "Planned" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 30, Title = "Unbroken Chains", WordCount = 0, Status = "Planned" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 31, Title = "The Last Chapter", WordCount = 0, Status = "Planned" },
+                new Chapter { Id = Guid.NewGuid(), StoryId = story.Id, PartId = p5.Id, Order = 32, Title = "Epilogue - Destiny Written", WordCount = 0, Status = "Planned" }
+            };
+
+            context.Chapters.AddRange(chapters);
+            await context.SaveChangesAsync();
+        }
+
+        // Seed 23 Characters if count < 23
+        var existingCharCount = await context.Characters.CountAsync(c => c.StoryId == story.Id);
+        if (existingCharCount < 23)
+        {
+            var charNames = new[] {
+                "Sameer Malhotra", "Riya", "Raj Malhotra", "Meera Malhotra", "Inspector Sharma",
+                "Kael Draven", "Alaric Vayne", "Seraphina Lorne", "Elara Moonwhisper", "Lord Marshall Eldric",
+                "Lira Dashwood", "Vikram Rathore", "Aanya Verma", "Devendra Roy", "Maya Sengupta",
+                "Kabir Anand", "Zoya Khan", "Tariq Mahmood", "Naina Kapoor", "Rohan Mehta",
+                "Priya Joshi", "Arjun Singhania", "Divya Thakur"
+            };
+
+            for (int i = existingCharCount; i < 23; i++)
+            {
+                context.Characters.Add(new Character
+                {
+                    Id = Guid.NewGuid(),
+                    StoryId = story.Id,
+                    Name = charNames[i],
+                    Role = i < 2 ? "Protagonist" : (i < 5 ? "Supporting" : "Secondary"),
+                    Status = "Active",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Seed 18 Locations if count < 18
+        var existingLocCount = await context.Locations.CountAsync(l => l.StoryId == story.Id);
+        if (existingLocCount < 18)
+        {
+            var locNames = new[] {
+                "Silverbrook City", "Dockside Area", "High Court of Silverbrook", "Old Market",
+                "Crime Branch Headquarters", "Silverbrook University Library", "Malhotra Villa",
+                "Grand Palace Ruins", "Shadow Alley", "Eldoria Forest",
+                "Ravenhold Castle", "Whispering Falls", "Starlight Observatory", "Blackwood Manor",
+                "Emerald Harbor", "Sunspire Tower", "Ironhold Prison", "Sanctuary Cove"
+            };
+
+            for (int i = existingLocCount; i < 18; i++)
+            {
+                context.Locations.Add(new Location
+                {
+                    Id = Guid.NewGuid(),
+                    StoryId = story.Id,
+                    Name = locNames[i],
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Seed 24 Timeline Events if count < 24
+        var existingEventCount = await context.TimelineEvents.CountAsync(e => e.StoryId == story.Id);
+        if (existingEventCount < 24)
+        {
+            for (int i = existingEventCount; i < 24; i++)
+            {
+                context.TimelineEvents.Add(new TimelineEvent
+                {
+                    Id = Guid.NewGuid(),
+                    StoryId = story.Id,
+                    Title = $"Timeline Event {i + 1}",
+                    Category = i % 2 == 0 ? "Investigation" : "Incident",
+                    StoryDate = $"Day {i + 1}",
+                    DisplayOrder = i + 1,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Seed 4 Story Arcs if count < 4
+        var existingArcCount = await context.StoryArcs.CountAsync(a => a.StoryId == story.Id);
+        if (existingArcCount < 4)
+        {
+            var arcTitles = new[] { "Main Story Arc", "Romance Arc", "Mystery Arc", "Crime Investigation" };
+            for (int i = existingArcCount; i < 4; i++)
+            {
+                context.StoryArcs.Add(new StoryArc
+                {
+                    Id = Guid.NewGuid(),
+                    StoryId = story.Id,
+                    Title = arcTitles[i],
+                    ArcType = arcTitles[i],
+                    Status = "Active",
+                    DisplayOrder = i + 1
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Seed 12 Research Notes if count < 12
+        var existingNoteCount = await context.ResearchNotes.CountAsync(r => r.StoryId == story.Id);
+        if (existingNoteCount < 12)
+        {
+            for (int i = existingNoteCount; i < 12; i++)
+            {
+                context.ResearchNotes.Add(new ResearchNote
+                {
+                    Id = Guid.NewGuid(),
+                    StoryId = story.Id,
+                    Title = $"Research Item {i + 1}",
+                    Category = i < 4 ? "Historical" : "Setting",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Seed 23 Assets if count < 23
+        var existingAssetCount = await context.Assets.CountAsync(a => a.StoryId == story.Id);
+        if (existingAssetCount < 23)
+        {
+            for (int i = existingAssetCount; i < 23; i++)
+            {
+                context.Assets.Add(new Asset
+                {
+                    Id = Guid.NewGuid(),
+                    StoryId = story.Id,
+                    Title = $"Asset File {i + 1}",
+                    Type = i % 2 == 0 ? "Image" : "Document",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Update UserGoal for user
+        var userGoal = await context.UserGoals.FirstOrDefaultAsync(g => g.UserId == userId);
+        if (userGoal == null)
+        {
+            userGoal = new UserGoal
+            {
+                UserId = userId,
+                DailyWordCountGoal = 1000,
+                WeeklyWordCountGoal = 5000,
+                MonthlyWordCountGoal = 20000,
+                WordsWrittenToday = 1250,
+                WordsWrittenThisWeek = 8200,
+                WordsWrittenThisMonth = 20450,
+                CurrentStreakDays = 12,
+                LastUpdated = DateTime.UtcNow
+            };
+            context.UserGoals.Add(userGoal);
+        }
+        else
+        {
+            userGoal.DailyWordCountGoal = 1000;
+            userGoal.WeeklyWordCountGoal = 5000;
+            userGoal.MonthlyWordCountGoal = 20000;
+            userGoal.WordsWrittenToday = 1250;
+            userGoal.WordsWrittenThisWeek = 8200;
+            userGoal.WordsWrittenThisMonth = 20450;
+            userGoal.CurrentStreakDays = 12;
+            userGoal.LastUpdated = DateTime.UtcNow;
+        }
+        await context.SaveChangesAsync();
+
+        return story;
+    }
+
+    public static async Task SeedLanguageOptionsAsync(ApplicationDbContext context)
+    {
+        var languagesToAdd = new[]
+        {
+            new DropdownOption { Id = Guid.NewGuid(), Category = "Language", Value = "HindiInEnglish", Text = "Hindi - Written in English", Description = "Hindi written using Roman / English script.", DisplayOrder = 3, IsActive = true },
+            new DropdownOption { Id = Guid.NewGuid(), Category = "Language", Value = "PureHindi", Text = "Pure Hindi", Description = "Pure Hindi language written in Devanagari script.", DisplayOrder = 4, IsActive = true },
+            new DropdownOption { Id = Guid.NewGuid(), Category = "Language", Value = "HindiAndEnglish", Text = "Hindi + English", Description = "Combination of Hindi and English language.", DisplayOrder = 5, IsActive = true }
+        };
+
+        foreach (var lang in languagesToAdd)
+        {
+            if (!await context.DropdownOptions.AnyAsync(d => d.Category == "Language" && d.Value == lang.Value))
+            {
+                context.DropdownOptions.Add(lang);
+            }
+        }
+
+        await context.SaveChangesAsync();
     }
 }

@@ -59,12 +59,20 @@ public class DashboardController : Controller
             .Take(5)
             .ToListAsync();
 
-        var userGoal = await _context.UserGoals
-            .AsNoTracking()
-            .FirstOrDefaultAsync(g => g.UserId == user.Id) ?? new UserGoal { UserId = user.Id };
+        UserGoal userGoal;
+        try
+        {
+            userGoal = await _context.UserGoals
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.UserId == user.Id) ?? new UserGoal { UserId = user.Id };
+        }
+        catch
+        {
+            userGoal = new UserGoal { UserId = user.Id, MonthlyWordCountGoal = 50000 };
+        }
 
         var totalWords = activeStory != null ? activeStory.CurrentWordCount : allStories.Sum(s => s.CurrentWordCount);
-        var activeStoriesCount = allStories.Count(s => s.Status == "InProgress");
+        var activeStoriesCount = allStories.Count(s => string.IsNullOrEmpty(s.Status) || s.Status != "Archived");
         
         var charactersCount = activeStory != null 
             ? await _context.Characters.AsNoTracking().CountAsync(c => c.StoryId == activeStory.Id) 

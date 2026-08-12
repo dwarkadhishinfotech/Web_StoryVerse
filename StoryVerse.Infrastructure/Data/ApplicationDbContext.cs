@@ -14,6 +14,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     }
 
     public DbSet<Story> Stories { get; set; }
+    public DbSet<StoryPart> StoryParts { get; set; }
     public DbSet<Chapter> Chapters { get; set; }
     public DbSet<Character> Characters { get; set; }
     public DbSet<Location> Locations { get; set; }
@@ -157,6 +158,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(sg => sg.AddedAt).HasDefaultValueSql("GETUTCDATE()");
         });
 
+        builder.Entity<StoryPart>(entity =>
+        {
+            entity.ToTable("DI_TRN_WebStoryParts");
+            entity.HasOne(sp => sp.Story)
+                .WithMany(s => s.StoryParts)
+                .HasForeignKey(sp => sp.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         builder.Entity<Chapter>(entity =>
         {
             entity.ToTable("DI_TRN_WebChapters");
@@ -164,6 +174,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany(s => s.Chapters)
                 .HasForeignKey(c => c.StoryId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(c => c.Part)
+                .WithMany(sp => sp.Chapters)
+                .HasForeignKey(c => c.PartId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<Character>(entity =>

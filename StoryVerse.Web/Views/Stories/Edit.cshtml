@@ -1,182 +1,1130 @@
 @model StoryVerse.Core.Entities.Story
 @{
     ViewData["Title"] = $"Edit {Model.Title}";
+    var currentGenreIds = ViewBag.CurrentGenreIds as List<int> ?? new List<int>();
+    var existingThemes = (Model.Themes ?? "").Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
 }
 
-<div class="w-full relative font-sans">
+<style>
+    .stories-page {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: #334155;
+    }
+    .font-serif { 
+        font-family: 'Playfair Display', Georgia, serif; 
+    }
+    .btn-teal { 
+        background-color: #0d9488; 
+        color: white; 
+        border: none;
+    }
+    .btn-teal:hover { 
+        background-color: #0f766e; 
+        color: white; 
+    }
+    .btn-outline-teal { 
+        border: 1px solid #0d9488; 
+        color: #0d9488; 
+        background: white; 
+    }
+    .btn-outline-teal:hover { 
+        background-color: #f0fdfa; 
+        color: #0d9488; 
+    }
+    .card-rounded { 
+        border-radius: 16px; 
+        border: 1px solid #e2e8f0; 
+        background: white; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .top-action-btn {
+        border-radius: 24px !important;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px 20px;
+    }
+    .icon-circle-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid #e2e8f0;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+    .icon-circle-btn:hover {
+        background: #f8fafc;
+        color: #334155;
+    }
+    .breadcrumb-link {
+        color: #0d9488;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 13.5px;
+    }
+    .breadcrumb-link:hover {
+        text-decoration: underline;
+    }
     
-    <!-- Decorative Peacock Blur Watermark -->
-    <div class="position-absolute" style="top: -80px; right: -80px; width: 500px; height: 500px; background: rgba(19, 168, 166, 0.04); border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 1;"></div>
+    .form-control, .form-select {
+        border-color: #e2e8f0;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #0d9488;
+        box-shadow: 0 0 0 0.2rem rgba(13, 148, 136, 0.1);
+    }
+    
+    .genre-card:hover {
+        border-color: #94a3b8 !important;
+    }
 
-    <!-- Premium Navy Hero Banner -->
-    <div class="position-relative w-100 p-5 mb-4 mt-2 overflow-hidden shadow-sm text-white" 
-         style="background: #0B1528; border-radius: 20px; z-index: 10;">
-        <div class="position-absolute" style="top: 0; right: 0; width: 350px; height: 350px; background: rgba(19, 168, 166, 0.12); border-radius: 50%; filter: blur(60px); pointer-events: none; transform: translate(30%, -30%);"></div>
-        <div class="position-absolute" style="bottom: 0; left: 0; width: 250px; height: 250px; background: rgba(30, 67, 155, 0.12); border-radius: 50%; filter: blur(50px); pointer-events: none; transform: translate(-30%, 30%);"></div>
+    .theme-pill-label {
+        font-size: 13.5px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .theme-pill-label.unselected {
+        background-color: transparent;
+        color: #64748b;
+        border: 1px solid transparent;
+    }
+    .theme-pill-label.unselected:hover {
+        color: #0f172a;
+    }
+    .theme-pill-label.selected {
+        background-color: #0d9488;
+        color: white;
+        border: 1px solid #0d9488;
+    }
+    .is-invalid {
+        border-color: #ef4444 !important;
+    }
+    .is-invalid:focus {
+        box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.25) !important;
+    }
+    
+    .custom-switch-teal .form-check-input:checked {
+        background-color: #0d9488;
+        border-color: #0d9488;
+    }
+</style>
 
-        <div class="position-relative d-flex flex-column align-items-start">
-            <a href="@Url.Action("Details", "Stories", new { id = Model.Id })" 
-               class="text-decoration-none text-slate-300 hover-text-white d-inline-flex align-items-center mb-4 px-3 py-1.5 rounded-pill border" 
-               style="background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1) !important; font-size: 0.8rem; font-weight: 500; color: #CBD5E1;">
-                <i data-lucide="arrow-left" class="me-2" style="width: 14px; height: 14px;"></i> Back to Details
+<div class="stories-page py-4 px-2 w-100">
+    <!-- Breadcrumbs & Header Row -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-3" style="color: #64748b; font-size: 13.5px;">
+            <a href="@Url.Action("Index", "Stories")" class="breadcrumb-link d-flex align-items-center">
+                <i data-lucide="arrow-left" class="me-1" style="width: 14px; height: 14px;"></i> Stories
             </a>
-            
-            <div class="d-flex align-items-center gap-2">
-                <h1 class="font-serif fw-bold text-white mb-0" style="font-size: 1.85rem; letter-spacing: -0.01em;">Edit Story Configuration</h1>
-                <i data-lucide="settings" class="text-info" style="width: 24px; height: 24px; color: #13A8A6 !important;"></i>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <a href="@Url.Action("Details", "Stories", new { id = Model.Id })" class="breadcrumb-link">@Model.Title</a>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+            <span class="text-slate-700 fw-medium">Edit Story</span>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h1 class="font-serif fw-bold mb-1 d-flex align-items-center gap-2" style="font-size: 34px; color: #1e293b;">
+                    Edit Story Configuration
+                    <span style="color: #0d9488; font-size: 24px; line-height: 1;">⚙</span>
+                </h1>
+                <p class="mb-0" style="font-size: 16px; font-style: italic; color: #64748b; font-family: 'Playfair Display', serif;">
+                    Refine your story details, genre preferences, and workspace settings.
+                </p>
             </div>
-            <p class="text-slate-300 mt-2 mb-0" style="font-size: 0.95rem; max-width: 600px; color: #94A3B8;">
-                Modify layout preferences, targets, and credentials for your creative story project workspace.
-            </p>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <a href="@Url.Action("Details", "Stories", new { id = Model.Id })" class="btn btn-outline-teal top-action-btn d-flex align-items-center text-decoration-none">
+                    <i data-lucide="eye" class="me-1.5" style="width: 16px; height: 16px;"></i> View Story Details
+                </a>
+            </div>
         </div>
     </div>
 
-    <!-- Main Form -->
-    <form asp-action="Edit" method="post" class="position-relative" style="z-index: 10;">
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-        <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="CurrentWordCount" />
-        <input type="hidden" asp-for="CreatedAt" />
-
-        <div class="row g-4">
-            
-            <!-- Left Column: Cover Image & Tips -->
-            <div class="col-lg-4 d-flex flex-column gap-4">
-                <!-- Cover Image Box -->
-                <div class="card border-0 p-4 shadow-xs" style="background: #ffffff; border: 1px solid #E2E8F0 !important; border-radius: 20px;">
-                    <h5 class="fw-bold mb-1 text-slate-900" style="font-size: 15px;">Cover Image</h5>
-                    <p class="text-secondary small mb-3">Update your story cover image reference URL.</p>
-
-                    <div class="mb-3">
-                        <input asp-for="CoverImageUrl" id="coverUrlInput" class="form-control" 
-                               placeholder="e.g. /images/covers/fantasy.png" 
-                               style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" />
-                        <span asp-validation-for="CoverImageUrl" class="text-danger small"></span>
+    <div class="row g-4">
+        <!-- Left Column: Form -->
+        <div class="col-xl-8">
+            <div class="card-rounded p-4 p-md-5 bg-white h-100">
+                <!-- Stepper -->
+                <div class="d-flex justify-content-between position-relative mb-5" style="max-width: 500px; margin: 0 auto;">
+                    <div class="position-absolute top-50 start-0 end-0 translate-middle-y" style="height: 2px; background-color: #e2e8f0; z-index: 1; left: 10% !important; right: 10% !important;"></div>
+                    
+                    <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-1">
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #0d9488; color: white; font-size: 14px; border: 2px solid white;">1</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 700; color: #0d9488;">Basic Details</div>
+                    </div>
+                    
+                    <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-2">
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #f1f5f9; color: #64748b; font-size: 14px; border: 2px solid white;">2</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 600; color: #64748b;">Genre & Theme</div>
+                    </div>
+                    
+                    <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-3">
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #f1f5f9; color: #64748b; font-size: 14px; border: 2px solid white;">3</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 600; color: #64748b;">Settings</div>
                     </div>
 
-                    <!-- Cover Preview Box -->
-                    <div class="p-3 rounded-3 d-flex align-items-center gap-3 border bg-light bg-opacity-50" style="border-color: #E2E8F0 !important; border-radius: 12px !important;">
-                        <div class="rounded bg-secondary bg-opacity-10 overflow-hidden flex-shrink-0 d-flex align-items-center justify-content-center" 
-                             style="width: 48px; height: 64px; border: 1px solid #E2E8F0;" id="previewContainer">
-                            <i data-lucide="image" class="text-secondary opacity-50" style="width: 20px; height: 20px;"></i>
-                        </div>
-                        <div class="d-flex flex-column">
-                            <span class="fw-bold text-slate-900" style="font-size: 13px;">Cover Preview</span>
-                            <span class="text-secondary" style="font-size: 11px;">Preview displays automatically</span>
-                        </div>
+                    <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;" id="top-stepper-4">
+                        <div class="top-step-icon rounded-circle d-flex align-items-center justify-content-center fw-bold mb-2 shadow-sm" style="width: 36px; height: 36px; background-color: #f1f5f9; color: #64748b; font-size: 14px; border: 2px solid white;">4</div>
+                        <div class="top-step-label" style="font-size: 11.5px; font-weight: 600; color: #64748b;">Review</div>
                     </div>
                 </div>
 
-                <!-- Author Tips -->
-                <div class="card border-0 p-4 shadow-xs" 
-                     style="background: linear-gradient(135deg, rgba(19, 168, 166, 0.06), rgba(30, 67, 155, 0.04)); border: 1px solid rgba(19, 168, 166, 0.15) !important; border-radius: 20px;">
-                    <h6 class="fw-bold d-flex align-items-center gap-2 mb-2" style="color: #0F766E;">
-                        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Edit Mode
-                    </h6>
-                    <p class="text-secondary small mb-0 leading-relaxed" style="font-size: 12.5px; font-weight: 500;">
-                        Updating targets or genres resets active goals accordingly. All saved chapters and logs are fully preserved.
-                    </p>
-                </div>
-            </div>
+                <form id="storyForm" method="post" action="@Url.Action("Edit", "Stories", new { id = Model.Id })" enctype="multipart/form-data" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="CurrentWordCount" />
+                    <input type="hidden" asp-for="CreatedAt" />
+                    <input type="hidden" asp-for="CoverImageUrl" id="existingCoverImageUrl" />
 
-            <!-- Right Column: Form Inputs -->
-            <div class="col-lg-8">
-                <div class="card border-0 p-4 p-md-5 shadow-xs" style="background: #ffffff; border: 1px solid #E2E8F0 !important; border-radius: 20px;">
-                    <h5 class="fw-bold mb-4 font-serif text-slate-900" style="font-size: 18px;">Story Details</h5>
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show mb-4 shadow-sm" role="alert" style="border-radius: 10px; border-left: 4px solid #ef4444;">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i data-lucide="alert-circle" style="width: 18px; height: 18px; color: #ef4444;"></i>
+                                <h6 class="fw-bold mb-0 text-danger" style="font-size: 14px;">Please fix the following errors before saving:</h6>
+                            </div>
+                            <div asp-validation-summary="All" class="text-danger small mb-0 ps-3"></div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
 
-                    <div class="d-flex flex-column gap-3">
+                    <!-- Step 1: Basic Details -->
+                    <div id="step-1" class="step-content">
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <i data-lucide="clipboard-list" style="width: 22px; height: 22px; color: #475569;"></i>
+                            <h4 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 20px;">Basic Details</h4>
+                        </div>
+                        <p class="text-muted mb-4" style="font-size: 13.5px;">Update your story title, tagline, synopsis, and primary audience.</p>
                         
-                        <!-- Story Title -->
-                        <div>
-                            <label asp-for="Title" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Story Title <span class="text-danger">*</span></label>
-                            <input asp-for="Title" class="form-control" 
-                                   style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required />
-                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex justify-content-between" style="font-size: 13px; color: #0f172a;">
+                                    <span>Story Title <span class="text-danger">*</span></span>
+                                </label>
+                                <input type="text" class="form-control text-slate-800" id="storyTitleInput" name="Title" value="@Model.Title" required placeholder="Enter your story title..." style="font-size: 13.5px; padding: 10px 14px; border-radius: 8px;">
+                                <div class="text-end text-muted mt-1.5" style="font-size: 10.5px; font-weight: 600;">0/120</div>
+                                
+                                <!-- Title Availability Alert & Suggestions Box -->
+                                <div id="titleAvailabilityBox" class="mt-2.5 d-none">
+                                    <div class="card border-0 p-3 rounded-3 shadow-xs" style="background-color: #fffbeb; border: 1px solid #fde68a !important;">
+                                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                            <div class="d-flex align-items-center gap-2" style="color: #b45309; font-size: 13px; font-weight: 700;">
+                                                <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+                                                <span id="titleAvailabilityMessage">Name is not available</span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2 text-dark fw-semibold" id="btnUseNameAnyway" style="font-size: 11px; border-radius: 12px; background: white;">Keep this name anyway</button>
+                                        </div>
+                                        <div class="text-slate-600 mb-2" style="font-size: 12px; font-weight: 500;">
+                                            A story with this title already exists in your library. You can choose one of these available suggestions:
+                                        </div>
+                                        <div id="titleSuggestionsList" class="d-flex flex-wrap gap-2">
+                                            <!-- Suggestions populated dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex justify-content-between" style="font-size: 13px; color: #0f172a;">
+                                    <span>Tagline (Optional)</span>
+                                </label>
+                                <input type="text" name="Tagline" value="@Model.Tagline" class="form-control text-slate-800" placeholder="A short tagline for your story..." style="font-size: 13.5px; padding: 10px 14px; border-radius: 8px;">
+                                <div class="text-end text-muted mt-1.5" style="font-size: 10.5px; font-weight: 600;">0/300</div>
+                            </div>
                         </div>
 
-                        <!-- Genre and Target Words row -->
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label asp-for="Genre" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Genre <span class="text-danger">*</span></label>
-                                <select asp-for="Genre" class="form-select" 
-                                        style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required>
-                                    <option value="Fantasy">Fantasy</option>
-                                    <option value="Sci-Fi">Science Fiction</option>
-                                    <option value="Romance">Romance</option>
-                                    <option value="Mystery">Mystery & Thriller</option>
-                                    <option value="Horror">Horror</option>
-                                    <option value="Adventure">Adventure</option>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Synopsis <span class="text-danger ms-1">*</span> 
+                                <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                            </label>
+                            <textarea class="form-control text-slate-800" name="Synopsis" required rows="4" placeholder="Write a brief synopsis of your story..." style="font-size: 13.5px; padding: 12px 14px; border-radius: 8px; resize: none;">@Model.Synopsis</textarea>
+                            <div class="text-end text-muted mt-1.5" style="font-size: 10.5px; font-weight: 600;">0/1000</div>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Story Type <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="StoryType" data-placeholder="Select story type...">
+                                    <option value=""></option>
+                                    @if (ViewBag.StoryTypes != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.StoryTypes) {
+                                            bool isSelected = opt.Value == Model.StoryType || opt.Text == Model.StoryType;
+                                            <option value="@opt.Value" data-description="@opt.Description" selected="@(isSelected ? "selected" : null)">@opt.Text</option>
+                                        }
+                                    }
                                 </select>
-                                <span asp-validation-for="Genre" class="text-danger small"></span>
                             </div>
+                        </div>
 
+                        <div class="row g-4 mb-5">
                             <div class="col-md-6">
-                                <label asp-for="TargetWordCount" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Target Word Count <span class="text-danger">*</span></label>
-                                <input asp-for="TargetWordCount" type="number" class="form-control" 
-                                       style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required />
-                                <span asp-validation-for="TargetWordCount" class="text-danger small"></span>
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Target Audience <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="TargetAudience" data-placeholder="Select target audience...">
+                                    <option value=""></option>
+                                    @if (ViewBag.TargetAudiences != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.TargetAudiences) {
+                                            bool isSelected = opt.Value == Model.TargetAudience || opt.Text == Model.TargetAudience;
+                                            <option value="@opt.Value" data-description="@opt.Description" selected="@(isSelected ? "selected" : null)">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2" style="font-size: 13px; color: #0f172a;">Language</label>
+                                <select class="form-select select2-themed" name="Language" data-placeholder="Select language...">
+                                    <option value=""></option>
+                                    @if (ViewBag.Languages != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.Languages) {
+                                            bool isSelected = opt.Value == Model.Language || opt.Text == Model.Language;
+                                            <option value="@opt.Value" data-description="@opt.Description" selected="@(isSelected ? "selected" : null)">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
                             </div>
                         </div>
 
-                        <!-- Writing Status -->
-                        <div>
-                            <label asp-for="Status" class="form-label fw-bold text-slate-700" style="font-size: 13px;">Writing Status</label>
-                            <select asp-for="Status" class="form-select" 
-                                    style="height: 44px; border-radius: 12px; font-size: 13.5px; font-weight: 500; border-color: #E2E8F0;" required>
-                                <option value="Draft">Planning / Draft</option>
-                                <option value="InProgress">In Progress</option>
-                                <option value="Published">Completed / Published</option>
-                            </select>
-                            <span asp-validation-for="Status" class="text-danger small"></span>
+                        <div class="mb-5">
+                            <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Cover Image <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                            </label>
+                            <div class="row g-4">
+                                <div class="col-md-7">
+                                    <input type="file" name="CoverFile" id="CoverFile" accept="image/*" class="d-none">
+                                    <div id="cover-drop-zone" class="border border-2 border-dashed rounded-3 p-4 text-center d-flex flex-column align-items-center justify-content-center h-100" style="border-color: #cbd5e1 !important; background-color: #f8fafc; transition: all 0.2s; cursor: pointer;">
+                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border mb-3" style="width: 48px; height: 48px; border-color: #e2e8f0;">
+                                            <i data-lucide="image" style="width: 20px; height: 20px; color: #0d9488;"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-1" style="color: #0f172a; font-size: 13px;">
+                                            @(string.IsNullOrEmpty(Model.CoverImageUrl) ? "Drag & drop your cover here" : "Change cover image")
+                                        </h6>
+                                        <p class="text-teal mb-1.5 fw-semibold" style="font-size: 12px; color: #0d9488;">or click to browse</p>
+                                        <p class="text-muted mb-0" style="font-size: 11px;">Recommended: 1200x1600px or 3:4 ratio</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="rounded-3 p-4 h-100 border text-center d-flex flex-column align-items-center justify-content-center" style="background-color: #f0fdfa; border-color: #ccfbf1 !important;">
+                                        <span class="fw-bold mb-2 text-slate-800" style="font-size: 12.5px;">Current Cover</span>
+                                        <div class="overflow-hidden rounded border shadow-xs" style="width: 64px; height: 85px; border-color: #e2e8f0;">
+                                            <img id="current-cover-preview" src="@(string.IsNullOrEmpty(Model.CoverImageUrl) ? "/images/empty-states/live_preview_book.png" : Model.CoverImageUrl)" class="w-100 h-100" style="object-fit: cover;" alt="Current Cover" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Submit Buttons -->
-                        <div class="d-flex justify-content-end gap-3 mt-4">
-                            <a href="@Url.Action("Details", "Stories", new { id = Model.Id })" class="btn btn-outline-secondary px-4 py-2.5 fw-semibold" 
-                               style="font-size: 13px; border-radius: 12px; border-color: #E2E8F0;">Cancel</a>
-                            <button type="submit" class="btn text-white px-4 py-2.5 fw-bold shadow-sm" 
-                                    style="background-color: #115E59; border: none; font-size: 13px; border-radius: 12px;">Save Changes</button>
+                        <!-- Hero Banner Background Image Upload -->
+                        <div class="mb-5">
+                            <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Hero Banner Background Image <span class="text-muted fw-normal ms-1">(Optional)</span>
+                                <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                            </label>
+                            <p class="text-muted mb-3" style="font-size: 12px;">Upload a custom wide background for your story workspace banner. If left empty, a rich theme gradient will be generated.</p>
+                            <div class="row g-4">
+                                <div class="col-md-7">
+                                    <input type="file" name="HeroBannerFile" id="HeroBannerFile" accept="image/*" class="d-none">
+                                    <div id="banner-drop-zone" class="border border-2 border-dashed rounded-3 p-4 text-center d-flex flex-column align-items-center justify-content-center h-100" style="border-color: #cbd5e1 !important; background-color: #f8fafc; transition: all 0.2s; cursor: pointer;">
+                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border mb-3" style="width: 48px; height: 48px; border-color: #e2e8f0;">
+                                            <i data-lucide="layout" style="width: 20px; height: 20px; color: #0d9488;"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-1" style="color: #0f172a; font-size: 13px;">
+                                            @(string.IsNullOrEmpty(Model.HeroBannerImageUrl) ? "Drag & drop background image" : "Change background image")
+                                        </h6>
+                                        <p class="text-teal mb-1.5 fw-semibold" style="font-size: 12px; color: #0d9488;">or click to browse</p>
+                                        <p class="text-muted mb-0" style="font-size: 11px;">Recommended: 1920x600px wide aspect ratio</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="rounded-3 p-3 h-100 border text-center d-flex flex-column align-items-center justify-content-center" style="background-color: #f0fdfa; border-color: #ccfbf1 !important;">
+                                        <span class="fw-bold mb-2 text-slate-800" style="font-size: 12.5px;">Current Background</span>
+                                        <div class="overflow-hidden rounded border shadow-xs w-100" style="height: 70px; border-color: #e2e8f0; background: linear-gradient(135deg, #0A1128 0%, #0F2A4A 35%, #0D4E5C 70%, #0D9488 100%); position: relative;">
+                                            <img id="current-banner-preview" src="@Model.HeroBannerImageUrl" class="w-100 h-100 @(string.IsNullOrEmpty(Model.HeroBannerImageUrl) ? "d-none" : "")" style="object-fit: cover;" alt="Banner Preview" />
+                                            <span id="banner-default-label" class="text-white small position-absolute top-50 start-50 translate-middle fw-semibold @(string.IsNullOrEmpty(Model.HeroBannerImageUrl) ? "" : "d-none")" style="font-size: 11px; white-space: nowrap;">Dynamic Mixed Gradient</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-2" style="border-color: #f1f5f9 !important;">
+                            <a href="@Url.Action("Details", "Stories", new { id = Model.Id })" class="btn btn-white border fw-bold text-slate-700 px-4 py-2 bg-white" style="border-radius: 8px; font-size: 14px; border-color: #e2e8f0 !important;">Cancel</a>
+                            <button type="button" class="btn btn-teal fw-bold px-4 py-2 d-flex align-items-center shadow-sm btn-next" data-next="2" style="border-radius: 8px; font-size: 14px;">
+                                Save & Continue <i data-lucide="arrow-right" class="ms-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Genre & Theme -->
+                    <div id="step-2" class="step-content">
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <i data-lucide="feather" style="width: 22px; height: 22px; color: #475569;"></i>
+                            <h4 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 20px;">Genre & Theme</h4>
+                        </div>
+                        <p class="text-muted mb-4" style="font-size: 13.5px;">Update your story genres, themes, and mood.</p>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-1 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Genres <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                            </label>
+                            <p class="text-muted mb-2" style="font-size: 12px;">Select one or more genres — e.g. Fantasy + Romance</p>
+                            <div id="selected-genres-preview" class="d-flex flex-wrap gap-1 mb-3" style="min-height: 24px;"></div>
+
+                            <div class="row g-3">
+                                @if (ViewBag.Genres != null)
+                                {
+                                    foreach (var genre in (List<StoryVerse.Core.Entities.Genre>)ViewBag.Genres)
+                                    {
+                                        bool isGenreSelected = currentGenreIds.Contains(genre.Id);
+                                        <div class="col-md-3">
+                                            <label class="genre-card w-100 position-relative p-3 rounded-3 h-100"
+                                                   style="cursor: pointer; border: 1px solid @(isGenreSelected ? "#0d9488" : "#e2e8f0"); background-color: @(isGenreSelected ? "#f0fdfa" : "#ffffff"); transition: all 0.2s;"
+                                                   data-genre-name="@genre.Name">
+                                                <input type="checkbox" name="SelectedGenreIds" value="@genre.Id" class="d-none" @(isGenreSelected ? "checked" : "")>
+                                                <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 @(isGenreSelected ? "" : "d-none")">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; background-color: #0d9488; color: white;">
+                                                        <i data-lucide="check" style="width: 11px; height: 11px;"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="icon-container rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                                         style="width: 32px; height: 32px; background-color: @(isGenreSelected ? "#ccfbf1" : "#f1f5f9"); color: @(isGenreSelected ? "#0d9488" : "#64748b");">
+                                                        <i data-lucide="@genre.Icon" style="width: 16px; height: 16px;"></i>
+                                                    </div>
+                                                    <h6 class="fw-bold mb-0" style="font-size: 13.5px; color: #0f172a; line-height: 1.15;">@genre.Name</h6>
+                                                </div>
+                                                <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.4;">@genre.Description</p>
+                                            </label>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mb-4 pt-2">
+                            <label class="form-label fw-bold mb-3 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Themes <span class="text-muted fw-normal ms-1">(Select all that apply)</span>
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @{
+                                    var themes = new[] { "Friendship", "Betrayal", "Redemption", "Power", "Love", "Identity", "Survival", "Courage", "Justice", "Destiny", "Family", "Sacrifice", "Growth", "Hope", "Freedom", "Vengeance", "Other" };
+                                    foreach (var theme in themes)
+                                    {
+                                        bool isSelected = existingThemes.Any(t => string.Equals(t, theme, StringComparison.OrdinalIgnoreCase));
+                                        <label class="theme-pill" style="cursor: pointer;">
+                                            <input type="checkbox" name="Themes" value="@theme" class="d-none" @(isSelected ? "checked" : "")>
+                                            <div class="theme-pill-label px-3 py-1.5 rounded-pill d-flex align-items-center gap-2 @(isSelected ? "selected" : "unselected")">
+                                                @theme <i data-lucide="@(isSelected ? "x" : "plus")" class="theme-icon" style="width: 14px; height: 14px; @(isSelected ? "" : "color: #94a3b8;")"></i>
+                                            </div>
+                                        </label>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mb-5 pt-2">
+                            <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                Tone / Mood <span class="text-muted fw-normal ms-1">(Optional)</span>
+                            </label>
+                            <select class="form-select select2-themed" name="Tone" data-placeholder="Select tone/mood...">
+                                <option value=""></option>
+                                @{
+                                    var tones = new[] { "Dark", "Light-hearted", "Romantic", "Suspenseful", "Humorous", "Philosophical", "Inspirational", "Dramatic", "Melancholy" };
+                                    foreach (var t in tones)
+                                    {
+                                        bool isSelected = string.Equals(Model.Tone, t, StringComparison.OrdinalIgnoreCase);
+                                        <option value="@t" selected="@(isSelected ? "selected" : null)">@t</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Footer actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-2" style="border-color: #f1f5f9 !important;">
+                            <button type="button" class="btn btn-white border fw-bold text-slate-700 px-4 py-2 bg-white d-flex align-items-center btn-back" data-prev="1" style="border-radius: 8px; font-size: 14px; border-color: #e2e8f0 !important;">
+                                <i data-lucide="arrow-left" class="me-2" style="width: 16px; height: 16px;"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-teal fw-bold px-4 py-2 d-flex align-items-center shadow-sm btn-next" data-next="3" style="border-radius: 8px; font-size: 14px;">
+                                Save & Continue <i data-lucide="arrow-right" class="ms-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Settings -->
+                    <div id="step-3" class="step-content d-none">
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <h4 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 20px;">Story Settings</h4>
+                        </div>
+                        <p class="text-muted mb-4" style="font-size: 13.5px;">Configure your writing status, point of view, and word count target.</p>
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Writing Status <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="Status" data-placeholder="Select status...">
+                                    <option value="Draft" selected="@(Model.Status == "Draft" ? "selected" : null)">Planning / Draft</option>
+                                    <option value="InProgress" selected="@(Model.Status == "InProgress" ? "selected" : null)">In Progress</option>
+                                    <option value="Published" selected="@(Model.Status == "Published" ? "selected" : null)">Completed / Published</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Point of View <i data-lucide="help-circle" style="width: 14px; height: 14px; color: #94a3b8; margin-left: 6px;"></i>
+                                </label>
+                                <select class="form-select select2-themed" name="PointOfView" data-placeholder="Select point of view...">
+                                    <option value=""></option>
+                                    @if (ViewBag.PointsOfView != null) {
+                                        foreach (var opt in (List<StoryVerse.Core.Entities.DropdownOption>)ViewBag.PointsOfView) {
+                                            bool isSelected = opt.Value == Model.PointOfView || opt.Text == Model.PointOfView;
+                                            <option value="@opt.Value" data-description="@opt.Description" selected="@(isSelected ? "selected" : null)">@opt.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2 d-flex align-items-center" style="font-size: 13px; color: #0f172a;">
+                                    Time Period / Setting Era
+                                </label>
+                                <input type="text" name="TimePeriod" value="@Model.TimePeriod" class="form-control" placeholder="e.g. Medieval, Modern, Future" style="font-size: 13.5px; padding: 10px 14px; border-radius: 8px;" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold mb-2" style="font-size: 13px; color: #0f172a;">Target Word Count <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" name="TargetWordCount" value="@Model.TargetWordCount" class="form-control" placeholder="e.g., 80000" style="font-size: 13.5px; border-right: none;" required>
+                                    <span class="input-group-text bg-white text-muted" style="font-size: 12.5px; border-left: none;">words</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-4" style="border-color: #f1f5f9 !important;">
+                            <button type="button" class="btn btn-white border fw-bold text-slate-700 px-4 py-2 bg-white d-flex align-items-center btn-back" data-prev="2" style="border-radius: 8px; font-size: 14px; border-color: #e2e8f0 !important;">
+                                <i data-lucide="arrow-left" class="me-2" style="width: 16px; height: 16px;"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-teal fw-bold px-4 py-2 d-flex align-items-center shadow-sm btn-next" data-next="4" style="border-radius: 8px; font-size: 14px;">
+                                Save & Continue <i data-lucide="arrow-right" class="ms-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Review -->
+                    <div id="step-4" class="step-content d-none">
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: #f1f5f9; color: #64748b;">
+                                <i data-lucide="check-square" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <h4 class="font-serif fw-bold mb-0" style="color: #0f172a; font-size: 20px;">Review Changes</h4>
+                        </div>
+                        <p class="text-muted mb-4" style="font-size: 13.5px;">Review your updated story details before saving changes.</p>
+
+                        <div class="row g-4 mb-4">
+                            <!-- Basic Details Summary -->
+                            <div class="col-md-6">
+                                <div class="card-rounded p-4 h-100 position-relative">
+                                    <button type="button" class="btn btn-link text-teal p-0 position-absolute top-0 end-0 mt-4 me-4 d-flex align-items-center text-decoration-none fw-medium btn-edit" data-step="1" style="font-size: 12.5px;">
+                                        <i data-lucide="edit-2" class="me-1.5" style="width: 12px; height: 12px;"></i> Edit
+                                    </button>
+                                    <div class="d-flex align-items-center gap-2 mb-4">
+                                        <i data-lucide="clipboard-list" style="width: 18px; height: 18px; color: #475569;"></i>
+                                        <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 14.5px;">Basic Details</h6>
+                                    </div>
+                                    <div class="d-flex flex-column gap-3" style="font-size: 12.5px;">
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Title</div>
+                                            <div class="col-7 fw-bold text-slate-900" id="review-title">@Model.Title</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Tagline</div>
+                                            <div class="col-7 text-slate-800" id="review-tagline">@(string.IsNullOrEmpty(Model.Tagline) ? "Not set" : Model.Tagline)</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Synopsis</div>
+                                            <div class="col-7 text-slate-800" id="review-synopsis" style="max-height: 80px; overflow-y: auto;">@Model.Synopsis</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Story Type</div>
+                                            <div class="col-7 text-slate-800" id="review-type">@Model.StoryType</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Target Audience</div>
+                                            <div class="col-7 text-slate-800" id="review-audience">@Model.TargetAudience</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Language</div>
+                                            <div class="col-7 text-slate-800" id="review-language">@Model.Language</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Genre & Theme Summary -->
+                            <div class="col-md-6">
+                                <div class="card-rounded p-4 h-100 position-relative">
+                                    <button type="button" class="btn btn-link text-teal p-0 position-absolute top-0 end-0 mt-4 me-4 d-flex align-items-center text-decoration-none fw-medium btn-edit" data-step="2" style="font-size: 12.5px;">
+                                        <i data-lucide="edit-2" class="me-1.5" style="width: 12px; height: 12px;"></i> Edit
+                                    </button>
+                                    <div class="d-flex align-items-center gap-2 mb-4">
+                                        <i data-lucide="feather" style="width: 18px; height: 18px; color: #475569;"></i>
+                                        <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 14.5px;">Genre & Theme</h6>
+                                    </div>
+                                    <div class="d-flex flex-column gap-3" style="font-size: 12.5px;">
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Selected Genres</div>
+                                            <div class="col-7 text-slate-800" id="review-primary-genre"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Themes</div>
+                                            <div class="col-7 text-slate-800" id="review-themes"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-5 text-muted fw-medium">Tone / Mood</div>
+                                            <div class="col-7 text-slate-800" id="review-mood">@Model.Tone</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top mt-4" style="border-color: #f1f5f9 !important;">
+                            <button type="button" class="btn btn-white border fw-bold text-slate-700 px-4 py-2 bg-white d-flex align-items-center btn-back" data-prev="3" style="border-radius: 8px; font-size: 14px; border-color: #e2e8f0 !important;">
+                                <i data-lucide="arrow-left" class="me-2" style="width: 16px; height: 16px;"></i> Back
+                            </button>
+                            <div class="d-flex flex-column align-items-end">
+                                <button type="submit" class="btn btn-teal fw-bold px-5 py-2.5 d-flex align-items-center shadow-sm" style="border-radius: 8px; font-size: 14px;">
+                                    Save Changes <i data-lucide="check" class="ms-2" style="width: 16px; height: 16px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Danger Zone Panel -->
+            <div class="card-rounded p-4 mt-4 bg-white" style="border-color: #fecaca !important; background-color: #fff5f5 !important;">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <h6 class="fw-bold mb-1" style="color: #991b1b; font-size: 14px;">Delete Story Workspace</h6>
+                        <p class="text-muted small mb-0" style="font-size: 12px;">Permanently delete this story and all its chapters, characters, and locations.</p>
+                    </div>
+                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this story? This cannot be undone.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger px-4 py-2 fw-bold" style="font-size: 13px; border-radius: 8px;">
+                            Delete Story
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Live Preview & Stepper Progress -->
+        <div class="col-xl-4 d-flex flex-column gap-4">
+            <!-- Live Preview -->
+            <div class="card-rounded p-4 bg-white text-center">
+                <h6 class="fw-bold text-start mb-4" style="color: #0f172a; font-size: 15px;">Live Preview</h6>
+                
+                <div class="mb-4 d-flex justify-content-center">
+                    <div style="width: 240px; height: 200px;">
+                        <img id="live-preview-book" src="@(string.IsNullOrEmpty(Model.CoverImageUrl) ? "/images/empty-states/live_preview_book.png" : Model.CoverImageUrl)" class="w-100 h-100" style="object-fit: contain; mix-blend-mode: multiply;" alt="Preview Book" />
+                    </div>
+                </div>
+
+                <h4 class="font-serif fw-bold mb-2" id="live-preview-title" style="color: #0f172a; font-size: 22px;">@Model.Title</h4>
+                <div class="mb-3 d-flex justify-content-center" id="live-preview-status-container">
+                    <div class="bg-light rounded-pill px-2.5 py-1.5 d-flex align-items-center gap-2 border" id="live-preview-status" style="font-size: 11px; font-weight: 700; color: #475569; border-color: #e2e8f0 !important; background-color: #f8fafc !important;">
+                        <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #f59e0b;"></div> @Model.Status
+                    </div>
+                </div>
+                
+                <p class="text-muted mb-4 px-3" id="live-preview-synopsis" style="font-size: 13px;">@(string.IsNullOrEmpty(Model.Synopsis) ? "Your story synopsis will appear here..." : Model.Synopsis)</p>
+
+                <div class="row g-0 pt-3 border-top" style="border-color: #f1f5f9 !important;">
+                    <div class="col-3 border-end" style="border-color: #f1f5f9 !important;">
+                        <div class="d-flex flex-column align-items-center">
+                            <i data-lucide="book-open" class="mb-1.5" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span class="fw-bold text-slate-800" style="font-size: 13px; line-height: 1;">@(Model.Chapters?.Count ?? 0)</span>
+                            <span class="text-muted mt-0.5" style="font-size: 10px;">Chapters</span>
+                        </div>
+                    </div>
+                    <div class="col-3 border-end" style="border-color: #f1f5f9 !important;">
+                        <div class="d-flex flex-column align-items-center">
+                            <i data-lucide="feather" class="mb-1.5" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span class="fw-bold text-slate-800" style="font-size: 13px; line-height: 1;">@Model.CurrentWordCount</span>
+                            <span class="text-muted mt-0.5" style="font-size: 10px;">Words</span>
+                        </div>
+                    </div>
+                    <div class="col-3 border-end" style="border-color: #f1f5f9 !important;">
+                        <div class="d-flex flex-column align-items-center">
+                            <i data-lucide="users" class="mb-1.5" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span class="fw-bold text-slate-800" style="font-size: 13px; line-height: 1;">@(Model.Characters?.Count ?? 0)</span>
+                            <span class="text-muted mt-0.5" style="font-size: 10px;">Characters</span>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="d-flex flex-column align-items-center">
+                            <i data-lucide="globe" class="mb-1.5" style="width: 14px; height: 14px; color: #64748b;"></i>
+                            <span class="fw-bold text-slate-800" id="live-preview-language" style="font-size: 13px; line-height: 1;">@(string.IsNullOrEmpty(Model.Language) ? "English" : Model.Language)</span>
+                            <span class="text-muted mt-0.5" style="font-size: 10px;">Language</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-        </div>
-    </form>
+            <!-- What's Next -->
+            <div id="right-whats-next" class="card-rounded p-4 bg-white flex-grow-1">
+                <h6 class="fw-bold mb-4 pb-2" style="color: #0f172a; font-size: 15px;">Configuration Steps</h6>
+                
+                <div class="position-relative ps-4 ms-2">
+                    <div class="position-absolute top-0 bottom-0" style="left: 0; width: 2px; background-color: #f1f5f9; margin-left: -1px; z-index: 1;"></div>
+                    
+                    <div class="d-flex mb-4 position-relative z-2 align-items-start" id="side-stepper-1">
+                        <div class="side-step-icon position-absolute rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 26px; height: 26px; background-color: #0d9488; left: -29px; top: -2px; font-size: 11px; border: 4px solid white;">1</div>
+                        <div class="ms-1">
+                            <h6 class="fw-bold mb-1" style="font-size: 13px; color: #0f172a;">Basic Details</h6>
+                            <p class="text-muted mb-0" style="font-size: 12px; line-height: 1.4;">Title, tagline, synopsis, and target language.</p>
+                        </div>
+                    </div>
 
-    <!-- Danger Zone Panel -->
-    <div class="card border-0 p-4 shadow-sm mt-4 mb-5" 
-         style="background: #FFF5F5; border: 1px solid #FEB2B2 !important; border-radius: 20px; z-index: 10; position: relative;">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <h5 class="fw-bold mb-1" style="color: #9B2C2C; font-size: 15px;">Delete Story Workspace</h5>
-                <p class="text-secondary small mb-0" style="font-size: 12.5px; font-weight: 500;">Permanently delete this story and all its chapters, characters, and locations.</p>
+                    <div class="d-flex mb-4 position-relative z-2 align-items-start" id="side-stepper-2">
+                        <div class="side-step-icon position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 26px; height: 26px; background-color: #f1f5f9; color: #64748b; left: -29px; top: -2px; font-size: 11px; border: 4px solid white;">2</div>
+                        <div class="ms-1">
+                            <h6 class="fw-bold mb-1" style="font-size: 13px; color: #0f172a;">Genre & Theme</h6>
+                            <p class="text-muted mb-0" style="font-size: 12px; line-height: 1.4;">Choose genres, themes, and overall mood.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex mb-4 position-relative z-2 align-items-start" id="side-stepper-3">
+                        <div class="side-step-icon position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 26px; height: 26px; background-color: #f1f5f9; color: #64748b; left: -29px; top: -2px; font-size: 11px; border: 4px solid white;">3</div>
+                        <div class="ms-1">
+                            <h6 class="fw-bold mb-1" style="font-size: 13px; color: #0f172a;">Settings</h6>
+                            <p class="text-muted mb-0" style="font-size: 12px; line-height: 1.4;">Writing status, POV, and word count target.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex position-relative z-2 align-items-start" id="side-stepper-4">
+                        <div class="side-step-icon position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 26px; height: 26px; background-color: #f1f5f9; color: #64748b; left: -29px; top: -2px; font-size: 11px; border: 4px solid white;">4</div>
+                        <div class="ms-1">
+                            <h6 class="fw-bold mb-1" style="font-size: 13px; color: #0f172a;">Review</h6>
+                            <p class="text-muted mb-0" style="font-size: 12px; line-height: 1.4;">Review and save updated story details.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this story? This cannot be undone.');">
-                <button type="submit" class="btn btn-danger px-4 py-2.5 fw-bold" style="font-size: 13px; border-radius: 12px; border: none;">
-                    Delete Story
-                </button>
-            </form>
         </div>
     </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const coverInput = document.getElementById("coverUrlInput");
-        const previewDiv = document.getElementById("previewContainer");
-
-        function updatePreview() {
-            const url = coverInput.value.trim();
-            if (url) {
-                previewDiv.innerHTML = `<img src="${url}" class="w-100 h-100 object-fit-cover" onerror="this.outerHTML='<i data-lucide=\\'image\\' class=\\'text-secondary opacity-50\\'></i>'; lucide.createIcons();" />`;
-            } else {
-                previewDiv.innerHTML = `<i data-lucide="image" class="text-secondary opacity-50" style="width: 20px; height: 20px;"></i>`;
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-        }
+            
+            function formatOption(opt) {
+                if (!opt.id) return opt.text;
+                var description = $(opt.element).data('description') || '';
+                if (description) {
+                    return $(
+                        '<div class="select2-option-wrapper"><div><div class="select2-option-title">' + opt.text + '</div>' +
+                        '<div class="select2-option-desc">' + description + '</div></div></div>'
+                    );
+                }
+                return opt.text;
+            }
 
-        coverInput.addEventListener("input", updatePreview);
-        updatePreview();
-    });
-</script>
+            $('.select2-themed').select2({
+                templateResult: formatOption,
+                width: '100%'
+            });
+            
+            // Genre Multi-Selection
+            function updateSelectedGenresPreview() {
+                var selected = [];
+                $('.genre-card input[type="checkbox"]:checked').each(function() {
+                    selected.push($(this).closest('label[data-genre-name]').data('genre-name'));
+                });
+                var $preview = $('#selected-genres-preview');
+                if (selected.length === 0) {
+                    $preview.html('<span class="text-muted" style="font-size: 12px; font-style: italic;">No genres selected yet — click cards above to pick one or more.</span>');
+                } else {
+                    var html = selected.map(function(g, i) {
+                        var sep = i < selected.length - 1 ? '<span style="color:#94a3b8;font-size:12px;">+</span>' : '';
+                        return '<span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill fw-semibold" style="background:#0d9488;color:white;font-size:12px;">' + g + '</span>' + sep;
+                    }).join('');
+                    $preview.html('<div class="d-flex flex-wrap align-items-center gap-1">' + html + '</div>');
+                }
+            }
+
+            $('.genre-card input[type="checkbox"]').on('change', function() {
+                var $card = $(this).closest('.genre-card');
+                if ($(this).is(':checked')) {
+                    $card.css({
+                        'background-color': '#f0fdfa',
+                        'border-color': '#0d9488'
+                    });
+                    $card.find('.check-icon').removeClass('d-none');
+                    $card.find('.icon-container').css({
+                        'background-color': '#ccfbf1',
+                        'color': '#0d9488'
+                    });
+                } else {
+                    $card.css({
+                        'background-color': '#ffffff',
+                        'border-color': '#e2e8f0'
+                    });
+                    $card.find('.check-icon').addClass('d-none');
+                    $card.find('.icon-container').css({
+                        'background-color': '#f1f5f9',
+                        'color': '#64748b'
+                    });
+                }
+                updateSelectedGenresPreview();
+            });
+
+            // Initialize genre preview on load
+            updateSelectedGenresPreview();
+
+            // Theme Selection
+            $('.theme-pill input[type="checkbox"]').on('change', function() {
+                var $pill = $(this).siblings('.theme-pill-label');
+                if ($(this).is(':checked')) {
+                    $pill.removeClass('unselected').addClass('selected');
+                    var iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x theme-icon"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+                    $pill.find('svg, i').replaceWith(iconHtml);
+                } else {
+                    $pill.removeClass('selected').addClass('unselected');
+                    var iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus theme-icon" style="color: #94a3b8;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
+                    $pill.find('svg, i').replaceWith(iconHtml);
+                }
+            });
+
+            // Cover Image Drag & Drop / File Select
+            var $dropZone = $('#cover-drop-zone');
+            var $fileInput = $('#CoverFile');
+
+            $dropZone.on('click', function() {
+                $fileInput.click();
+            });
+
+            $fileInput.on('change', function(e) {
+                handleFileSelect(e.target.files);
+            });
+
+            $dropZone.on('dragover', function(e) {
+                e.preventDefault();
+                $dropZone.css('border-color', '#0d9488');
+            });
+
+            $dropZone.on('dragleave', function(e) {
+                e.preventDefault();
+                $dropZone.css('border-color', '#cbd5e1');
+            });
+
+            $dropZone.on('drop', function(e) {
+                e.preventDefault();
+                $dropZone.css('border-color', '#cbd5e1');
+                if (e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files.length) {
+                    $fileInput[0].files = e.originalEvent.dataTransfer.files;
+                    handleFileSelect(e.originalEvent.dataTransfer.files);
+                }
+            });
+
+            function handleFileSelect(files) {
+                if (files && files.length > 0) {
+                    var file = files[0];
+                    $dropZone.find('h6').text(file.name);
+                    $dropZone.find('p.text-teal').text('File selected');
+                    
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#live-preview-book').attr('src', e.target.result);
+                        $('#current-cover-preview').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            // Hero Banner Background Image Drag & Drop
+            var $bannerZone = $('#banner-drop-zone');
+            var $bannerInput = $('#HeroBannerFile');
+
+            $bannerZone.on('click', function() {
+                $bannerInput.click();
+            });
+
+            $bannerInput.on('change', function(e) {
+                handleBannerSelect(e.target.files);
+            });
+
+            $bannerZone.on('dragover', function(e) {
+                e.preventDefault();
+                $bannerZone.css('border-color', '#0d9488');
+            });
+
+            $bannerZone.on('dragleave', function(e) {
+                e.preventDefault();
+                $bannerZone.css('border-color', '#cbd5e1');
+            });
+
+            $bannerZone.on('drop', function(e) {
+                e.preventDefault();
+                $bannerZone.css('border-color', '#cbd5e1');
+                if (e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files.length) {
+                    $bannerInput[0].files = e.originalEvent.dataTransfer.files;
+                    handleBannerSelect(e.originalEvent.dataTransfer.files);
+                }
+            });
+
+            function handleBannerSelect(files) {
+                if (files && files.length > 0) {
+                    var file = files[0];
+                    $bannerZone.find('h6').text(file.name);
+                    $bannerZone.find('p.text-teal').text('File selected');
+                    
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#current-banner-preview').attr('src', e.target.result).removeClass('d-none');
+                        $('#banner-default-label').addClass('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            // Step Navigation Logic
+            function updateSteppers(currentStep) {
+                for (let i = 1; i <= 4; i++) {
+                    let topStep = $('#top-stepper-' + i);
+                    let sideStep = $('#side-stepper-' + i);
+                    
+                    if (i < currentStep) {
+                        topStep.find('.top-step-icon').html('<i data-lucide="check" style="width: 18px; height: 18px;"></i>').css({
+                            'background-color': '#0d9488',
+                            'color': 'white'
+                        });
+                        topStep.find('.top-step-label').css({'font-weight': '500', 'color': '#64748b'});
+                        
+                        sideStep.find('.side-step-icon').html('<i data-lucide="check" style="width: 12px; height: 12px;"></i>').css({
+                            'background-color': '#0d9488',
+                            'color': 'white'
+                        }).removeClass('text-slate-500').addClass('text-white shadow-sm');
+                    } else if (i == currentStep) {
+                        topStep.find('.top-step-icon').html(i).css({
+                            'background-color': '#0d9488',
+                            'color': 'white'
+                        });
+                        topStep.find('.top-step-label').css({'font-weight': '700', 'color': '#0d9488'});
+                        
+                        sideStep.find('.side-step-icon').html(i).css({
+                            'background-color': '#0d9488',
+                            'color': 'white'
+                        }).removeClass('text-slate-500').addClass('text-white shadow-sm');
+                    } else {
+                        topStep.find('.top-step-icon').html(i).css({
+                            'background-color': '#f1f5f9',
+                            'color': '#64748b'
+                        });
+                        topStep.find('.top-step-label').css({'font-weight': '600', 'color': '#64748b'});
+                        
+                        sideStep.find('.side-step-icon').html(i).css({
+                            'background-color': '#f1f5f9',
+                            'color': '#64748b'
+                        }).removeClass('text-white shadow-sm');
+                    }
+                }
+                
+                if (currentStep == 4) {
+                    updateReviewData();
+                }
+
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            function updateReviewData() {
+                function getText(selector) {
+                    var el = $(selector);
+                    if (el.is('select')) {
+                        var val = el.val();
+                        if (!val) return '';
+                        return el.find('option:selected').text();
+                    }
+                    return el.val();
+                }
+                function setVal(id, val) {
+                    if (!val || val.trim() === '') {
+                        $(id).html('<span class="text-muted fst-italic">Not set</span>');
+                    } else {
+                        $(id).text(val);
+                    }
+                }
+                
+                var title = getText('input[name="Title"]');
+                setVal('#review-title', title);
+                setVal('#review-tagline', getText('input[name="Tagline"]'));
+                setVal('#review-synopsis', getText('textarea[name="Synopsis"]'));
+                setVal('#review-type', getText('select[name="StoryType"]'));
+                setVal('#review-audience', getText('select[name="TargetAudience"]'));
+                setVal('#review-language', getText('select[name="Language"]'));
+                
+                var selectedGenres = [];
+                $('input[name="SelectedGenreIds"]:checked').each(function() {
+                    selectedGenres.push($(this).closest('label[data-genre-name]').data('genre-name'));
+                });
+                if (selectedGenres.length > 0) {
+                    var genreTagsHtml = '<div class="d-flex flex-wrap gap-1">' +
+                        selectedGenres.map(function(g) {
+                            return '<span class="px-2 py-0.5 rounded-pill fw-medium" style="background:#0d9488;color:white;font-size:11px;">' + g + '</span>';
+                        }).join('') + '</div>';
+                    $('#review-primary-genre').html(genreTagsHtml);
+                } else {
+                    $('#review-primary-genre').html('<span class="text-muted fst-italic">Not set</span>');
+                }
+                
+                var themes = [];
+                $('input[name="Themes"]:checked').each(function() {
+                    themes.push($(this).val());
+                });
+                if (themes.length > 0) {
+                    var themesHtml = '<div class="d-flex flex-wrap gap-1.5">';
+                    themes.forEach(function(t) {
+                        themesHtml += '<span class="bg-light text-slate-700 px-2 py-1 rounded" style="font-size: 11px; font-weight: 500;">' + t + '</span>';
+                    });
+                    themesHtml += '</div>';
+                    $('#review-themes').html(themesHtml);
+                } else {
+                    $('#review-themes').html('<span class="text-muted fst-italic">Not set</span>');
+                }
+                
+                setVal('#review-mood', getText('select[name="Tone"]'));
+                
+                // Live preview updates
+                $('#live-preview-title').text(title && title.trim() !== '' ? title : 'Untitled Story');
+                $('#live-preview-synopsis').text(getText('textarea[name="Synopsis"]') || 'Your story synopsis will appear here...');
+                $('#live-preview-language').text(getText('select[name="Language"]') || 'English');
+            }
+            
+            function validateStep(stepIndex) {
+                let isValid = true;
+                let $step = $('#step-' + stepIndex);
+                
+                $step.find('.text-danger.validation-message').remove();
+                $step.find('.is-invalid').removeClass('is-invalid');
+                
+                $step.find('input[required], textarea[required], select[required]').each(function() {
+                    if (!$(this).val() || $(this).val().trim() === '') {
+                        isValid = false;
+                        $(this).addClass('is-invalid');
+                        $(this).after('<div class="text-danger validation-message mt-1 fw-medium" style="font-size: 12px;">This field is required.</div>');
+                    }
+                });
+                
+                return isValid;
+            }
+
+            $('.btn-next').on('click', function() {
+                var currentStep = $(this).closest('.step-content').attr('id').split('-')[1];
+                if (!validateStep(currentStep)) {
+                    return;
+                }
+
+                var nextStep = $(this).data('next');
+                $('.step-content').addClass('d-none');
+                $('#step-' + nextStep).removeClass('d-none');
+                updateSteppers(nextStep);
+            });
+
+            $('.btn-back').on('click', function() {
+                var prevStep = $(this).data('prev');
+                $('.step-content').addClass('d-none');
+                $('#step-' + prevStep).removeClass('d-none');
+                updateSteppers(prevStep);
+            });
+            
+            $('.btn-edit').on('click', function() {
+                var targetStep = $(this).data('step');
+                $('.step-content').addClass('d-none');
+                $('#step-' + targetStep).removeClass('d-none');
+                updateSteppers(targetStep);
+            });
+            
+            // Initialize on step 1 (Basic Details)
+            updateSteppers(1);
+            $('.step-content').addClass('d-none');
+            $('#step-1').removeClass('d-none');
+
+            // Title Availability Check
+            let userOverrodeTitle = false;
+            const currentStoryId = '@Model.Id';
+
+            function checkTitleAvailability() {
+                const $input = $('#storyTitleInput');
+                const titleVal = $input.val() ? $input.val().trim() : '';
+                const $box = $('#titleAvailabilityBox');
+                const $msg = $('#titleAvailabilityMessage');
+                const $suggestionsList = $('#titleSuggestionsList');
+
+                if (!titleVal) {
+                    $box.addClass('d-none');
+                    userOverrodeTitle = false;
+                    return;
+                }
+
+                if (userOverrodeTitle) return;
+
+                $.ajax({
+                    url: '/Stories/CheckTitleAvailability',
+                    type: 'GET',
+                    global: false,
+                    data: { title: titleVal, currentStoryId: currentStoryId },
+                    success: function (res) {
+                        if (!res.isAvailable && !userOverrodeTitle) {
+                            $msg.text(res.message || 'Name is not available');
+                            $suggestionsList.empty();
+
+                            if (res.suggestions && res.suggestions.length > 0) {
+                                res.suggestions.forEach(function (sugg) {
+                                    const $pill = $('<button type="button" class="btn btn-sm text-teal fw-semibold bg-white border border-teal-subtle me-1 mb-1 suggestion-pill" style="border-radius: 16px; font-size: 12px; border-color: #0d9488 !important; color: #0d9488 !important; transition: all 0.2s;">' + sugg + '</button>');
+                                    $pill.on('click', function () {
+                                        $input.val(sugg);
+                                        userOverrodeTitle = false;
+                                        checkTitleAvailability();
+                                    });
+                                    $suggestionsList.append($pill);
+                                });
+                            }
+                            $box.removeClass('d-none');
+                            if (typeof lucide !== 'undefined') lucide.createIcons();
+                        } else {
+                            $box.addClass('d-none');
+                        }
+                    }
+                });
+            }
+
+            $('#storyTitleInput').on('blur', checkTitleAvailability);
+            $('#storyTitleInput').on('input', function () {
+                userOverrodeTitle = false;
+                $('#titleAvailabilityBox').addClass('d-none');
+            });
+            $(document).on('click', '#btnUseNameAnyway', function () {
+                userOverrodeTitle = true;
+                $('#titleAvailabilityBox').addClass('d-none');
+            });
+        });
+    </script>
+}

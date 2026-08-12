@@ -63,6 +63,35 @@
         }
         /* Global utility helpers */
         .transition-all { transition: all 0.2s ease; }
+
+        /* -------------------------------------------------------------
+           GLOBAL MOBILE VIEW - 20PX PAGE END MARGIN / PADDING FOR ALL PAGES
+           ------------------------------------------------------------- */
+        @@media (max-width: 767.98px) {
+            .main-content-wrapper {
+                padding-bottom: 20px !important;
+            }
+            .main-content-wrapper > div:last-child {
+                padding-bottom: 20px !important;
+                margin-bottom: 20px !important;
+            }
+            .main-content-wrapper .card:last-child,
+            .main-content-wrapper .db-card:last-child,
+            .main-content-wrapper .cs-card:last-child,
+            .main-content-wrapper .row:last-child {
+                margin-bottom: 20px !important;
+            }
+            .dashboard-page,
+            .chapter-studio-page,
+            .stories-page-container,
+            .character-page-container,
+            .world-building-page,
+            .timeline-page,
+            .story-details-page {
+                padding-bottom: 20px !important;
+                margin-bottom: 20px !important;
+            }
+        }
     </style>
 </head>
 <body class="text-slate-800 font-sans" style="margin: 0; padding: 0; height: 100vh; height: 100dvh; overflow: hidden; background-color: #FAF5ED;">

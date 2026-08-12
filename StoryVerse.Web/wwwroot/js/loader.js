@@ -213,23 +213,12 @@
         _setupApiInterceptors: function () {
             const self = this;
 
-            function onRequestStart(isExplicitOverlay, message) {
-                activeRequestCount++;
-                if (isExplicitOverlay) {
-                    self.show({ text: message || 'Loading data...' });
-                } else if (activeRequestCount === 1) {
-                    self.startProgress();
-                }
-            }
-
-            function onRequestEnd(isExplicitOverlay) {
-                activeRequestCount = Math.max(0, activeRequestCount - 1);
-                if (isExplicitOverlay) {
-                    self.hide();
-                }
-                if (activeRequestCount === 0) {
-                    self.endProgress();
-                }
+            function isAutoSaveRequest(url, options) {
+                const urlStr = (typeof url === 'string' ? url : (url && url.url ? url.url : '')).toLowerCase();
+                if (options && (options.skipLoader === true || options.showLoader === false)) return true;
+                if (options && options.headers && (options.headers['X-Skip-Loader'] === 'true' || options.headers['x-skip-loader'] === 'true')) return true;
+                if (urlStr.includes('/chapters/savedraft') || urlStr.includes('/chapters/savecontent') || urlStr.includes('autosave') || urlStr.includes('savedraft')) return true;
+                return false;
             }
 
             // 1. Intercept native fetch
@@ -237,7 +226,13 @@
                 const originalFetch = window.fetch;
                 window.fetch = function () {
                     const args = arguments;
+                    const url = args[0];
                     const options = args[1] || {};
+
+                    if (isAutoSaveRequest(url, options)) {
+                        return originalFetch.apply(this, args);
+                    }
+
                     const isExplicitOverlay = options.showLoaderOverlay === true;
                     const message = options.loaderText || 'Loading...';
 
@@ -267,7 +262,10 @@
 
                 XMLHttpRequest.prototype.send = function () {
                     const xhr = this;
-                    // Ignore internal analytics or noise requests if needed
+                    if (isAutoSaveRequest(xhr._svUrl)) {
+                        return originalSend.apply(this, arguments);
+                    }
+
                     const isExplicitOverlay = xhr._svShowOverlay === true;
 
                     onRequestStart(isExplicitOverlay, xhr._svLoaderText);
@@ -282,7 +280,9 @@
 
             // 3. Intercept jQuery AJAX if present
             if (window.jQuery) {
-                window.jQuery(document).on('ajaxStart.svLoader', function () {
+                window.jQuery(document).on('ajaxStart.svLoader', function (e, xhr, settings) {
+                    const url = settings ? settings.url : '';
+                    if (isAutoSaveRequest(url, settings)) return;
                     if (activeRequestCount === 0) {
                         self.startProgress();
                     }

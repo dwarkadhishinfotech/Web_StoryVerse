@@ -1,560 +1,1371 @@
 @model StoryVerse.Core.Entities.Story
 @{
     ViewData["Title"] = Model.Title;
-    var progress = Model.TargetWordCount > 0 ? (int)((double)Model.CurrentWordCount / Model.TargetWordCount * 100) : 0;
-    progress = Math.Min(100, Math.Max(0, progress));
-    var completedChaptersCount = Model.Chapters?.Count ?? 0; // Mock completed chapters as total chapters
+    
+    // UserGoal from ViewBag
+    var userGoal = ViewBag.UserGoal as StoryVerse.Core.Entities.UserGoal ?? new StoryVerse.Core.Entities.UserGoal();
+    
+    // User info
+    var userInitials = ViewBag.UserInitials as string ?? "RP";
+    var userName = ViewBag.UserName as string ?? "Rakshesh kumar";
+
+    // Progress percentage
+    var progress = Model.ProgressPercentage;
+    if (Model.TargetWordCount > 0 && Model.CurrentWordCount > 0)
+    {
+        progress = (int)Math.Clamp(((double)Model.CurrentWordCount / Model.TargetWordCount) * 100, 0, 100);
+    }
+
+    // Reading time calculation (~4h 20m for 82,450 words)
+    int totalWords = Model.CurrentWordCount;
+    int totalMinutes = (int)Math.Round((double)totalWords / 317); 
+    if (totalWords == 0) totalMinutes = 0;
+    string readingTimeStr = totalMinutes >= 60 ? $"~ {totalMinutes / 60}h {totalMinutes % 60}m" : $"~ {totalMinutes} min";
+
+    // Chapter breakdown calculations
+    var allChapters = Model.Chapters?.ToList() ?? new List<StoryVerse.Core.Entities.Chapter>();
+    int totalChaptersCount = allChapters.Count;
+    int completedCount = allChapters.Count(c => c.Status == "Completed");
+    int inProgressCount = allChapters.Count(c => c.Status == "InProgress");
+    int plannedCount = allChapters.Count(c => c.Status == "Planned");
+    int onHoldCount = allChapters.Count(c => c.Status == "OnHold");
+    int archivedCount = allChapters.Count(c => c.Status == "Archived");
+
+    int completedPercent = totalChaptersCount > 0 ? (int)Math.Round((double)completedCount / totalChaptersCount * 100) : 0;
+    int inProgressPercent = totalChaptersCount > 0 ? (int)Math.Round((double)inProgressCount / totalChaptersCount * 100) : 0;
+    int plannedPercent = totalChaptersCount > 0 ? (int)Math.Round((double)plannedCount / totalChaptersCount * 100) : 0;
+    int onHoldPercent = totalChaptersCount > 0 ? (int)Math.Round((double)onHoldCount / totalChaptersCount * 100) : 0;
+    int archivedPercent = totalChaptersCount > 0 ? (int)Math.Round((double)archivedCount / totalChaptersCount * 100) : 0;
+
+    // Writing goals percentages
+    int dailyGoalVal = userGoal.DailyWordCountGoal > 0 ? userGoal.DailyWordCountGoal : 1000;
+    int dailyWrittenVal = userGoal.WordsWrittenToday;
+    int dailyPercent = dailyGoalVal > 0 ? (int)Math.Round((double)dailyWrittenVal / dailyGoalVal * 100) : 0;
+
+    int weeklyGoalVal = userGoal.WeeklyWordCountGoal > 0 ? userGoal.WeeklyWordCountGoal : 5000;
+    int weeklyWrittenVal = userGoal.WordsWrittenThisWeek;
+    int weeklyPercent = weeklyGoalVal > 0 ? (int)Math.Round((double)weeklyWrittenVal / weeklyGoalVal * 100) : 0;
+
+    int monthlyGoalVal = userGoal.MonthlyWordCountGoal > 0 ? userGoal.MonthlyWordCountGoal : 20000;
+    int monthlyWrittenVal = userGoal.WordsWrittenThisMonth;
+    int monthlyPercent = monthlyGoalVal > 0 ? (int)Math.Round((double)monthlyWrittenVal / monthlyGoalVal * 100) : 0;
+
+    // Parse Genres
+    var genresList = !string.IsNullOrWhiteSpace(Model.Genre)
+        ? Model.Genre.Split(new[] { ',', '•' }, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+        : (Model.StoryGenres != null && Model.StoryGenres.Any()
+            ? Model.StoryGenres.Select(sg => sg.Genre?.Name).Where(n => !string.IsNullOrEmpty(n)).ToArray()!
+            : Array.Empty<string>());
 }
 
-<!-- Custom Styles for Story Workspace Details Page -->
+<!-- Custom Beautified Styles matching exact reference image -->
 <style>
-    .font-serif {
+    @@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Great+Vibes&display=swap');
+
+    /* ========================================
+       STORY DETAILS — RESPONSIVE & BEAUTIFIED
+    ======================================== */
+    .storyverse-workspace {
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        color: #1E293B;
+        background: transparent; /* No container background */
+    }
+
+    .font-serif-title {
         font-family: 'Playfair Display', Georgia, serif;
     }
-    .hero-banner {
-        background-color: #0A1A2F;
-        border-radius: 24px;
+
+    .font-calligraphy {
+        font-family: 'Great Vibes', 'Playfair Display', cursive;
+    }
+
+    /* ===== Top Action Header ===== */
+    .story-action-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .story-action-header .header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* ===== Premium Hero Banner ===== */
+    .hero-banner-card {
+        border-radius: 20px;
         position: relative;
         overflow: hidden;
-        color: #ffffff;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        margin-bottom: 1.5rem;
+        color: #FFFFFF;
+        box-shadow: 0 12px 40px rgba(11, 19, 41, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        margin-bottom: 1.25rem;
     }
-    .hero-banner::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image: radial-gradient(circle at 80% 20%, rgba(19, 168, 166, 0.15) 0%, transparent 50%),
-                          radial-gradient(circle at 10% 80%, rgba(30, 67, 155, 0.2) 0%, transparent 40%);
-        pointer-events: none;
-    }
-    .hero-banner-content {
+
+    .hero-banner-overlay {
+        background: linear-gradient(90deg, #0B132A 0%, #0B132AE6 50%, #0B132A55 82%, rgba(11, 19, 42, 0.1) 100%);
+        padding: 2rem 2.5rem;
         position: relative;
-        z-index: 10;
-        padding: 3rem 2.5rem;
+        z-index: 2;
     }
-    .dashboard-card {
-        background: #ffffff;
-        border: 1px solid #E2E8F0;
-        border-radius: 20px;
-        padding: 1.5rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+
+    @@media (max-width: 991.98px) {
+        .hero-banner-overlay {
+            padding: 1.5rem 1.75rem;
+        }
     }
-    .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+
+    @@media (max-width: 575.98px) {
+        .hero-banner-overlay {
+            padding: 1.25rem 1.25rem;
+            background: linear-gradient(160deg, #0B132A 0%, #0B132AEE 60%, #0B132A88 100%);
+        }
+        .hero-banner-card {
+            border-radius: 16px;
+        }
     }
-    .action-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 0.75rem;
+
+    .book-cover-elevated {
+        width: 145px;
+        height: 205px;
+        border-radius: 12px;
+        object-fit: cover;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.12);
+        transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+        flex-shrink: 0;
     }
-    .badge-genre {
-        background-color: rgba(177, 165, 255, 0.1);
-        color: #B1A5FF;
-        border: 1px solid rgba(177, 165, 255, 0.2);
+
+    .book-cover-elevated:hover {
+        transform: scale(1.03) translateY(-3px);
+    }
+
+    @@media (max-width: 575.98px) {
+        .book-cover-elevated {
+            width: 100px;
+            height: 145px;
+            border-radius: 10px;
+        }
+    }
+
+    .badge-novel {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #E2E8F0;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 3px 10px;
+        border-radius: 100px;
+    }
+
+    .tag-pill {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #F1F5F9;
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: 100px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
-    .badge-subgenre {
-        background-color: rgba(125, 211, 252, 0.1);
-        color: #7DD3FC;
-        border: 1px solid rgba(125, 211, 252, 0.2);
+
+    .tag-pill-add {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px dashed rgba(255, 255, 255, 0.3);
+        color: #94A3B8;
         font-size: 11px;
-        font-weight: 600;
-    }
-    .snapshot-stat-card {
-        background-color: #F8FAFC;
-        border-radius: 16px;
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-center;
-        position: relative;
-        margin-top: 1rem;
-        border: 1px solid #F1F5F9;
-    }
-    .snapshot-icon-badge {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        top: 0;
-        transform: translateY(-50%);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .roadmap-node {
-        position: relative;
-        z-index: 10;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 80px;
-    }
-    .roadmap-circle {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: #ffffff;
-        border: 4px solid #E2E8F0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 0.5rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: 100px;
+        cursor: pointer;
         transition: all 0.2s ease;
     }
-    .roadmap-node.completed .roadmap-circle {
-        border-color: #13A8A6;
+
+    .tag-pill-add:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #FFFFFF;
     }
-    .roadmap-node.active .roadmap-circle {
-        border-color: #3B82F6;
+
+    /* ===== 8 Quick Action Grid ===== */
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
     }
-    .roadmap-line {
+
+    @@media (max-width: 1199.98px) {
+        .quick-actions-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .quick-actions-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.6rem;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .quick-actions-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+    }
+
+    .action-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 16px;
+        padding: 1.1rem 0.6rem;
+        text-align: center;
+        transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        text-decoration: none;
+        cursor: pointer;
+        position: relative;
+    }
+
+    /* ===== Soon Badge ===== */
+    .soon-badge {
         position: absolute;
-        top: 20px;
-        left: 40px;
-        right: 40px;
-        height: 2px;
-        background-color: #F1F5F9;
-        z-index: 0;
+        top: 7px;
+        right: 7px;
+        background: linear-gradient(135deg, #F59E0B, #EF4444);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        padding: 2px 7px;
+        border-radius: 100px;
+        text-transform: uppercase;
+        line-height: 1.4;
+        pointer-events: none;
+        box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
     }
-    .roadmap-line-active {
+
+    /* Soon badge inside element-card */
+    .element-card .soon-badge {
+        top: 6px;
+        right: 6px;
+        font-size: 8.5px;
+        padding: 2px 6px;
+    }
+
+    .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.08);
+        border-color: #CBD5E1;
+        background: #FFFFFF;
+    }
+
+    .action-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.6rem;
+        transition: transform 0.25s ease;
+    }
+
+    .action-card:hover .action-icon-box {
+        transform: scale(1.08);
+    }
+
+    @@media (max-width: 575.98px) {
+        .action-card {
+            padding: 0.85rem 0.5rem;
+            border-radius: 12px;
+        }
+        .action-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            margin-bottom: 0.45rem;
+        }
+    }
+
+    /* ===== Content Cards ===== */
+    .content-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+    }
+
+    @@media (max-width: 575.98px) {
+        .content-card {
+            padding: 1.1rem;
+            border-radius: 16px;
+        }
+    }
+
+    /* ===== Scrollable card body ===== */
+    /* Fixed-height content cards: header stays pinned, body scrolls */
+    .card-scroll-body {
+        overflow-y: auto;
+        overflow-x: hidden;
+        flex: 1 1 auto;
+        /* Custom scrollbar inside cards */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(13, 148, 136, 0.25) transparent;
+    }
+    .card-scroll-body::-webkit-scrollbar {
+        width: 4px;
+    }
+    .card-scroll-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .card-scroll-body::-webkit-scrollbar-thumb {
+        background: rgba(13, 148, 136, 0.3);
+        border-radius: 4px;
+    }
+    .card-scroll-body::-webkit-scrollbar-thumb:hover {
+        background: rgba(13, 148, 136, 0.6);
+    }
+
+    /* Synopsis / Tagline / At-A-Glance row — equal height cards */
+    .info-cards-row .content-card {
+        height: 280px;   /* fixed height – equal across all 3 */
+    }
+
+    /* Manuscript Overview card */
+    .manuscript-card {
+        height: 100%;
+        min-height: 480px;
+    }
+
+    /* Writing Goals card */
+    .goals-card {
+        min-height: 220px;
+    }
+
+    /* Manuscript Progress card */
+    .progress-card {
+        min-height: 220px;
+    }
+
+    @@media (max-width: 991.98px) {
+        /* On tablet/mobile let cards grow naturally but cap at a max */
+        .info-cards-row .content-card {
+            height: auto;
+            max-height: 300px;
+        }
+        .manuscript-card {
+            height: auto;
+            max-height: 420px;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .info-cards-row .content-card {
+            max-height: 260px;
+        }
+    }
+
+    /* Manuscript Chapter Accordion */
+    .part-header {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 0.85rem 1.15rem;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 13.5px;
+        color: #1E293B;
+        transition: background-color 0.2s ease;
+    }
+
+    .part-header:hover {
+        background: #F1F5F9;
+    }
+
+    .chapter-row {
+        padding: 0.85rem 1.15rem;
+        border-bottom: 1px solid #F1F5F9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        transition: background 0.15s ease;
+    }
+
+    .chapter-row:hover {
+        background: #F8FAFC;
+    }
+
+    .chapter-row:last-child {
+        border-bottom: none;
+    }
+
+    /* Status Badges */
+    .badge-status-completed {
+        background-color: #E6F4EA;
+        color: #137333;
+        font-weight: 600;
+        font-size: 10.5px;
+        padding: 3px 10px;
+        border-radius: 100px;
+    }
+
+    .badge-status-inprogress {
+        background-color: #E8F0FE;
+        color: #1A73E8;
+        font-weight: 600;
+        font-size: 10.5px;
+        padding: 3px 10px;
+        border-radius: 100px;
+    }
+
+    .badge-status-planned {
+        background-color: #FEF7E0;
+        color: #B06000;
+        font-weight: 600;
+        font-size: 10.5px;
+        padding: 3px 10px;
+        border-radius: 100px;
+    }
+
+    /* Dynamic Donut Chart */
+    .donut-chart-container {
+        position: relative;
+        width: 140px;
+        height: 140px;
+    }
+
+    .donut-center-label {
         position: absolute;
-        top: 20px;
-        left: 40px;
-        height: 2px;
-        background: linear-gradient(to right, #13A8A6, #3B82F6);
-        z-index: 0;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    /* ===== Story Elements 7 Grid ===== */
+    .elements-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.75rem;
+    }
+
+    @@media (max-width: 1199.98px) {
+        .elements-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .elements-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .elements-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+    }
+
+    .element-card {
+        background: rgba(248, 250, 252, 0.7);
+        border: 1px solid rgba(241, 245, 249, 0.9);
+        border-radius: 14px;
+        padding: 1rem 0.5rem;
+        text-align: center;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .element-card:hover {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: #CBD5E1;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.06);
+    }
+
+    /* ===== Stepper Roadmap ===== */
+    .roadmap-node-circle {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.55rem;
+        z-index: 2;
+        position: relative;
+        background: #FFFFFF;
+        border: 2px solid #CBD5E1;
+        transition: all 0.25s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .roadmap-node-circle.completed {
+        border-color: #0D9488;
+        background: #F0FDFA;
+        color: #0D9488;
+        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1);
+    }
+
+    .roadmap-node-circle.active {
+        border-color: #0D9488;
+        background: linear-gradient(135deg, #0D9488, #0EA5E9);
+        color: #FFFFFF;
+        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+    }
+
+    .roadmap-node-circle.upcoming {
+        border-color: #E2E8F0;
+        color: #94A3B8;
+    }
+
+    /* ===== Responsive Roadmap ===== */
+    .roadmap-scroll-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 0.5rem;
+    }
+
+    .roadmap-scroll-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+
+    .roadmap-inner {
+        min-width: 560px;
+    }
+
+    /* ===== Row Gap / Section Spacing ===== */
+    .sv-section-gap {
+        margin-bottom: 1.25rem;
+    }
+
+    @@media (min-width: 768px) {
+        .sv-section-gap {
+            margin-bottom: 1.5rem;
+        }
+    }
+
+    /* ===== Hero Stats Row on mobile ===== */
+    @@media (max-width: 575.98px) {
+        .hero-stats-row {
+            gap: 0.75rem !important;
+        }
+        .hero-stats-row .col-6 {
+            flex: 0 0 auto;
+            width: auto;
+        }
+    }
+
+    /* ===== Middle Cards (Synopsis/Tagline/Glance) ===== */
+    @@media (max-width: 991.98px) {
+        .tagline-card {
+            min-height: 180px;
+        }
+    }
+
+    /* ===== Writing Goals spacing ===== */
+    .goal-row {
+        margin-bottom: 1rem;
+    }
+
+    .goal-row:last-child {
+        margin-bottom: 0;
+    }
+
+    /* ===== Motivational banner ===== */
+    .motivational-banner {
+        margin-top: 1.25rem;
+        text-align: center;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        font-weight: 600;
+        background: #F0FDFA;
+        color: #0D9488;
+        font-size: 12.5px;
+        border: 1px solid #CCFBF1;
+        transition: background 0.2s ease;
+    }
+
+    .motivational-banner:hover {
+        background: #CCFBF1;
     }
 </style>
 
-<div class="w-full pb-5">
+<div class="storyverse-workspace w-full pb-4">
     
-    <!-- Back to Library Button -->
-    <a href="@Url.Action("Index", "Stories")" 
-       class="text-decoration-none text-muted d-inline-flex align-items-center mb-3 fw-bold" 
-       style="font-size: 13px;">
-        <i data-lucide="arrow-left" class="me-1.5" style="width: 16px; height: 16px;"></i> Back to Library
-    </a>
+    <!-- Top Action Header -->
+    <div class="story-action-header">
+        <a href="@Url.Action("Index", "Stories")" 
+           class="text-decoration-none text-slate-600 d-inline-flex align-items-center fw-semibold" 
+           style="font-size: 13px;">
+            <i data-lucide="arrow-left" class="me-1" style="width: 16px; height: 16px;"></i> Back to Library
+        </a>
 
-    <!-- Premium Hero Section -->
-    <div class="hero-banner">
-        <div class="hero-banner-content">
-            <div class="d-flex align-items-center text-teal mb-3 fw-bold text-uppercase" style="font-size: 11px; letter-spacing: 1px; color: #13A8A6 !important;">
-                <i data-lucide="edit-3" class="me-1.5" style="width: 14px; height: 14px;"></i> Continue Writing
-            </div>
-            
-            <h1 class="font-serif fw-bold mb-3 text-white" style="font-size: 40px;">@Model.Title</h1>
-            
-            <div class="d-flex gap-2 mb-4">
-                <span class="badge rounded-pill px-3 py-1.5 badge-genre">
-                    <i data-lucide="heart" class="me-1" style="width: 12px; height: 12px; vertical-align: middle;"></i> @Model.Genre
-                </span>
-                <span class="badge rounded-pill px-3 py-1.5 badge-subgenre">
-                    <i data-lucide="tv" class="me-1" style="width: 12px; height: 12px; vertical-align: middle;"></i> Novel
-                </span>
+        <div class="header-right">
+            <a href="@Url.Action("Edit", "Stories", new { id = Model.Id })" 
+               class="btn btn-sm border fw-semibold d-flex align-items-center bg-white" 
+               style="font-size: 12.5px; border-radius: 10px; border-color: #E2E8F0; padding: 6px 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+                <i data-lucide="edit-3" class="me-1 text-muted" style="width: 14px; height: 14px;"></i>
+                <span class="d-none d-sm-inline">Edit Story</span>
+                <span class="d-sm-none">Edit</span>
+            </a>
+
+            <div class="dropdown">
+                <button class="btn btn-sm border bg-white" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                        style="border-radius: 10px; border-color: #E2E8F0; padding: 6px 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+                    <i data-lucide="more-horizontal" style="width: 16px; height: 16px;"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" style="border-radius: 12px; font-size: 12.5px;">
+                    <li><a class="dropdown-item py-2" href="#"><i data-lucide="settings" class="me-2 text-muted" style="width: 14px; height: 14px;"></i> Story Settings</a></li>
+                    <li><a class="dropdown-item py-2 text-danger" href="#"><i data-lucide="trash-2" class="me-2" style="width: 14px; height: 14px;"></i> Delete Story</a></li>
+                </ul>
             </div>
 
-            <!-- Stats row -->
-            <div class="row g-3 mb-4" style="max-width: 900px;">
-                <div class="col-6 col-md">
-                    <span class="text-slate-400 d-block mb-1" style="font-size: 12px; color: #94A3B8;">Current Chapter</span>
-                    <span class="text-white fw-bold d-block" style="font-size: 14px;">Chapter @completedChaptersCount</span>
-                    <span class="text-slate-400" style="font-size: 11px; color: #94A3B8;">@(Model.Chapters?.LastOrDefault()?.Title ?? "-")</span>
+            <button class="btn btn-sm border bg-white" type="button" title="Bookmark"
+                    style="border-radius: 10px; border-color: #E2E8F0; padding: 6px 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+                <i data-lucide="bookmark" style="width: 16px; height: 16px; color: #0D9488;"></i>
+            </button>
+
+            <a href="@Url.Action("Index", "Stories")" 
+               class="btn btn-sm text-white fw-bold d-flex align-items-center" 
+               style="background: linear-gradient(135deg, #0D9488, #0EA5E9); border: none; font-size: 12.5px; border-radius: 10px; padding: 6px 16px; box-shadow: 0 4px 12px rgba(13,148,136,0.25);">
+                <span class="d-none d-sm-inline">Continue Writing</span>
+                <span class="d-sm-none">Write</span>
+                <i data-lucide="zap" class="ms-1" style="width: 14px; height: 14px;"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Featured Hero Banner -->
+    @{
+        bool hasCustomBanner = !string.IsNullOrEmpty(Model.HeroBannerImageUrl);
+        string bannerStyle = hasCustomBanner
+            ? $"background-color: #0B1329; background-image: url('{Model.HeroBannerImageUrl}'); background-size: cover; background-position: center right;"
+            : "background: linear-gradient(135deg, #0A1128 0%, #0F2A4A 35%, #0D4E5C 70%, #0D9488 100%);";
+    }
+    <div class="hero-banner-card" style="@bannerStyle">
+        @if (!hasCustomBanner)
+        {
+            <!-- Mixed Gradient Glowing Orbs -->
+            <div class="position-absolute" style="top: -60px; right: -60px; width: 400px; height: 400px; background: rgba(13, 148, 136, 0.28); border-radius: 50%; filter: blur(75px); pointer-events: none; z-index: 1;"></div>
+            <div class="position-absolute" style="bottom: -50px; left: 15%; width: 350px; height: 350px; background: rgba(14, 165, 233, 0.22); border-radius: 50%; filter: blur(65px); pointer-events: none; z-index: 1;"></div>
+        }
+        <div class="hero-banner-overlay">
+            <div class="row align-items-center g-4">
+                
+                <!-- Left: 3D Book Cover -->
+                <div class="col-auto">
+                    <img src="@(string.IsNullOrEmpty(Model.CoverImageUrl) ? "/images/dil_hai_ki_cover.png" : Model.CoverImageUrl)" 
+                         alt="@Model.Title" 
+                         class="book-cover-elevated" 
+                         onerror="this.src='/images/dil_hai_ki_cover.png';" />
                 </div>
-                <div class="col-6 col-md">
-                    <span class="text-slate-400 d-block mb-1" style="font-size: 12px; color: #94A3B8;">Progress</span>
-                    <span class="text-white fw-bold d-block mb-1" style="font-size: 14px;">@progress%</span>
-                    <div class="progress rounded-pill bg-slate-700" style="height: 4px; width: 80%;">
-                        <div class="progress-bar rounded-pill" style="width: @progress%; background-color: #13A8A6;"></div>
+
+                <!-- Right: Title, Metadata, Stats -->
+                <div class="col">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge-novel">@Model.StoryType.ToUpper()</span>
                     </div>
-                </div>
-                <div class="col-6 col-md">
-                    <span class="text-slate-400 d-block mb-1" style="font-size: 12px; color: #94A3B8;">Words</span>
-                    <span class="text-white fw-bold d-block mb-1" style="font-size: 14px;">@Model.CurrentWordCount.ToString("N0") / @Model.TargetWordCount.ToString("N0")</span>
-                    <div class="progress rounded-pill bg-slate-700" style="height: 4px; width: 80%;">
-                        <div class="progress-bar rounded-pill" style="width: @progress%; background-color: #13A8A6;"></div>
-                    </div>
-                </div>
-                <div class="col-6 col-md">
-                    <span class="text-slate-400 d-block mb-1" style="font-size: 12px; color: #94A3B8;">Reading Time</span>
-                    <span class="text-white fw-bold d-block" style="font-size: 14px;">~ @(Model.CurrentWordCount / 200) min</span>
-                </div>
-                <div class="col-6 col-md">
-                    <span class="text-slate-400 d-block mb-1" style="font-size: 12px; color: #94A3B8;">Last Edited</span>
-                    <span class="text-white fw-bold d-block" style="font-size: 14px;">@Model.UpdatedAt.ToString("MM/dd/yyyy")</span>
-                </div>
-            </div>
 
-            <!-- Action buttons -->
-            <div class="d-flex align-items-center gap-2.5 flex-wrap">
-                <a href="@Url.Action("Index", "Stories")" class="btn text-white px-4 py-2 rounded-pill fw-bold shadow-sm d-flex align-items-center"
-                   style="background-color: #13A8A6; font-size: 13.5px; border: none;">
-                    Continue Writing <i data-lucide="arrow-right" class="ms-1.5" style="width: 16px; height: 16px;"></i>
-                </a>
-                <a href="@Url.Action("Index", "Stories")" class="btn btn-outline-light px-4 py-2 rounded-pill fw-bold"
-                   style="font-size: 13.5px; border-color: rgba(255, 255, 255, 0.2);">
-                    Open Chapter 0
-                </a>
-                <div class="dropdown">
-                    <button class="btn btn-outline-light p-0 rounded-circle d-flex align-items-center justify-content-center" 
-                            type="button" id="storyActions" data-bs-toggle="dropdown" aria-expanded="false"
-                            style="width: 38px; height: 38px; border-color: rgba(255, 255, 255, 0.2);">
-                        <i data-lucide="more-horizontal" style="width: 18px; height: 18px;"></i>
-                    </button>
-                    <ul class="dropdown-menu border-0 shadow-lg" aria-labelledby="storyActions" style="border-radius: 12px; font-size: 13px;">
-                        <li>
-                            <a class="dropdown-item fw-semibold py-2" href="@Url.Action("Edit", "Stories", new { id = Model.Id })">
-                                <i data-lucide="settings" class="me-2 text-muted" style="width: 15px; height: 15px; vertical-align: text-bottom;"></i> Story Settings
-                            </a>
-                        </li>
-                    </ul>
+                    <div class="d-flex align-items-center gap-2.5 mb-1">
+                        <h1 class="font-serif-title fw-bold text-white mb-0" style="font-size: 32px; letter-spacing: -0.5px;">
+                            @Model.Title
+                        </h1>
+                        <i data-lucide="feather" class="text-teal" style="width: 22px; height: 22px; color: #5EEAD4;"></i>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Tagline))
+                    {
+                        <p class="text-slate-300 mb-3 font-semibold" style="font-size: 14px; opacity: 0.9;">
+                            @Model.Tagline
+                        </p>
+                    }
+
+                    <!-- Genre Tags -->
+                    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                        @foreach (var g in genresList)
+                        {
+                            <span class="tag-pill">
+                                <i data-lucide="tag" style="width: 11px; height: 11px;"></i> @g
+                            </span>
+                        }
+                        <span class="tag-pill-add">+ Add Tag</span>
+                    </div>
+
+                    <!-- Bottom Hero Stats Row -->
+                    <div class="d-flex flex-wrap gap-3 gap-sm-4 pt-2 border-top hero-stats-row" style="border-color: rgba(255, 255, 255, 0.12) !important;">
+                        <div>
+                            <span class="text-slate-400 d-block text-uppercase fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Chapters</span>
+                            <span class="text-white fw-bold d-block" style="font-size: 20px; line-height: 1.2;">@totalChaptersCount</span>
+                            <span class="text-slate-400" style="font-size: 11px;">@(Model.StoryParts?.Count ?? 0) Parts</span>
+                        </div>
+
+                        <div style="border-left: 1px solid rgba(255,255,255,0.12); padding-left: 1rem;">
+                            <span class="text-slate-400 d-block text-uppercase fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Words</span>
+                            <span class="text-white fw-bold d-block" style="font-size: 20px; line-height: 1.2;">@Model.CurrentWordCount.ToString("N0")</span>
+                            <span class="text-slate-400" style="font-size: 11px;">Total Manuscript</span>
+                        </div>
+
+                        <div style="border-left: 1px solid rgba(255,255,255,0.12); padding-left: 1rem;">
+                            <span class="text-slate-400 d-block text-uppercase fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Progress</span>
+                            <span class="text-white fw-bold d-block" style="font-size: 20px; line-height: 1.2;">@progress%</span>
+                            <div class="progress rounded-pill" style="height: 4px; width: 90px; background: rgba(255,255,255,0.12); margin-top: 4px;">
+                                <div class="progress-bar rounded-pill" role="progressbar" style="width: @progress%; background-color: #14B8A6;"></div>
+                            </div>
+                        </div>
+
+                        <div style="border-left: 1px solid rgba(255,255,255,0.12); padding-left: 1rem;">
+                            <span class="text-slate-400 d-block text-uppercase fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Reading Time</span>
+                            <span class="text-white fw-bold d-block" style="font-size: 20px; line-height: 1.2;">@readingTimeStr</span>
+                        </div>
+
+                        <div style="border-left: 1px solid rgba(255,255,255,0.12); padding-left: 1rem;">
+                            <span class="text-slate-400 d-block text-uppercase fw-semibold" style="font-size: 10px; letter-spacing: 0.5px;">Last Edited</span>
+                            <span class="text-white fw-bold d-block" style="font-size: 16px; line-height: 1.3;">@Model.UpdatedAt.ToString("dd MMM yyyy")</span>
+                            <span class="text-slate-400" style="font-size: 11px;">Today</span>
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions Dashboard Grid -->
-    <div class="row g-3 mb-4">
-        @{
-            var actionsList = new[] {
-                new { title = "New Chapter", desc = "Start writing", icon = "book", color = "text-teal", bg = "bg-teal-50", iconHex = "#0D9488", bgHex = "#F0FDFA" },
-                new { title = "Characters", desc = "Build your cast", icon = "users", color = "text-purple", bg = "bg-purple-50", iconHex = "#A855F7", bgHex = "#FAF5FF" },
-                new { title = "Timeline", desc = "Plan your story", icon = "calendar", color = "text-blue", bg = "bg-blue-50", iconHex = "#3B82F6", bgHex = "#EFF6FF" },
-                new { title = "Research", desc = "Add references", icon = "search", color = "text-orange", bg = "bg-orange-50", iconHex = "#F97316", bgHex = "#FFF7ED" },
-                new { title = "Notes", desc = "Capture ideas", icon = "file-text", color = "text-info", bg = "bg-info-50", iconHex = "#06B6D4", bgHex = "#ECFEFF" },
-                new { title = "Assets", desc = "Manage files", icon = "folder", color = "text-teal", bg = "bg-teal-50", iconHex = "#0D9488", bgHex = "#F0FDFA" }
-            };
-        }
-        @foreach (var act in actionsList)
-        {
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="dashboard-card text-center d-flex flex-column align-items-center justify-content-center" style="height: 100%;">
-                    <div class="action-icon-wrapper" style="background-color: @act.bgHex; color: @act.iconHex;">
-                        <i data-lucide="@act.icon" style="width: 22px; height: 22px;"></i>
-                    </div>
-                    <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 13.5px;">@act.title</h6>
-                    <p class="text-muted mb-0 mt-0.5" style="font-size: 11px;">@act.desc</p>
-                </div>
+    <!-- Quick Action Grid (8 Cards in 1 Row) -->
+    <div class="quick-actions-grid">
+        <!-- New Chapter — Soon -->
+        <div class="action-card" style="opacity: 0.75; cursor: not-allowed;">
+            <span class="soon-badge">Soon</span>
+            <div class="action-icon-box" style="background: #F0FDFA; color: #0D9488;">
+                <i data-lucide="file-plus" style="width: 20px; height: 20px;"></i>
             </div>
-        }
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">New Chapter</h6>
+            <span class="text-muted" style="font-size: 11px;">Start writing</span>
+        </div>
+
+        <!-- View Chapters — Soon -->
+        <div class="action-card" style="opacity: 0.75; cursor: not-allowed;">
+            <span class="soon-badge">Soon</span>
+            <div class="action-icon-box" style="background: #EFF6FF; color: #2563EB;">
+                <i data-lucide="list" style="width: 20px; height: 20px;"></i>
+            </div>
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">View Chapters</h6>
+            <span class="text-muted" style="font-size: 11px;">@totalChaptersCount Chapters</span>
+        </div>
+
+        <div class="action-card">
+            <div class="action-icon-box" style="background: #FAF5FF; color: #9333EA;">
+                <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+            </div>
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">Characters</h6>
+            <span class="text-muted" style="font-size: 11px;">@Model.Characters.Count Characters</span>
+        </div>
+
+        <div class="action-card">
+            <div class="action-icon-box" style="background: #F0FDF4; color: #16A34A;">
+                <i data-lucide="map-pin" style="width: 20px; height: 20px;"></i>
+            </div>
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">World Building</h6>
+            <span class="text-muted" style="font-size: 11px;">@Model.Locations.Count Locations</span>
+        </div>
+
+        <div class="action-card">
+            <div class="action-icon-box" style="background: #FEF3C7; color: #D97706;">
+                <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+            </div>
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">Timeline</h6>
+            <span class="text-muted" style="font-size: 11px;">@Model.TimelineEvents.Count Events</span>
+        </div>
+
+        <div class="action-card">
+            <div class="action-icon-box" style="background: #FFF7ED; color: #EA580C;">
+                <i data-lucide="search" style="width: 20px; height: 20px;"></i>
+            </div>
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">Research</h6>
+            <span class="text-muted" style="font-size: 11px;">@Model.ResearchNotes.Count Items</span>
+        </div>
+
+        <!-- Notes — Soon -->
+        <div class="action-card" style="opacity: 0.75; cursor: not-allowed;">
+            <span class="soon-badge">Soon</span>
+            <div class="action-icon-box" style="background: #FEF2F2; color: #DC2626;">
+                <i data-lucide="sticky-note" style="width: 20px; height: 20px;"></i>
+            </div>
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">Notes</h6>
+            <span class="text-muted" style="font-size: 11px;">@(Model.ResearchNotes?.Count ?? 0) Notes</span>
+        </div>
+
+        <!-- Assets — Soon -->
+        <div class="action-card" style="opacity: 0.75; cursor: not-allowed;">
+            <span class="soon-badge">Soon</span>
+            <div class="action-icon-box" style="background: #F5F3FF; color: #7C3AED;">
+                <i data-lucide="folder" style="width: 20px; height: 20px;"></i>
+            </div>
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">Assets</h6>
+            <span class="text-muted" style="font-size: 11px;">@Model.Assets.Count Files</span>
+        </div>
     </div>
 
-    <!-- Main Workspace Split Layout -->
-    <div class="row g-4">
-        <!-- Left Side Main column -->
-        <div class="col-lg-8 d-flex flex-column gap-4">
-            
-            <!-- Chapters List -->
-            <div class="dashboard-card">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Middle Row: Synopsis, Tagline, At A Glance -->
+    <div class="row g-3 g-lg-4 sv-section-gap info-cards-row">
+        
+        <!-- Story Synopsis -->
+        <div class="col-lg-4">
+            <div class="content-card">
+                <!-- Pinned header -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-shrink-0">
                     <div class="d-flex align-items-center gap-2">
-                        <h5 class="fw-bold text-slate-900 mb-0" style="font-size: 17px;">Chapters</h5>
-                        <span class="badge bg-light text-slate-600 rounded-pill px-2.5 py-1" style="font-size: 10px; font-weight: 700;">@completedChaptersCount</span>
+                        <i data-lucide="book-open" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                        <h6 class="fw-bold text-slate-900 mb-0" style="font-size: 15px;">Story Synopsis</h6>
                     </div>
-                    <a href="#" class="text-teal text-decoration-none fw-bold d-flex align-items-center" style="font-size: 13px; color: #13A8A6;">
-                        View All Chapters <i data-lucide="arrow-right" class="ms-1" style="width: 14px; height: 14px;"></i>
+                    <a href="@Url.Action("Edit", "Stories", new { id = Model.Id })" class="text-decoration-none fw-semibold flex-shrink-0" style="font-size: 12px; color: #0D9488;">Edit</a>
+                </div>
+
+                <!-- Scrollable body -->
+                <div class="card-scroll-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.Synopsis))
+                    {
+                        <p class="text-slate-600 mb-0" style="font-size: 12.5px; line-height: 1.7; white-space: pre-line;">
+                            @Model.Synopsis
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="text-muted fst-italic mb-0" style="font-size: 12.5px;">No synopsis added yet.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Short Tagline with Feather Inkwell Art -->
+        <div class="col-lg-4">
+            <div class="content-card position-relative overflow-hidden tagline-card" style="background: linear-gradient(135deg, #FFFDF7 0%, #FFFBEE 100%);">
+                <!-- Pinned header -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-shrink-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="quote" style="width: 18px; height: 18px; color: #D97706;"></i>
+                        <h6 class="fw-bold text-slate-900 mb-0" style="font-size: 15px;">Short Tagline</h6>
+                    </div>
+                    <a href="@Url.Action("Edit", "Stories", new { id = Model.Id })" class="text-decoration-none fw-semibold flex-shrink-0" style="font-size: 12px; color: #0D9488;">Edit</a>
+                </div>
+
+                <!-- Scrollable body -->
+                <div class="card-scroll-body d-flex flex-column py-1">
+                    @if (!string.IsNullOrWhiteSpace(Model.Tagline))
+                    {
+                        var taglineLen = Model.Tagline.Length;
+                        string fontSize = taglineLen > 140 ? "18.5px" : (taglineLen > 80 ? "22px" : "28px");
+                        string lineHeight = taglineLen > 140 ? "1.45" : "1.3";
+                        <div class="my-auto px-2">
+                            <p class="font-calligraphy text-center mb-0" style="font-size: @fontSize; color: #92400E; line-height: @lineHeight;">
+                                "@Model.Tagline"
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="my-auto">
+                            <p class="text-muted text-center fst-italic mb-0" style="font-size: 13px;">No tagline added yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Story At A Glance -->
+        <div class="col-lg-4">
+            <div class="content-card">
+                <!-- Pinned header -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-shrink-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="layout" style="width: 18px; height: 18px; color: #4F46E5;"></i>
+                        <h6 class="fw-bold text-slate-900 mb-0" style="font-size: 15px;">Story At A Glance</h6>
+                    </div>
+                    <a href="@Url.Action("Edit", "Stories", new { id = Model.Id })" class="text-decoration-none fw-semibold flex-shrink-0" style="font-size: 12px; color: #0D9488;">Edit</a>
+                </div>
+
+                <!-- Scrollable body -->
+                <div class="card-scroll-body">
+                    <div class="d-flex flex-column gap-1" style="font-size: 12.5px;">
+                        <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: #F1F5F9 !important;">
+                            <span class="text-slate-500 font-medium"><i data-lucide="compass" class="me-1.5 text-muted" style="width: 13px; height: 13px;"></i> POV</span>
+                            <span class="fw-bold text-slate-800">@(string.IsNullOrEmpty(Model.PointOfView) ? "Not specified" : Model.PointOfView)</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: #F1F5F9 !important;">
+                            <span class="text-slate-500 font-medium"><i data-lucide="clock" class="me-1.5 text-muted" style="width: 13px; height: 13px;"></i> Time Period</span>
+                            <span class="fw-bold text-slate-800">@(string.IsNullOrEmpty(Model.TimePeriod) ? "Not specified" : Model.TimePeriod)</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: #F1F5F9 !important;">
+                            <span class="text-slate-500 font-medium"><i data-lucide="globe" class="me-1.5 text-muted" style="width: 13px; height: 13px;"></i> Language</span>
+                            <span class="fw-bold text-slate-800">@(string.IsNullOrEmpty(Model.Language) ? "Not specified" : Model.Language)</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: #F1F5F9 !important;">
+                            <span class="text-slate-500 font-medium"><i data-lucide="target" class="me-1.5 text-muted" style="width: 13px; height: 13px;"></i> Target Audience</span>
+                            <span class="fw-bold text-slate-800">@(string.IsNullOrEmpty(Model.TargetAudience) ? "Not specified" : Model.TargetAudience)</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: #F1F5F9 !important;">
+                            <span class="text-slate-500 font-medium"><i data-lucide="layers" class="me-1.5 text-muted" style="width: 13px; height: 13px;"></i> Themes</span>
+                            <span class="fw-bold text-slate-800 text-end" style="max-width: 160px;">@(string.IsNullOrEmpty(Model.Themes) ? "Not specified" : Model.Themes)</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between py-2">
+                            <span class="text-slate-500 font-medium"><i data-lucide="smile" class="me-1.5 text-muted" style="width: 13px; height: 13px;"></i> Tone</span>
+                            <span class="fw-bold text-slate-800">@(string.IsNullOrEmpty(Model.Tone) ? "Not specified" : Model.Tone)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Main Content Grid: Manuscript Overview (Left) + Goals & Progress (Right) -->
+            <span class="text-muted" style="font-size: 11px;">@Model.Assets.Count Assets</span>
+        </div>
+
+        <div class="action-card">
+            <div class="action-icon-box" style="background: #F8FAFC; color: #475569;">
+                <i data-lucide="pie-chart" style="width: 20px; height: 20px;"></i>
+            </div>
+            <h6 class="fw-bold text-slate-800 mb-0" style="font-size: 12.5px;">Progress</h6>
+            <span class="text-muted" style="font-size: 11px;">@completedPercent% Completed</span>
+        </div>
+    </div>
+
+    <!-- MAIN TWO COLUMN CONTENT -->
+    <div class="row g-4 mb-4">
+        <!-- LEFT COLUMN: Manuscript Overview -->
+        <div class="col-12 col-xl-8">
+            <div class="detail-card h-100">
+                <div class="detail-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="book" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                        <h5 class="fw-bold text-slate-900 mb-0" style="font-size: 16px;">Manuscript Overview</h5>
+                    </div>
+                    <a href="@Url.Action("Index", "Chapters", new { storyId = Model.Id })" class="text-decoration-none fw-bold d-inline-flex align-items-center" style="font-size: 12.5px; color: #0D9488;">
+                        View All Chapters <i data-lucide="chevron-right" class="ms-1" style="width: 14px; height: 14px;"></i>
                     </a>
                 </div>
 
-                @if (Model.Chapters != null && Model.Chapters.Any())
+                <!-- Scrollable accordion list -->
+                <div class="card-scroll-body">
+
+                <!-- Accordion Parts List -->
+                @if (Model.StoryParts != null && Model.StoryParts.Any())
                 {
-                    <div class="list-group list-group-flush rounded-4 overflow-hidden border">
-                        @foreach (var ch in Model.Chapters.OrderBy(c => c.Order))
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var part in Model.StoryParts.OrderBy(p => p.Order))
                         {
-                            <div class="list-group-item list-group-item-action p-3.5 d-flex justify-content-between align-items-center border-bottom bg-transparent hover-lift-subtle" style="border-color: #F1F5F9 !important;">
-                                <div>
-                                    <h6 class="fw-bold mb-1 text-slate-900" style="font-size: 14px;">@ch.Title</h6>
-                                    <p class="text-secondary small mb-0 font-semibold" style="font-size: 11px;">@ch.WordCount.ToString("N0") words • Edited @ch.UpdatedAt.ToString("g")</p>
+                            var partChapters = part.Chapters?.OrderBy(c => c.Order).ToList() ?? new List<StoryVerse.Core.Entities.Chapter>();
+                            bool isPart1 = part.Order == 1;
+
+                            <div class="border rounded-3 overflow-hidden" style="border-color: #E2E8F0 !important;">
+                                <div class="part-header d-flex justify-content-between align-items-center" 
+                                     data-bs-toggle="collapse" 
+                                     data-bs-target="#partCollapse_@part.Id" 
+                                     aria-expanded="@(isPart1 ? "true" : "false")">
+                                    <span class="fw-bold">@part.Title</span>
+                                    <span class="text-muted small fw-normal">@partChapters.Count Chapters <i data-lucide="chevron-down" class="ms-1" style="width: 14px; height: 14px;"></i></span>
                                 </div>
-                                <span class="badge rounded-pill px-3 py-1.5 text-white shadow-xs" style="background: linear-gradient(135deg, #1E439B, #13A8A6); font-size: 10.5px;">
-                                    Chapter @ch.Order
-                                </span>
+
+                                <div id="partCollapse_@part.Id" class="collapse @(isPart1 ? "show" : "")">
+                                    <div class="bg-white">
+                                        @foreach (var ch in partChapters)
+                                        {
+                                            string statusBadgeClass = ch.Status == "Completed" ? "badge-status-completed" : (ch.Status == "InProgress" ? "badge-status-inprogress" : "badge-status-planned");
+                                            string statusText = ch.Status == "Completed" ? "Completed" : (ch.Status == "InProgress" ? "In Progress" : "Planned");
+
+                                            <a href="@Url.Action("Editor", "Chapters", new { storyId = Model.Id, chapterId = ch.Id })" class="chapter-row text-decoration-none">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <span class="fw-bold text-slate-400" style="width: 20px;">@ch.Order.ToString("D2")</span>
+                                                    <span class="fw-semibold text-slate-800">@ch.Title</span>
+                                                </div>
+
+                                                <div class="d-flex align-items-center gap-4">
+                                                    <span class="text-muted" style="font-size: 12px;">@(ch.WordCount > 0 ? $"{ch.WordCount.ToString("N0")} words" : "--")</span>
+                                                    <span class="@statusBadgeClass">@statusText</span>
+                                                    <i data-lucide="edit-3" class="text-teal-600" style="width: 15px; height: 15px;"></i>
+                                                </div>
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         }
                     </div>
                 }
                 else
                 {
-                    <!-- Chapters Empty state Illustration -->
-                    <div class="bg-light rounded-4 p-5 flex-column d-flex align-items-center justify-content-center text-center" style="border-radius: 20px !important;">
-                        <img src="/images/Stories/WritingBg.png" alt="Story is waiting to be written" class="img-fluid mb-4" style="max-height: 200px; object-fit: contain;" onerror="this.style.display='none';" />
-                        <h5 class="font-serif text-slate-900 mb-1" style="font-size: 19px;">Your story is waiting to be written</h5>
-                        <p class="text-muted mb-4" style="font-size: 13px; max-width: 320px; font-weight: 500;">Create your first chapter and start building your masterpiece.</p>
-                        <button class="btn text-white rounded-pill px-4 py-2.5 fw-bold shadow" style="background-color: #13A8A6; border: none; font-size: 13px;">
-                            + Create Your First Chapter
-                        </button>
+                    <div class="text-center py-5">
+                        <i data-lucide="book-open" class="text-muted mb-3" style="width: 36px; height: 36px; opacity: 0.3;"></i>
+                        <h6 class="fw-bold text-slate-700 mb-1" style="font-size: 14px;">No Chapters Created Yet</h6>
+                        <p class="text-muted small mb-4" style="font-size: 12px;">Start organizing your story by adding parts and chapters.</p>
+                        <span class="d-inline-flex align-items-center gap-2 px-4 py-2 rounded-pill fw-bold" 
+                              style="background: linear-gradient(135deg, #F59E0B22, #EF444422); border: 1.5px dashed #F59E0B; color: #D97706; font-size: 12.5px; cursor: default;">
+                            <i data-lucide="clock" style="width: 15px; height: 15px;"></i>
+                            Chapter Management — Coming Soon
+                        </span>
                     </div>
                 }
+                </div><!-- end card-scroll-body -->
+            </div>
+        </div>
 
-                <div class="d-flex justify-content-between align-items-center mt-3.5 px-1" style="font-size: 11.5px; font-weight: 700; color: #64748B;">
-                    <div class="d-flex align-items-center">
-                        <i data-lucide="lightbulb" class="text-muted me-1.5" style="width: 15px; height: 15px;"></i>
-                        <span>Tip: Break your story into chapters and parts</span>
+        <!-- Right Column: Writing Goals + Manuscript Progress -->
+        <div class="col-lg-4 d-flex flex-column gap-3">
+            
+            <!-- Writing Goals Card -->
+            <div class="content-card goals-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-slate-900 mb-0" style="font-size: 15px;">Writing Goals</h6>
+                    <a href="#" class="text-decoration-none fw-semibold" style="font-size: 12px; color: #0D9488;">Edit Goals</a>
+                </div>
+
+                <div class="d-flex flex-column" style="gap: 0.9rem;">
+                    <!-- Daily Goal -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <i data-lucide="sun" class="text-amber-500" style="width: 16px; height: 16px; color: #F59E0B;"></i>
+                                <span class="fw-bold text-slate-800" style="font-size: 12.5px;">Daily Goal</span>
+                            </div>
+                            <span class="fw-bold text-slate-800" style="font-size: 12px;">
+                                @dailyWrittenVal.ToString("N0") / @dailyGoalVal.ToString("N0") words
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress rounded-pill bg-slate-100 flex-grow-1" style="height: 6px;">
+                                <div class="progress-bar rounded-pill" style="width: @(Math.Min(100, dailyPercent))%; background-color: #0D9488;"></div>
+                            </div>
+                            <span class="fw-bold text-teal" style="font-size: 11px; width: 34px; text-align: right; color: #0D9488;">@dailyPercent%</span>
+                        </div>
                     </div>
-                    <a href="#" class="text-decoration-none text-muted hover-text-slate-900 d-flex align-items-center">
-                        <i data-lucide="book-open" class="text-teal me-1.5" style="width: 15px; height: 15px; color: #13A8A6 !important;"></i>
-                        <span>Learn: How to structure a novel</span> <i data-lucide="arrow-right" class="ms-0.5" style="width: 11px; height: 11px;"></i>
-                    </a>
-                </div>
-            </div>
 
-            <!-- Story Snapshot Grid -->
-            <div class="dashboard-card">
-                <h5 class="fw-bold text-slate-900 mb-4" style="font-size: 17px;">Story Snapshot</h5>
-                <div class="row g-4 pt-1">
-                    @{
-                        var snapshotList = new[] {
-                            new { title = "Total Words", val = Model.CurrentWordCount.ToString("N0"), sub = "-", icon = "type", iconColor = "#F43F5E", bg = "#FFF1F2" },
-                            new { title = "Chapters", val = completedChaptersCount.ToString(), sub = completedChaptersCount + " completed", icon = "book", iconColor = "#13A8A6", bg = "#F0FDFA" },
-                            new { title = "Characters", val = (Model.Characters?.Count ?? 0).ToString(), sub = "-", icon = "users", iconColor = "#06B6D4", bg = "#ECFEFF" },
-                            new { title = "Themes", val = "Yes", sub = "-", icon = "layers", iconColor = "#6366F1", bg = "#EEF2FF" },
-                            new { title = "Locations", val = (Model.Locations?.Count ?? 0).ToString(), sub = "-", icon = "map-pin", iconColor = "#8B5CF6", bg = "#F5F3FF" },
-                            new { title = "Research Notes", val = "-", sub = "-", icon = "file-text", iconColor = "#3B82F6", bg = "#EFF6FF" },
-                            new { title = "Assets", val = "-", sub = "-", icon = "folder", iconColor = "#13A8A6", bg = "#F0FDFA" },
-                            new { title = "Ideas", val = "-", sub = "-", icon = "lightbulb", iconColor = "#F97316", bg = "#FFF7ED" }
-                        };
-                    }
-                    @foreach (var snap in snapshotList)
-                    {
-                        <div class="col-6 col-sm-3">
-                            <div class="snapshot-stat-card">
-                                <div class="snapshot-icon-badge" style="background-color: @snap.bg; color: @snap.iconColor;">
-                                    <i data-lucide="@snap.icon" style="width: 14px; height: 14px;"></i>
-                                </div>
-                                <span class="text-muted fw-bold text-uppercase mb-1" style="font-size: 9px; letter-spacing: 0.5px; margin-top: 8px;">@snap.title</span>
-                                <span class="text-slate-900 fw-bold" style="font-size: 24px; line-height: 1.1;">@snap.val</span>
-                                <span class="text-muted" style="font-size: 9px; font-weight: 550;">@snap.sub</span>
+                    <!-- Weekly Goal -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <i data-lucide="calendar" class="text-rose-500" style="width: 16px; height: 16px; color: #F43F5E;"></i>
+                                <span class="fw-bold text-slate-800" style="font-size: 12.5px;">Weekly Goal</span>
                             </div>
+                            <span class="fw-bold text-slate-800" style="font-size: 12px;">
+                                @weeklyWrittenVal.ToString("N0") / @weeklyGoalVal.ToString("N0") words
+                            </span>
                         </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Story Roadmap -->
-            <div class="dashboard-card">
-                <h5 class="fw-bold text-slate-900 mb-5" style="font-size: 17px;">Story Roadmap</h5>
-                
-                <div class="position-relative d-flex justify-content-between align-items-center px-3">
-                    <!-- Lines connecting the stepper -->
-                    <div class="roadmap-line"></div>
-                    <div class="roadmap-line-active" style="width: 25%;"></div>
-                    
-                    @{
-                        var roadmapSteps = new[] {
-                            new { label = "Story Created", sub = Model.CreatedAt.ToString("MM/dd/yyyy"), icon = "check-circle-2", status = "completed" },
-                            new { label = "Planning", sub = Model.Status == "Draft" ? "In Progress" : "Completed", icon = "file-text", status = Model.Status == "Draft" ? "active" : "completed" },
-                            new { label = "Writing", sub = Model.Status == "InProgress" ? "In Progress" : (Model.Status == "Published" ? "Completed" : "-"), icon = "pen-tool", status = Model.Status == "InProgress" ? "active" : (Model.Status == "Published" ? "completed" : "pending") },
-                            new { label = "Editing", sub = "-", icon = "edit-3", status = "pending" },
-                            new { label = "Review", sub = "-", icon = "eye", status = "pending" },
-                            new { label = "Publishing", sub = "-", icon = "file-up", status = "pending" },
-                            new { label = "Published", sub = Model.Status == "Published" ? Model.UpdatedAt.ToString("MM/dd/yyyy") : "-", icon = "lock", status = Model.Status == "Published" ? "completed" : "pending" }
-                        };
-                    }
-                    @foreach (var step in roadmapSteps)
-                    {
-                        <div class="roadmap-node @step.status">
-                            <div class="roadmap-circle">
-                                @if (step.status == "completed")
-                                {
-                                    <i data-lucide="@step.icon" class="text-teal" style="width: 16px; height: 16px; color: #13A8A6;"></i>
-                                }
-                                else if (step.status == "active")
-                                {
-                                    <i data-lucide="@step.icon" class="text-primary" style="width: 16px; height: 16px; color: #3B82F6;"></i>
-                                }
-                                else
-                                {
-                                    <i data-lucide="@step.icon" class="text-muted" style="width: 16px; height: 16px; color: #94A3B8;"></i>
-                                }
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress rounded-pill bg-slate-100 flex-grow-1" style="height: 6px;">
+                                <div class="progress-bar rounded-pill" style="width: @(Math.Min(100, weeklyPercent))%; background-color: #F43F5E;"></div>
                             </div>
-                            <span class="fw-bold mb-0.5 text-center" style="font-size: 11px; line-height: 1.2; color: @(step.status == "completed" ? "#13A8A6" : (step.status == "active" ? "#0F172A" : "#64748B"));">@step.label</span>
-                            <span class="text-muted" style="font-size: 9.5px; font-weight: 550;">@step.sub</span>
+                            <span class="fw-bold text-rose-500" style="font-size: 11px; width: 34px; text-align: right; color: #F43F5E;">@weeklyPercent%</span>
                         </div>
-                    }
-                </div>
+                    </div>
 
-                <div class="mt-4 text-center py-2.5 rounded-3 fw-bold border" style="background-color: rgba(19, 168, 166, 0.03); border-color: rgba(19, 168, 166, 0.1) !important; color: #13A8A6; font-size: 11.5px;">
-                    Every great story starts with a single word. You've taken the first step! ✨
-                </div>
-            </div>
-
-            <!-- Import / Export widgets -->
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="dashboard-card h-100 d-flex align-items-center gap-3">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center bg-light border position-relative" style="width: 64px; height: 64px; flex-shrink: 0;">
-                            <i data-lucide="file-up" class="text-muted opacity-50" style="width: 32px; height: 32px;"></i>
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white border-2 border-white position-absolute" 
-                                 style="width: 24px; height: 24px; background-color: #3B82F6; right: -6px; bottom: -6px; font-size: 10px;">
-                                <i data-lucide="arrow-right" class="text-white" style="width: 12px; height: 12px; transform: rotate(-90deg);"></i>
+                    <!-- Monthly Goal -->
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <i data-lucide="target" class="text-purple-600" style="width: 16px; height: 16px; color: #9333EA;"></i>
+                                <span class="fw-bold text-slate-800" style="font-size: 12.5px;">Monthly Goal</span>
                             </div>
+                            <span class="fw-bold text-slate-800" style="font-size: 12px;">
+                                @monthlyWrittenVal.ToString("N0") / @monthlyGoalVal.ToString("N0") words
+                            </span>
                         </div>
-                        <div>
-                            <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 13.5px;">Import Your Story</h6>
-                            <p class="text-muted small mb-2.5 leading-relaxed" style="font-size: 11px;">Already have a manuscript? Import it and we'll help you organize it beautifully.</p>
-                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                                <button class="btn btn-teal text-white py-1 px-2.5 rounded fw-bold" style="background-color: #13A8A6; font-size: 10px; border: none;">Import Now</button>
-                                <span class="badge border bg-light text-slate-500 rounded px-1.5 py-1" style="font-size: 9px; font-weight: 700;">DOCX</span>
-                                <span class="badge border bg-light text-slate-500 rounded px-1.5 py-1" style="font-size: 9px; font-weight: 700;">TXT</span>
-                                <span class="badge border bg-light text-slate-500 rounded px-1.5 py-1" style="font-size: 9px; font-weight: 700;">MD</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress rounded-pill bg-slate-100 flex-grow-1" style="height: 6px;">
+                                <div class="progress-bar rounded-pill" style="width: @(Math.Min(100, monthlyPercent))%; background-color: #9333EA;"></div>
                             </div>
+                            <span class="fw-bold text-purple-600" style="font-size: 11px; width: 34px; text-align: right; color: #9333EA;">@monthlyPercent%</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-6">
-                    <div class="dashboard-card h-100 d-flex align-items-center gap-3">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center bg-light border position-relative" style="width: 64px; height: 64px; flex-shrink: 0;">
-                            <i data-lucide="file-text" class="text-muted opacity-50" style="width: 32px; height: 32px;"></i>
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white border-2 border-white position-absolute" 
-                                 style="width: 24px; height: 24px; background-color: #13A8A6; right: -6px; bottom: -6px; font-size: 10px;">
-                                <i data-lucide="arrow-right" class="text-white" style="width: 12px; height: 12px;"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold text-slate-800 mb-1" style="font-size: 13.5px;">Export Your Story</h6>
-                            <p class="text-muted small mb-2.5 leading-relaxed" style="font-size: 11px;">Export your story or specific chapters in multiple formats.</p>
-                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                                <button class="btn btn-teal text-white py-1 px-2.5 rounded fw-bold" style="background-color: #13A8A6; font-size: 10px; border: none;">Export Now</button>
-                                <span class="badge border bg-light text-slate-500 rounded px-1.5 py-1" style="font-size: 9px; font-weight: 700;">DOCX</span>
-                                <span class="badge border bg-light text-slate-500 rounded px-1.5 py-1" style="font-size: 9px; font-weight: 700;">PDF</span>
-                                <span class="badge border bg-light text-slate-500 rounded px-1.5 py-1" style="font-size: 9px; font-weight: 700;">EPUB</span>
-                            </div>
+                <div class="mt-4 pt-3 border-top d-flex align-items-center gap-2 text-amber-600 font-semibold" style="border-color: #F1F5F9 !important; font-size: 12.5px; color: #D97706;">
+                    <i data-lucide="flame" style="width: 16px; height: 16px;"></i> Writing Streak: <strong>@(userGoal?.CurrentStreakDays ?? 0) days</strong>
+                </div>
+            </div>
+
+            <!-- Manuscript Progress (Donut Chart) Card -->
+            <div class="content-card">
+                <h6 class="fw-bold text-slate-900 mb-3" style="font-size: 15px;">Manuscript Progress</h6>
+
+                @{
+                    int offsetComp = 0;
+                    int offsetInProg = -completedPercent;
+                    int offsetPlan = -(completedPercent + inProgressPercent);
+                    int overallProgressDisplay = totalChaptersCount > 0 ? (int)Math.Round((double)completedCount / totalChaptersCount * 100) : progress;
+                }
+
+                <div class="d-flex align-items-center justify-content-between">
+                    <!-- SVG Dynamic Donut Chart -->
+                    <div class="donut-chart-container">
+                        <svg viewBox="0 0 36 36" class="w-full h-full">
+                            <path class="circle-bg"
+                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  fill="none"
+                                  stroke="#F1F5F9"
+                                  stroke-width="3.8" />
+                            
+                            @if (completedPercent > 0)
+                            {
+                                <path class="circle"
+                                      stroke-dasharray="@completedPercent, 100"
+                                      stroke-dashoffset="@offsetComp"
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                      fill="none"
+                                      stroke="#0D9488"
+                                      stroke-width="3.8"
+                                      stroke-linecap="round" />
+                            }
+
+                            @if (inProgressPercent > 0)
+                            {
+                                <path class="circle"
+                                      stroke-dasharray="@inProgressPercent, 100"
+                                      stroke-dashoffset="@offsetInProg"
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                      fill="none"
+                                      stroke="#2563EB"
+                                      stroke-width="3.8"
+                                      stroke-linecap="round" />
+                            }
+
+                            @if (plannedPercent > 0)
+                            {
+                                <path class="circle"
+                                      stroke-dasharray="@plannedPercent, 100"
+                                      stroke-dashoffset="@offsetPlan"
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                      fill="none"
+                                      stroke="#F59E0B"
+                                      stroke-width="3.8"
+                                      stroke-linecap="round" />
+                            }
+                        </svg>
+
+                        <div class="donut-center-label">
+                            <span class="fw-bold text-slate-900" style="font-size: 22px; line-height: 1;">@overallProgressDisplay%</span>
+                            <span class="text-muted" style="font-size: 9px; font-weight: 600;">Overall Progress</span>
                         </div>
                     </div>
+
+                    <!-- Legend Breakdown -->
+                    <div class="d-flex flex-column gap-2" style="font-size: 12px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-circle" style="width: 8px; height: 8px; background: #0D9488;"></span>
+                            <span class="text-slate-600 font-medium">Completed</span>
+                            <span class="fw-bold text-slate-900 ms-auto">@completedCount (@completedPercent%)</span>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-circle" style="width: 8px; height: 8px; background: #2563EB;"></span>
+                            <span class="text-slate-600 font-medium">In Progress</span>
+                            <span class="fw-bold text-slate-900 ms-auto">@inProgressCount (@inProgressPercent%)</span>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-circle" style="width: 8px; height: 8px; background: #F59E0B;"></span>
+                            <span class="text-slate-600 font-medium">Planned</span>
+                            <span class="fw-bold text-slate-900 ms-auto">@plannedCount (@plannedPercent%)</span>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-circle" style="width: 8px; height: 8px; background: #EF4444;"></span>
+                            <span class="text-slate-600 font-medium">On Hold</span>
+                            <span class="fw-bold text-slate-900 ms-auto">@onHoldCount (@onHoldPercent%)</span>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-circle" style="width: 8px; height: 8px; background: #94A3B8;"></span>
+                            <span class="text-slate-600 font-medium">Archived</span>
+                            <span class="fw-bold text-slate-900 ms-auto">@archivedCount (@archivedPercent%)</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
         </div>
 
-        <!-- Right Side column -->
-        <div class="col-lg-4 d-flex flex-column gap-4">
-            
-            <!-- Writing Goals Widget -->
-            <div class="dashboard-card p-0 overflow-hidden">
-                <div class="p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold text-slate-900 mb-0" style="font-size: 15px;">Writing Goals</h5>
-                        <a href="#" class="text-teal text-decoration-none fw-bold" style="font-size: 13px; color: #13A8A6;">Edit Goals</a>
-                    </div>
+    </div>
 
-                    <div class="d-flex flex-column gap-4">
-                        <!-- Daily Goal -->
-                        <div>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-orange-50 text-warning" style="width: 36px; height: 36px; background-color: #FFF7ED; color: #F59E0B !important;">
-                                        <i data-lucide="sun" style="width: 18px; height: 18px;"></i>
-                                    </div>
-                                    <span class="fw-bold text-slate-800" style="font-size: 13.5px;">Daily Goal</span>
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold text-slate-800" style="font-size: 16px;">- <span class="text-muted font-semibold" style="font-size: 12px;">/ 1,000</span></span>
-                                    <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 8px; letter-spacing: 0.5px; margin-top: -3px;">words</span>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="progress rounded-pill bg-light flex-grow-1" style="height: 6px;">
-                                    <div class="progress-bar rounded-pill bg-primary" role="progressbar" style="width: 0%;"></div>
-                                </div>
-                                <span class="text-muted fw-bold" style="font-size: 11px; width: 24px;">0%</span>
-                            </div>
-                        </div>
+    <!-- Story Elements Summary Row (7 Cards) -->
+    <div class="content-card sv-section-gap">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-slate-900 mb-0" style="font-size: 15px;">Story Elements</h6>
+        </div>
 
-                        <!-- Weekly Goal -->
-                        <div>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-rose-50 text-danger" style="width: 36px; height: 36px; background-color: #FFF1F2; color: #F43F5E !important;">
-                                        <i data-lucide="calendar-days" style="width: 18px; height: 18px;"></i>
-                                    </div>
-                                    <span class="fw-bold text-slate-800" style="font-size: 13.5px;">Weekly Goal</span>
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold text-slate-800" style="font-size: 16px;">- <span class="text-muted font-semibold" style="font-size: 12px;">/ 5,000</span></span>
-                                    <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 8px; letter-spacing: 0.5px; margin-top: -3px;">words</span>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="progress rounded-pill bg-light flex-grow-1" style="height: 6px;">
-                                    <div class="progress-bar rounded-pill bg-primary" role="progressbar" style="width: 0%;"></div>
-                                </div>
-                                <span class="text-muted fw-bold" style="font-size: 11px; width: 24px;">0%</span>
-                            </div>
-                        </div>
-
-                        <!-- Monthly Goal -->
-                        <div>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-purple-50 text-purple" style="width: 36px; height: 36px; background-color: #FDF4FF; color: #D946EF !important;">
-                                        <i data-lucide="target" style="width: 18px; height: 18px;"></i>
-                                    </div>
-                                    <span class="fw-bold text-slate-800" style="font-size: 13.5px;">Monthly Goal</span>
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold text-slate-800" style="font-size: 16px;">- <span class="text-muted font-semibold" style="font-size: 12px;">/ 20,000</span></span>
-                                    <span class="text-muted d-block text-uppercase fw-bold" style="font-size: 8px; letter-spacing: 0.5px; margin-top: -3px;">words</span>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="progress rounded-pill bg-light flex-grow-1" style="height: 6px;">
-                                    <div class="progress-bar rounded-pill bg-primary" role="progressbar" style="width: 0%;"></div>
-                                </div>
-                                <span class="text-muted fw-bold" style="font-size: 11px; width: 24px;">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Footer button info -->
-                <div class="bg-light border-top p-3.5 d-flex justify-content-between align-items-center px-4" style="border-color: #F1F5F9 !important;">
-                    <div class="d-flex align-items-center text-warning fw-bold" style="font-size: 12.5px; color: #F59E0B !important;">
-                        <i data-lucide="sun" class="me-1.5" style="width: 15px; height: 15px;"></i> - Day Streak
-                    </div>
-                    <a href="#" class="text-teal text-decoration-none fw-bold d-flex align-items-center" style="font-size: 12.5px; color: #13A8A6;">
-                        View Calendar <i data-lucide="arrow-right" class="ms-1" style="width: 14px; height: 14px;"></i>
-                    </a>
-                </div>
+        <div class="elements-grid">
+            <div class="element-card">
+                <i data-lucide="users" class="mb-1 text-purple-600" style="width: 18px; height: 18px; color: #9333EA;"></i>
+                <span class="text-slate-500 d-block" style="font-size: 11px;">Characters</span>
+                <span class="fw-bold text-slate-900" style="font-size: 20px;">@Model.Characters.Count</span>
+                <span class="text-muted d-block" style="font-size: 10px;">Developed</span>
             </div>
 
-            <!-- Recent Activity Widget -->
-            <div class="dashboard-card">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold text-slate-900 mb-0" style="font-size: 15px;">Recent Activity</h5>
-                    <a href="#" class="text-teal text-decoration-none fw-bold" style="font-size: 13px; color: #13A8A6;">View All</a>
-                </div>
-
-                <div class="d-flex flex-column gap-4">
-                    <div class="d-flex gap-3">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center bg-teal-50 text-teal flex-shrink-0" style="width: 40px; height: 40px; background-color: #F0FDFA; color: #13A8A6 !important;">
-                            <i data-lucide="book" style="width: 18px; height: 18px;"></i>
-                        </div>
-                        <div class="flex-grow-1 min-w-0">
-                            <div class="d-flex justify-content-between align-items-baseline mb-0.5">
-                                <h6 class="fw-bold text-slate-800 mb-0 text-truncate" style="font-size: 13px;">Story created</h6>
-                                <span class="text-muted small whitespace-nowrap ml-2">@Model.CreatedAt.ToString("MM/dd/yyyy")</span>
-                            </div>
-                            <p class="text-muted small mb-0 text-truncate">@Model.Title</p>
-                        </div>
-                    </div>
-                    <div class="text-center text-muted py-2 small fw-semibold">
-                        No other recent activity.
-                    </div>
-                </div>
+            <div class="element-card">
+                <i data-lucide="map-pin" class="mb-1 text-teal" style="width: 18px; height: 18px; color: #0D9488;"></i>
+                <span class="text-slate-500 d-block" style="font-size: 11px;">Locations</span>
+                <span class="fw-bold text-slate-900" style="font-size: 20px;">@Model.Locations.Count</span>
+                <span class="text-muted d-block" style="font-size: 10px;">Built</span>
             </div>
 
+            <div class="element-card">
+                <i data-lucide="calendar" class="mb-1 text-blue-600" style="width: 18px; height: 18px; color: #2563EB;"></i>
+                <span class="text-slate-500 d-block" style="font-size: 11px;">Timeline Events</span>
+                <span class="fw-bold text-slate-900" style="font-size: 20px;">@Model.TimelineEvents.Count</span>
+                <span class="text-muted d-block" style="font-size: 10px;">Mapped</span>
+            </div>
+
+            <!-- Story Arcs — Soon -->
+            <div class="element-card position-relative" style="opacity: 0.72; cursor: not-allowed;">
+                <span class="soon-badge">Soon</span>
+                <i data-lucide="git-branch" class="mb-1" style="width: 18px; height: 18px; color: #F43F5E;"></i>
+                <span class="text-slate-500 d-block" style="font-size: 11px;">Story Arcs</span>
+                <span class="fw-bold text-slate-900" style="font-size: 20px;">@Model.StoryArcs.Count</span>
+                <span class="text-muted d-block" style="font-size: 10px;">Active</span>
+            </div>
+
+            <div class="element-card">
+                <i data-lucide="file-text" class="mb-1 text-cyan-600" style="width: 18px; height: 18px; color: #0891B2;"></i>
+                <span class="text-slate-500 d-block" style="font-size: 11px;">Research Items</span>
+                <span class="fw-bold text-slate-900" style="font-size: 20px;">@Model.ResearchNotes.Count</span>
+                <span class="text-muted d-block" style="font-size: 10px;">Collected</span>
+            </div>
+
+            <!-- Notes — Soon -->
+            <div class="element-card position-relative" style="opacity: 0.72; cursor: not-allowed;">
+                <span class="soon-badge">Soon</span>
+                <i data-lucide="sticky-note" class="mb-1" style="width: 18px; height: 18px; color: #F59E0B;"></i>
+                <span class="text-slate-500 d-block" style="font-size: 11px;">Notes</span>
+                <span class="fw-bold text-slate-900" style="font-size: 20px;">@(Model.ResearchNotes?.Count ?? 0)</span>
+                <span class="text-muted d-block" style="font-size: 10px;">Captured</span>
+            </div>
+
+            <!-- Assets — Soon -->
+            <div class="element-card position-relative" style="opacity: 0.72; cursor: not-allowed;">
+                <span class="soon-badge">Soon</span>
+                <i data-lucide="folder" class="mb-1" style="width: 18px; height: 18px; color: #059669;"></i>
+                <span class="text-slate-500 d-block" style="font-size: 11px;">Assets</span>
+                <span class="fw-bold text-slate-900" style="font-size: 20px;">@Model.Assets.Count</span>
+                <span class="text-muted d-block" style="font-size: 10px;">Files</span>
+            </div>
         </div>
     </div>
+
+    <!-- Story Roadmap Timeline Stepper -->
+    <div class="content-card position-relative" style="overflow: hidden;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-slate-900 mb-0" style="font-size: 15px;">Story Roadmap</h6>
+            <span class="soon-badge position-static" style="font-size: 10px; padding: 3px 10px;">Coming Soon</span>
+        </div>
+
+        <div class="roadmap-scroll-wrapper">
+        <div class="roadmap-inner position-relative d-flex justify-content-between align-items-center px-3 py-2">
+            <!-- Background connecting line -->
+            <div class="position-absolute" style="top: 28px; left: 60px; right: 60px; height: 2px; background: #E2E8F0; z-index: 0;"></div>
+            <div class="position-absolute" style="top: 28px; left: 60px; width: 22%; height: 2px; background: #0D9488; z-index: 0;"></div>
+
+            <!-- Stage 1: Created -->
+            <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;">
+                <div class="roadmap-node-circle completed">
+                    <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+                </div>
+                <span class="fw-bold text-slate-900" style="font-size: 12px;">Story Created</span>
+                <span class="text-muted" style="font-size: 10px;">@Model.CreatedAt.ToString("dd MMM yyyy")</span>
+            </div>
+
+            <!-- Stage 2: Planning -->
+            <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;">
+                <div class="roadmap-node-circle active">
+                    <i data-lucide="target" style="width: 18px; height: 18px;"></i>
+                </div>
+                <span class="fw-bold text-teal" style="font-size: 12px; color: #0D9488;">Planning</span>
+                <span class="fw-bold text-teal" style="font-size: 10px; color: #0D9488;">In Progress</span>
+            </div>
+
+            <!-- Stage 3: Writing -->
+            <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;">
+                <div class="roadmap-node-circle upcoming">
+                    <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
+                </div>
+                <span class="fw-semibold text-slate-600" style="font-size: 12px;">Writing</span>
+                <span class="text-muted" style="font-size: 10px;">Upcoming</span>
+            </div>
+
+            <!-- Stage 4: Editing -->
+            <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;">
+                <div class="roadmap-node-circle upcoming">
+                    <i data-lucide="scissors" style="width: 16px; height: 16px;"></i>
+                </div>
+                <span class="fw-semibold text-slate-600" style="font-size: 12px;">Editing</span>
+                <span class="text-muted" style="font-size: 10px;">Upcoming</span>
+            </div>
+
+            <!-- Stage 5: Review -->
+            <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;">
+                <div class="roadmap-node-circle upcoming">
+                    <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                </div>
+                <span class="fw-semibold text-slate-600" style="font-size: 12px;">Review</span>
+                <span class="text-muted" style="font-size: 10px;">Upcoming</span>
+            </div>
+
+            <!-- Stage 6: Publishing -->
+            <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;">
+                <div class="roadmap-node-circle upcoming">
+                    <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                </div>
+                <span class="fw-semibold text-slate-600" style="font-size: 12px;">Publishing</span>
+                <span class="text-muted" style="font-size: 10px;">Upcoming</span>
+            </div>
+
+            <!-- Stage 7: Published -->
+            <div class="d-flex flex-column align-items-center position-relative" style="z-index: 2;">
+                <div class="roadmap-node-circle upcoming">
+                    <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                </div>
+                <span class="fw-semibold text-slate-600" style="font-size: 12px;">Published</span>
+                <span class="text-muted" style="font-size: 10px;">Upcoming</span>
+            </div>
+        </div>
+        </div><!-- end roadmap-scroll-wrapper -->
+
+        <!-- Footer Motivational Banner Quote -->
+        <div class="motivational-banner">
+            "The story is yours. The power to write it is already within you." ✨
+        </div>
+    </div>
+
 </div>

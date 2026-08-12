@@ -446,11 +446,11 @@
                                 {
                                     var daysAgo = (DateTime.UtcNow - ch.UpdatedAt).Days;
                                     var label = daysAgo == 0 ? "Today" : daysAgo == 1 ? "1 day ago" : $"{daysAgo} days ago";
-                                    <div class="cd-appearance-item">
+                                    <a href="@Url.Action("Editor", "Chapters", new { storyId = Model.StoryId, chapterId = ch.Id })" class="cd-appearance-item text-decoration-none">
                                         <i data-lucide="book-open" class="cd-app-icon"></i>
                                         <span class="cd-app-title">@ch.Title</span>
                                         <span class="cd-app-meta @(daysAgo == 0 ? "cd-app-current" : "")">@label</span>
-                                    </div>
+                                    </a>
                                 }
                             </div>
                         </div>
