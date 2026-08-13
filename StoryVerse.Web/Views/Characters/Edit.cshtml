@@ -1491,11 +1491,11 @@
                             Select Existing Character
                             <i data-lucide="info" class="info-tooltip-icon" style="width: 13px; height: 13px;" data-bs-toggle="tooltip" title="Select a character from your story cast to auto-fill their info."></i>
                         </label>
-                        <select id="modalRelTargetChar" class="form-select form-select-custom mb-2">
+                        <select id="modalRelTargetChar" class="form-select select2-themed form-select-custom mb-2" data-placeholder="Choose Existing Character...">
                             <option value="">-- Choose Existing Character --</option>
                             @foreach (var oc in otherCharacters)
                             {
-                                <option value="@oc.Name" data-avatar="@(string.IsNullOrEmpty(oc.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(oc.Name)}" : oc.AvatarUrl)" data-role="@oc.Role">@oc.Name (@oc.Role)</option>
+                                <option value="@oc.Name" data-icon="user" data-avatar="@(string.IsNullOrEmpty(oc.AvatarUrl) ? $"https://api.dicebear.com/7.x/avataaars/svg?seed={Uri.EscapeDataString(oc.Name)}" : oc.AvatarUrl)" data-role="@oc.Role">@oc.Name (@oc.Role)</option>
                             }
                         </select>
                         
@@ -1504,15 +1504,15 @@
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label-custom">Role / Archetype</label>
-                        <select id="modalRelRole" class="form-select form-select-custom">
-                            <option value="Supporting" selected>Supporting Character</option>
-                            <option value="Protagonist">Protagonist</option>
-                            <option value="Antagonist">Antagonist</option>
-                            <option value="Mentor">Mentor</option>
-                            <option value="Sidekick">Sidekick</option>
-                            <option value="Love Interest">Love Interest</option>
-                            <option value="Rival">Rival</option>
-                            <option value="Minor">Minor Character</option>
+                        <select id="modalRelRole" class="form-select select2-themed form-select-custom">
+                            <option value="Supporting" selected data-icon="user-check">Supporting Character</option>
+                            <option value="Protagonist" data-icon="star">Protagonist</option>
+                            <option value="Antagonist" data-icon="shield-alert">Antagonist</option>
+                            <option value="Mentor" data-icon="award">Mentor</option>
+                            <option value="Sidekick" data-icon="user-plus">Sidekick</option>
+                            <option value="Love Interest" data-icon="heart">Love Interest</option>
+                            <option value="Rival" data-icon="swords">Rival</option>
+                            <option value="Minor" data-icon="user font-size-12">Minor Character</option>
                         </select>
                     </div>
                 </div>
@@ -1538,27 +1538,27 @@
                 <div class="row g-3 mb-3">
                     <div class="col-12 col-md-6">
                         <label class="form-label-custom">Relationship Title / Type</label>
-                        <select id="modalRelType" class="form-select form-select-custom">
-                            <option value="Father">Father</option>
-                            <option value="Mother">Mother</option>
-                            <option value="Parent">Parent</option>
-                            <option value="Sibling">Sibling / Brother / Sister</option>
-                            <option value="Child">Son / Daughter</option>
-                            <option value="Ally">Ally / Friend</option>
-                            <option value="Enemy">Enemy / Adversary</option>
-                            <option value="Love Interest">Love Interest / Spouse</option>
-                            <option value="Mentor">Mentor / Guide</option>
-                            <option value="Rival">Rival</option>
-                            <option value="Neutral">Neutral / Associate</option>
+                        <select id="modalRelType" class="form-select select2-themed form-select-custom">
+                            <option value="Father" data-icon="user">Father</option>
+                            <option value="Mother" data-icon="user">Mother</option>
+                            <option value="Parent" data-icon="users">Parent</option>
+                            <option value="Sibling" data-icon="users">Sibling / Brother / Sister</option>
+                            <option value="Child" data-icon="user-plus">Son / Daughter</option>
+                            <option value="Ally" data-icon="shield-check">Ally / Friend</option>
+                            <option value="Enemy" data-icon="swords">Enemy / Adversary</option>
+                            <option value="Love Interest" data-icon="heart">Love Interest / Spouse</option>
+                            <option value="Mentor" data-icon="award">Mentor / Guide</option>
+                            <option value="Rival" data-icon="zap">Rival</option>
+                            <option value="Neutral" data-icon="minus-circle">Neutral / Associate</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-6">
                         <label class="form-label-custom">Dynamics Type</label>
-                        <select id="modalRelDynamicsType" class="form-select form-select-custom">
-                            <option value="Positive" selected>Positive (Friendly / Supportive)</option>
-                            <option value="Negative">Negative (Hostile / Antagonistic)</option>
-                            <option value="Neutral">Neutral (Professional / Distant)</option>
-                            <option value="Complex">Complex (Complicated / Mixed)</option>
+                        <select id="modalRelDynamicsType" class="form-select select2-themed form-select-custom">
+                            <option value="Positive" selected data-icon="thumbs-up">Positive (Friendly / Supportive)</option>
+                            <option value="Negative" data-icon="thumbs-down">Negative (Hostile / Antagonistic)</option>
+                            <option value="Neutral" data-icon="minus">Neutral (Professional / Distant)</option>
+                            <option value="Complex" data-icon="git-commit">Complex (Complicated / Mixed)</option>
                         </select>
                     </div>
                 </div>

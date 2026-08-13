@@ -236,6 +236,126 @@ namespace StoryVerse.Web.Controllers
             return View(chapter);
         }
 
+        // GET: Chapters/Read?storyId=...&chapterId=...
+        public async Task<IActionResult> Read(Guid? storyId, Guid? chapterId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var userStories = await _activeStoryService.GetUserStoriesAsync(user.Id);
+            ViewBag.Stories = userStories;
+
+            var activeStoryIdGuid = await _activeStoryService.GetActiveStoryIdAsync(HttpContext, user.Id, storyId);
+            if (!activeStoryIdGuid.HasValue && userStories.Any())
+            {
+                activeStoryIdGuid = userStories.First().Id;
+            }
+
+            if (!activeStoryIdGuid.HasValue)
+            {
+                return RedirectToAction("Index", "Stories");
+            }
+
+            var storyIdGuid = activeStoryIdGuid.Value;
+
+            var story = await _context.Stories
+                .Include(s => s.User)
+                .Include(s => s.StoryGenres)
+                    .ThenInclude(sg => sg.Genre)
+                .FirstOrDefaultAsync(s => s.Id == storyIdGuid && s.UserId == user.Id);
+
+            if (story == null) return NotFound();
+
+            // Set active story session
+            _activeStoryService.SetActiveStoryId(HttpContext, storyIdGuid);
+
+            var authorName = !string.IsNullOrEmpty(story.User?.DisplayName) ? story.User.DisplayName :
+                             !string.IsNullOrEmpty(story.User?.FirstName) ? $"{story.User.FirstName} {story.User.LastName}".Trim() :
+                             story.User?.UserName ?? user.DisplayName ?? user.UserName ?? "Author";
+            ViewBag.AuthorName = authorName;
+
+            var allChapters = await _context.Chapters
+                .Include(c => c.Part)
+                .Where(c => c.StoryId == storyIdGuid)
+                .OrderBy(c => c.Order)
+                .ToListAsync();
+
+            if (!allChapters.Any())
+            {
+                ViewBag.Story = story;
+                ViewBag.AllChapters = allChapters;
+                ViewBag.StoryParts = new List<StoryPart>();
+                ViewBag.Characters = new List<Character>();
+                ViewBag.WorldEntities = new List<WorldEntity>();
+                ViewBag.TimelineEvents = new List<TimelineEvent>();
+                ViewBag.LinkedCharacterIds = new List<Guid>();
+                ViewBag.LinkedWorldEntityIds = new List<Guid>();
+                ViewBag.LinkedTimelineEventIds = new List<Guid>();
+                return View("Read", null);
+            }
+
+            Chapter? chapter = null;
+            if (chapterId.HasValue && chapterId.Value != Guid.Empty)
+            {
+                chapter = allChapters.FirstOrDefault(c => c.Id == chapterId.Value);
+            }
+
+            if (chapter == null)
+            {
+                chapter = allChapters.FirstOrDefault(c => c.Status == "InProgress") 
+                    ?? allChapters.First();
+            }
+
+            var storyParts = await _context.StoryParts
+                .Where(p => p.StoryId == storyIdGuid)
+                .OrderBy(p => p.Order)
+                .ToListAsync();
+
+            var characters = await _context.Characters
+                .Where(c => c.StoryId == storyIdGuid)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            var worldEntities = await _context.WorldEntities
+                .Include(w => w.EntityType)
+                .Where(w => w.StoryId == storyIdGuid && w.ActiveStatus)
+                .OrderBy(w => w.Name)
+                .ToListAsync();
+
+            var timelineEvents = await _context.TimelineEvents
+                .Where(t => t.StoryId == storyIdGuid)
+                .OrderBy(t => t.DisplayOrder)
+                .ThenBy(t => t.CreatedAt)
+                .ToListAsync();
+
+            var linkedCharacterIds = await _context.ChapterCharacters
+                .Where(cc => cc.ChapterId == chapter.Id)
+                .Select(cc => cc.CharacterId)
+                .ToListAsync();
+
+            var linkedWorldEntityIds = await _context.ChapterWorldEntities
+                .Where(cw => cw.ChapterId == chapter.Id)
+                .Select(cw => cw.WorldEntityId)
+                .ToListAsync();
+
+            var linkedTimelineEventIds = await _context.TimelineEventChapters
+                .Where(tc => tc.ChapterId == chapter.Id)
+                .Select(tc => tc.TimelineEventId)
+                .ToListAsync();
+
+            ViewBag.Story = story;
+            ViewBag.StoryParts = storyParts;
+            ViewBag.AllChapters = allChapters;
+            ViewBag.Characters = characters;
+            ViewBag.WorldEntities = worldEntities;
+            ViewBag.TimelineEvents = timelineEvents;
+            ViewBag.LinkedCharacterIds = linkedCharacterIds;
+            ViewBag.LinkedWorldEntityIds = linkedWorldEntityIds;
+            ViewBag.LinkedTimelineEventIds = linkedTimelineEventIds;
+
+            return View("Read", chapter);
+        }
+
         // POST: Chapters/SaveDraft
         [HttpPost]
         public async Task<IActionResult> SaveDraft([FromBody] SaveDraftDto model)

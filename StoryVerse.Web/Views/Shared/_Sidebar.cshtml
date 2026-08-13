@@ -460,7 +460,12 @@
                 <a href="@Url.Action("Index", "Timeline", new { storyId = activeStory?.Id, activeTab = "TimelineView", viewMode = "Graph" })" class="d-block py-1 text-white-50 hover-text-white text-decoration-none small">Timeline Views</a>
             </div>
         </div>
-        <a href="@Url.Action("Index", "Chapters", new { storyId = activeStory?.Id })" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(controller == "Chapters" ? "active" : "")">
+        @{
+            var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
+            var isReadPage = controller == "Chapters" && currentAction == "Read";
+            var isChaptersPage = controller == "Chapters" && currentAction != "Read";
+        }
+        <a href="@Url.Action("Index", "Chapters", new { storyId = activeStory?.Id })" class="sidebar-nav-link text-decoration-none d-flex align-items-center justify-content-between mb-1 @(isChaptersPage ? "active" : "")">
             <div class="d-flex align-items-center gap-3">
                 <i data-lucide="file-text" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
                 <span class="sidebar-text-label" style="font-size: 0.85rem;">Chapters</span>
@@ -500,6 +505,10 @@
                 <span class="sidebar-text-label" style="font-size: 0.85rem;">Analytics</span>
             </div>
             <span class="badge-coming-soon sidebar-text-label">SOON</span>
+        </a>
+        <a href="@Url.Action("Activity", "Dashboard")" title="Activity Feed" class="sidebar-nav-link text-decoration-none d-flex align-items-center gap-3 mb-1 @(Context.Request.Path.Value?.Contains("/dashboard/activity") == true ? "active" : "")">
+            <i data-lucide="activity" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+            <span class="sidebar-text-label" style="font-size: 0.85rem;">Activity Feed</span>
         </a>
     </div>
 

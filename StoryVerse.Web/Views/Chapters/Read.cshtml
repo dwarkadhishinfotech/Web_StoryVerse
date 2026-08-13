@@ -1,0 +1,2943 @@
+@using StoryVerse.Core.Entities
+@using System.Text.Encodings.Web
+@using System.Text.Json
+@model StoryVerse.Core.Entities.Chapter
+@{
+    Layout = null;
+    ViewData["Title"] = Model != null ? $"Read — {Model.Title}" : "Read Mode";
+
+    var story = ViewBag.Story as Story;
+    var storyParts = ViewBag.StoryParts as List<StoryPart> ?? new List<StoryPart>();
+    var allChapters = ViewBag.AllChapters as List<Chapter> ?? new List<Chapter>();
+    var characters = ViewBag.Characters as List<Character> ?? new List<Character>();
+    var worldEntities = ViewBag.WorldEntities as List<WorldEntity> ?? new List<WorldEntity>();
+    var timelineEvents = ViewBag.TimelineEvents as List<TimelineEvent> ?? new List<TimelineEvent>();
+
+    var authorName = ViewBag.AuthorName as string;
+    if (string.IsNullOrEmpty(authorName) && story?.User != null)
+    {
+        authorName = !string.IsNullOrEmpty(story.User.DisplayName) ? story.User.DisplayName :
+                     (!string.IsNullOrEmpty(story.User.FirstName) ? $"{story.User.FirstName} {story.User.LastName}".Trim() : story.User.UserName);
+    }
+    if (string.IsNullOrEmpty(authorName)) authorName = "Sachi Patel";
+
+    var coverImage = !string.IsNullOrEmpty(story?.CoverImageUrl) ? story.CoverImageUrl :
+                     !string.IsNullOrEmpty(story?.HeroBannerImageUrl) ? story.HeroBannerImageUrl :
+                     "/images/dil_hai_ki_hero_bg.png";
+
+    var genresList = story?.StoryGenres?.Select(sg => sg.Genre?.Name).Where(g => !string.IsNullOrEmpty(g)).ToList();
+    var genresText = (genresList != null && genresList.Any()) ? string.Join(" • ", genresList) : (story?.StoryType ?? "Novel");
+
+    var activeChapterId = Model?.Id.ToString() ?? (allChapters.FirstOrDefault()?.Id.ToString() ?? "");
+    var wordCount = Model?.WordCount ?? (allChapters.Sum(c => c.WordCount));
+    var readTimeMinutes = (int)Math.Max(1, Math.Ceiling(wordCount / 200.0));
+}
+<!DOCTYPE html>
+<html lang="en" data-theme="ivory">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>@(story?.Title ?? "StoryVerse Novel Reader") — Read Mode</title>
+    <link rel="shortcut icon" href="/images/CompanyLogo/favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="/images/CompanyLogo/favicon.ico" type="image/x-icon" />
+
+    <!-- Google Fonts for Luxury Novel Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           STORYVERSE DIGITAL NOVEL READER — WARM IVORY ARCHITECTURE
+           ========================================================================== */
+
+        :root {
+            --paper-bg: #FAF7F2;
+            --paper-bg-subtle: #F4EFE6;
+            --paper-text: #2C2825;
+            --paper-text-muted: #786F66;
+            --paper-heading: #1C1917;
+            --spine-shadow: rgba(60, 50, 40, 0.22);
+            --desk-bg: #EFE8DC;
+            --desk-glow: rgba(197, 160, 89, 0.25);
+            --novel-accent: #0D9488;
+            --novel-accent-hover: #0F766E;
+            --novel-gold: #C5A059;
+            --entity-accent: #0D9488;
+            --font-reader: 'Lora', 'Georgia', serif;
+            --font-heading: 'Cormorant Garamond', 'Georgia', serif;
+        }
+
+        html[data-theme="paper"] {
+            --paper-bg: #FAF6EE;
+            --paper-bg-subtle: #F3ECE0;
+            --paper-text: #1F1D1A;
+            --paper-text-muted: #6E665E;
+            --paper-heading: #141210;
+            --spine-shadow: rgba(50, 40, 30, 0.25);
+            --desk-bg: #EAE3D2;
+            --desk-glow: rgba(217, 119, 6, 0.2);
+            --novel-accent: #B45309;
+            --novel-accent-hover: #92400E;
+            --novel-gold: #D97706;
+            --entity-accent: #B45309;
+        }
+
+        html[data-theme="sepia"] {
+            --paper-bg: #F4ECD8;
+            --paper-bg-subtle: #E9DFC7;
+            --paper-text: #432818;
+            --paper-text-muted: #7F5539;
+            --paper-heading: #271406;
+            --spine-shadow: rgba(67, 40, 24, 0.26);
+            --desk-bg: #E5DBC7;
+            --desk-glow: rgba(180, 83, 9, 0.2);
+            --novel-accent: #78350F;
+            --novel-accent-hover: #451A03;
+            --novel-gold: #B45309;
+            --entity-accent: #78350F;
+        }
+
+        html[data-theme="daylight"] {
+            --paper-bg: #FFFFFF;
+            --paper-bg-subtle: #F8FAFC;
+            --paper-text: #0F172A;
+            --paper-text-muted: #64748B;
+            --paper-heading: #020617;
+            --spine-shadow: rgba(15, 23, 42, 0.14);
+            --desk-bg: #E2E8F0;
+            --desk-glow: rgba(255, 255, 255, 0.85);
+            --novel-accent: #0284C7;
+            --novel-accent-hover: #0369A1;
+            --novel-gold: #0D9488;
+            --entity-accent: #0284C7;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--desk-bg);
+            color: #2C2825;
+            transition: background-color 0.4s ease;
+            -webkit-font-smoothing: antialiased;
+            touch-action: manipulation;
+        }
+
+        /* Ambient Desk Canvas Glow */
+        .ambient-desk-canvas {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 38%, var(--desk-glow) 0%, transparent 75%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ==========================================================================
+           1. MINIMAL APPLICATION HEADER
+           ========================================================================== */
+
+        .minimal-app-header {
+            height: 56px;
+            background: rgba(244, 239, 230, 0.96);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.25rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 2000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-brand-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none !important;
+        }
+
+        .brand-peacock-badge {
+            width: 32px;
+            height: 32px;
+            background: #0D9488;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+            overflow: hidden;
+            padding: 3px;
+        }
+
+        .brand-text {
+            font-family: var(--font-heading);
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #1C1917;
+            letter-spacing: -0.01em;
+        }
+
+        .breadcrumb-sep {
+            color: #A8A29E;
+            font-size: 0.85rem;
+        }
+
+        .story-crumb-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #44403C;
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chapter-crumb-title {
+            font-size: 0.85rem;
+            color: #78716C;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-right-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(197, 160, 89, 0.35);
+            color: #44403C;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+            white-space: nowrap;
+        }
+
+        .header-btn:hover {
+            background: #FFFFFF;
+            color: #0D9488;
+            border-color: #0D9488;
+            box-shadow: 0 2px 6px rgba(13, 148, 136, 0.15);
+        }
+
+        .header-btn.read-active-badge {
+            background: rgba(13, 148, 136, 0.12);
+            border-color: var(--novel-accent);
+            color: var(--novel-accent);
+            font-weight: 700;
+            pointer-events: none;
+        }
+
+        /* ==========================================================================
+           2. CLOSED BOOK COVER STAGE (INITIAL VIEW)
+           ========================================================================== */
+
+        .closed-book-viewport {
+            position: fixed;
+            top: 56px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at 50% 40%, #F4EFE6 0%, #E8DFD1 60%, #DDD3C1 100%);
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            padding: 1.5rem 1.25rem;
+            gap: 1.5rem;
+        }
+
+        .closed-book-3d-card {
+            width: 100%;
+            max-width: 518px;
+            height: 78vh;
+            max-height: 740px;
+            min-height: 520px;
+            aspect-ratio: 0.70 / 1;
+            position: relative;
+            cursor: pointer;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(50, 40, 30, 0.28), 0 6px 18px rgba(0, 0, 0, 0.12);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        @@media (max-width: 767px) {
+            .closed-book-3d-card {
+                max-width: 320px;
+                max-height: 68vh;
+            }
+        }
+
+        .closed-book-3d-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 60px rgba(50, 40, 30, 0.35), 0 8px 24px rgba(13, 148, 136, 0.2);
+        }
+
+        /* Cover Surface Plate */
+        .cover-surface-plate {
+            position: absolute;
+            inset: 0;
+            background-color: #0F172A;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2.2rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.45);
+            background-size: cover;
+            background-position: center;
+            backface-visibility: hidden;
+        }
+
+        /* Filigree Inner Gold Frame */
+        .cover-surface-plate::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            border: 1px solid rgba(197, 160, 89, 0.65);
+            outline: 3px double rgba(197, 160, 89, 0.35);
+            outline-offset: -6px;
+            pointer-events: none;
+            z-index: 2;
+            border-radius: 8px;
+        }
+
+        .cover-surface-overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 30%, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.92) 75%, rgba(9, 13, 22, 0.98) 100%);
+            backdrop-filter: blur(2px);
+            z-index: 1;
+        }
+
+        .cover-surface-content {
+            position: relative;
+            z-index: 3;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            color: #FFFFFF;
+        }
+
+        .cover-publisher-tag {
+            font-size: 0.7rem;
+            letter-spacing: 0.26em;
+            color: #C5A059;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 0.2rem;
+        }
+
+        .cover-genre-badge {
+            font-size: 0.68rem;
+            background: rgba(13, 148, 136, 0.25);
+            border: 1px solid rgba(45, 212, 191, 0.4);
+            backdrop-filter: blur(8px);
+            padding: 3px 12px;
+            border-radius: 12px;
+            color: #5EEAD4;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            display: inline-block;
+        }
+
+        .cover-hero-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.3rem;
+            font-weight: 700;
+            line-height: 1.12;
+            color: #FFFFFF;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.95), 0 0 24px rgba(197, 160, 89, 0.35);
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.01em;
+        }
+
+        .cover-tagline-box {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(197, 160, 89, 0.35);
+            border-radius: 10px;
+            padding: 0.55rem 1rem;
+            margin-top: 0.4rem;
+            max-width: 95%;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        }
+
+        .cover-tagline-text {
+            font-family: 'Lora', serif;
+            font-style: italic;
+            color: #FDE047;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .cover-author-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            color: #F8FAFC;
+            text-transform: uppercase;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        /* 3D Spine and Pages Edge (Disabled for clean flat layout) */
+        .closed-book-spine,
+        .closed-book-pages-edge {
+            display: none;
+        }
+
+        .cover-action-bar {
+            margin-top: 0.6rem;
+            margin-bottom: 0.2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 10;
+        }
+
+        .btn-open-book-hero {
+            background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 0.85rem 2.4rem;
+            border-radius: 50px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.98rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(13, 148, 136, 0.38), 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none !important;
+        }
+
+        .btn-open-book-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-open-book-hero:hover::before {
+            left: 100%;
+        }
+
+        .btn-open-book-hero:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 16px 40px rgba(13, 148, 136, 0.5), 0 4px 12px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #14B8A6 0%, #0D9488 100%);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-open-book-hero:active {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
+        }
+
+        .btn-open-book-hero .btn-book-icon {
+            transition: transform 0.35s ease;
+        }
+
+        .btn-open-book-hero:hover .btn-book-icon {
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        .btn-skip-animation {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            color: #44403C;
+            padding: 0.65rem 1.25rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-skip-animation:hover {
+            color: #0D9488;
+            background: #FFFFFF;
+            border-color: #0D9488;
+        }
+
+        /* ==========================================================================
+           3. OPEN BOOK STAGE & DYNAMIC SPREAD
+           ========================================================================== */
+
+        .open-book-viewport {
+            position: fixed;
+            top: 56px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 1.25rem 1rem 1.25rem;
+            perspective: 1600px;
+        }
+
+        .book-spread-container {
+            width: 100%;
+            max-width: 1036px;
+            height: 78vh;
+            max-height: 740px;
+            min-height: 520px;
+            aspect-ratio: 1.40 / 1;
+            background: var(--paper-bg);
+            border-radius: 6px 14px 14px 6px;
+            box-shadow: 0 20px 55px var(--spine-shadow), 0 4px 16px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            position: relative;
+            overflow: hidden;
+            transition: background-color 0.4s ease, box-shadow 0.4s ease;
+            transform-style: preserve-3d;
+        }
+
+        /* Spine Center Fold Shadow */
+        .book-center-spine-shadow {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 44px;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0.03) 100%);
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        /* 3D Physical Page Flip Animated Leaf */
+        .flipping-page-leaf {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            z-index: 25;
+            transform-style: preserve-3d;
+            display: none;
+            pointer-events: none;
+        }
+
+        .flipping-page-leaf.flip-next {
+            right: 0;
+            transform-origin: left center;
+        }
+
+        .flipping-page-leaf.flip-prev {
+            left: 0;
+            transform-origin: right center;
+        }
+
+        @@media (max-width: 767px) {
+            .flipping-page-leaf.flip-next,
+            .flipping-page-leaf.flip-prev {
+                width: 100%;
+            }
+        }
+
+        .leaf-face {
+            position: absolute;
+            inset: 0;
+            background: var(--paper-bg);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            padding: 2rem 2.6rem 1.6rem 2.6rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-family: var(--font-reader);
+            font-size: 1.05rem;
+            line-height: 1.82;
+            color: var(--paper-text);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.05), 0 0 25px rgba(0, 0, 0, 0.22);
+            border-radius: 4px;
+        }
+
+        .leaf-face.leaf-front {
+            z-index: 2;
+            transform: rotateY(0deg);
+        }
+
+        .leaf-face.leaf-back {
+            z-index: 1;
+            transform: rotateY(180deg);
+            -webkit-transform: rotateY(180deg);
+        }
+
+        .leaf-spine-shadow {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            background: linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.02) 40%, rgba(0,0,0,0.25) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Individual Book Page Half */
+        .book-page-half {
+            flex: 1;
+            padding: 2rem 2.6rem 1.6rem 2.6rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-family: var(--font-reader);
+            font-size: 1.05rem;
+            line-height: 1.82;
+            color: var(--paper-text);
+            position: relative;
+            user-select: text;
+            overflow-y: hidden;
+        }
+
+        .book-page-half.left-half {
+            border-right: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        /* Page Headers & Footers */
+        .page-header-row {
+            font-family: var(--font-heading);
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--paper-text-muted);
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            padding-bottom: 0.35rem;
+            margin-bottom: 1rem;
+        }
+
+        .page-body-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+
+        .page-footer-row {
+            font-family: var(--font-heading);
+            font-size: 0.8rem;
+            color: var(--novel-gold);
+            text-align: center;
+            padding-top: 0.45rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            margin-top: 0.7rem;
+        }
+
+        /* Decorative Blank Page */
+        .blank-decorative-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            opacity: 0.35;
+        }
+
+        .feather-watermark {
+            font-size: 3rem;
+            color: var(--novel-gold);
+        }
+
+        /* Inside Cover Endpaper */
+        .inside-cover-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            text-align: center;
+            padding: 1.4rem 1rem;
+            border: 2px double var(--novel-gold);
+            border-radius: 6px;
+            background: var(--paper-bg-subtle);
+        }
+
+        .inside-cover-publisher {
+            font-family: var(--font-heading);
+            font-size: 0.72rem;
+            letter-spacing: 0.2em;
+            color: var(--novel-gold);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .inside-cover-banner-img {
+            width: 100%;
+            max-height: 175px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        }
+
+        .inside-cover-hero-title {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--paper-heading);
+            margin-top: 0.6rem;
+            margin-bottom: 0.3rem;
+            line-height: 1.15;
+        }
+
+        .inside-cover-author {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            color: var(--paper-text);
+            text-transform: uppercase;
+        }
+
+        /* Manuscript Paragraph Styling & Drop Cap */
+        .manuscript-p {
+            margin-bottom: 1rem;
+            text-indent: 1.75em;
+            text-align: justify;
+            word-break: break-word;
+        }
+
+        .manuscript-p:first-of-type, .no-indent {
+            text-indent: 0 !important;
+        }
+
+        .manuscript-p.has-drop-cap::first-letter {
+            font-family: var(--font-heading);
+            font-size: 3.5em;
+            float: left;
+            line-height: 0.78;
+            padding-top: 4px;
+            padding-right: 8px;
+            padding-left: 2px;
+            color: var(--novel-accent);
+            font-weight: 700;
+        }
+
+        .ornament-sep {
+            text-align: center;
+            color: var(--novel-gold);
+            font-size: 1.35rem;
+            margin: 1rem 0;
+            line-height: 1;
+        }
+
+        /* ==========================================================================
+           4. LITERARY SECTION PAGES
+           ========================================================================== */
+
+        .part-opener-container, .chapter-opener-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 1.5rem 1rem;
+        }
+
+        .part-label-badge {
+            font-family: var(--font-heading);
+            font-size: 0.9rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--novel-gold);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .part-title-heading {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--paper-heading);
+            margin-bottom: 0.8rem;
+            line-height: 1.18;
+        }
+
+        .chapter-label-badge {
+            font-family: var(--font-heading);
+            font-size: 0.88rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--novel-accent);
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .chapter-title-heading {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--paper-heading);
+            margin-bottom: 0.8rem;
+            line-height: 1.18;
+        }
+
+        /* End Book Actions & Beautified Buttons */
+        .end-book-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 80%;
+            max-width: 320px;
+            margin-top: 1.25rem;
+        }
+
+        .btn-read-again {
+            background-color: rgba(13, 148, 136, 0.05);
+            border: 1.5px solid var(--novel-accent);
+            color: var(--novel-accent);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            padding: 0.65rem 1.4rem;
+            border-radius: 50px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            text-decoration: none !important;
+            width: 100%;
+        }
+
+        .btn-read-again:hover {
+            background-color: var(--novel-accent);
+            color: #FFFFFF;
+            border-color: var(--novel-accent);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(13, 148, 136, 0.25);
+        }
+
+        .btn-read-again:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(13, 148, 136, 0.2);
+        }
+
+        .btn-read-again svg {
+            transition: transform 0.35s ease;
+        }
+
+        .btn-read-again:hover svg {
+            transform: rotate(-60deg);
+        }
+
+        .btn-back-story {
+            background-color: var(--novel-accent);
+            border: 1.5px solid var(--novel-accent);
+            color: #FFFFFF;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            padding: 0.65rem 1.4rem;
+            border-radius: 50px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.22);
+            text-decoration: none !important;
+            width: 100%;
+        }
+
+        .btn-back-story:hover {
+            background-color: var(--novel-accent-hover);
+            border-color: var(--novel-accent-hover);
+            color: #FFFFFF;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.32);
+        }
+
+        .btn-back-story:active {
+            transform: translateY(0);
+        }
+
+        .btn-back-story svg {
+            transition: transform 0.25s ease;
+        }
+
+        .btn-back-story:hover svg {
+            transform: translateX(-3px);
+        }
+
+        /* Inside TOC / Contents */
+        .inside-toc-container {
+            padding: 0.4rem 0;
+            overflow-y: auto;
+            max-height: 52vh;
+        }
+
+        .toc-part-row {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--novel-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.15);
+            padding-bottom: 4px;
+            margin-top: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .toc-chapter-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            padding: 6px 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-size: 0.94rem;
+        }
+
+        .toc-chapter-row:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--novel-accent);
+        }
+
+        .toc-chapter-title {
+            font-weight: 600;
+        }
+
+        .toc-dots {
+            flex: 1;
+            border-bottom: 1px dotted var(--paper-text-muted);
+            margin: 0 8px;
+            opacity: 0.45;
+        }
+
+        /* ==========================================================================
+           5. INTERACTIVE ENTITIES & RIGHT SIDEBAR
+           ========================================================================== */
+
+        .entity-ref {
+            border-bottom: 1.5px dotted var(--entity-accent);
+            color: var(--paper-text);
+            font-weight: 600;
+            cursor: pointer;
+            padding-bottom: 1px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .entity-ref:hover {
+            color: var(--novel-accent);
+            background: rgba(13, 148, 136, 0.08);
+            border-bottom-style: solid;
+        }
+
+        .entity-sidebar-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: var(--paper-bg-subtle);
+            border-left: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 1.25rem 1rem;
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+            box-shadow: -6px 0 18px rgba(0, 0, 0, 0.06);
+            overflow-y: auto;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @@keyframes slideInRight {
+            from { opacity: 0; transform: translateX(15px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .entity-panel-title {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--novel-accent);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .entity-card-item {
+            background: var(--paper-bg);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            padding: 0.65rem;
+            margin-bottom: 0.6rem;
+            transition: all 0.2s ease;
+        }
+
+        .entity-card-item:hover {
+            border-color: var(--novel-accent);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .entity-card-name {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: var(--paper-heading);
+        }
+
+        .entity-card-role {
+            font-size: 0.72rem;
+            color: var(--novel-gold);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .entity-card-desc {
+            font-size: 0.78rem;
+            color: var(--paper-text-muted);
+            margin-top: 3px;
+            line-height: 1.35;
+        }
+
+        /* Hover Popover Box */
+        .entity-popover-box {
+            position: fixed;
+            z-index: 4000;
+            width: 280px;
+            background: #FFFFFF;
+            color: #1E293B;
+            border-radius: 14px;
+            padding: 1rem;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #E2E8F0;
+            display: none;
+            animation: popoverFadeIn 0.2s ease-out;
+        }
+
+        @@keyframes popoverFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .popover-header-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.65rem;
+        }
+
+        .popover-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #F1F5F9;
+            border: 1.5px solid var(--novel-accent);
+        }
+
+        .popover-name {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.1;
+            color: #0F172A;
+        }
+
+        .popover-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--novel-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .popover-desc {
+            font-size: 0.8rem;
+            color: #475569;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+        }
+
+        .popover-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--novel-accent);
+            text-decoration: none !important;
+            transition: color 0.2s ease;
+        }
+
+        /* ==========================================================================
+           6. BOTTOM READING CONTROL BAR
+           ========================================================================== */
+
+        .bottom-reading-bar {
+            width: 100%;
+            max-width: 740px;
+            background: rgba(244, 239, 230, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(197, 160, 89, 0.35);
+            border-radius: 40px;
+            padding: 8px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            box-shadow: 0 8px 28px rgba(60, 50, 40, 0.15);
+            z-index: 100;
+        }
+
+        .nav-control-btn {
+            background: transparent;
+            border: none;
+            color: #44403C;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-control-btn:hover:not(:disabled) {
+            background: rgba(13, 148, 136, 0.12);
+            color: #0D9488;
+        }
+
+        .nav-control-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .reading-slider-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-count-text {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #57534E;
+            white-space: nowrap;
+        }
+
+        .progress-range-slider {
+            flex: 1;
+            height: 4px;
+            accent-color: var(--novel-accent);
+            cursor: pointer;
+        }
+
+        .percent-badge {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #0D9488;
+            min-width: 38px;
+            text-align: right;
+        }
+
+        /* ==========================================================================
+           7. FLOATING READING SETTINGS DRAWER & MODALS
+           ========================================================================== */
+
+        .settings-drawer-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: none;
+        }
+
+        .settings-drawer-card {
+            position: fixed;
+            top: 70px;
+            right: 1.25rem;
+            width: 330px;
+            background: #FFFFFF;
+            color: #0F172A;
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+            border: 1px solid #E2E8F0;
+            z-index: 3100;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: drawerSlideIn 0.3s ease-out;
+        }
+
+        @@keyframes drawerSlideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .drawer-header-bar {
+            padding: 0.9rem 1.1rem;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .drawer-header-title {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .drawer-body-content {
+            padding: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+
+        .setting-block-title {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.45rem;
+        }
+
+        .theme-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .theme-btn-card {
+            background: #F8FAFC;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 0.55rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .theme-btn-card.active-theme {
+            border-color: var(--novel-accent);
+            background: rgba(13, 148, 136, 0.08);
+        }
+
+        .theme-swatch-circle {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+
+        .theme-card-name {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #1E293B;
+        }
+
+        /* Reader Modals */
+        .custom-reader-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(6px);
+            z-index: 3500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .custom-reader-modal-card {
+            background: #FFFFFF;
+            color: #0F172A;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 80vh;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ==========================================================================
+           8. RESPONSIVE BREAKPOINTS (LAPTOP, TABLET & MOBILE)
+           ========================================================================== */
+
+        /* Laptop & Large Desktop */
+        @@media (min-width: 993px) {
+            .book-spread-container {
+                flex-direction: row;
+            }
+        }
+
+        /* Tablet Screen (768px - 992px) */
+        @@media (max-width: 992px) and (min-width: 768px) {
+            .minimal-app-header {
+                padding: 0 1rem;
+            }
+            .story-crumb-title {
+                max-width: 130px;
+            }
+            .chapter-crumb-title {
+                max-width: 140px;
+            }
+            .book-spread-container {
+                height: 74vh;
+                max-height: 580px;
+                min-height: 440px;
+                aspect-ratio: 1.40 / 1;
+                max-width: 812px;
+            }
+            .book-page-half {
+                padding: 1.6rem 1.8rem 1.4rem 1.8rem;
+                font-size: 0.98rem;
+                line-height: 1.75;
+            }
+            .closed-book-3d-card {
+                height: 74vh;
+                max-height: 580px;
+                min-height: 440px;
+                aspect-ratio: 0.70 / 1;
+                max-width: 406px;
+            }
+        }
+
+        /* Mobile Floating Navigation Overlay Side Arrows */
+        .mobile-side-nav-btn {
+            display: none;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 500;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(250, 247, 242, 0.92);
+            border: 1.5px solid rgba(197, 160, 89, 0.5);
+            color: var(--paper-text);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mobile-side-nav-btn:hover:not(:disabled),
+        .mobile-side-nav-btn:active:not(:disabled) {
+            background: var(--novel-accent);
+            color: #FFFFFF;
+            border-color: var(--novel-accent);
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .mobile-side-nav-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .mobile-nav-prev {
+            left: 6px;
+        }
+
+        .mobile-nav-next {
+            right: 6px;
+        }
+
+        /* Mobile Screen (< 768px) */
+        @@media (max-width: 767px) {
+            .mobile-side-nav-btn {
+                display: flex;
+            }
+            .minimal-app-header {
+                padding: 0 0.75rem;
+                height: 52px;
+            }
+            .story-crumb-title, .breadcrumb-sep, .chapter-crumb-title {
+                display: none;
+            }
+            .header-btn span {
+                display: none;
+            }
+            .header-btn {
+                padding: 5px 8px;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                justify-content: center;
+            }
+            .header-btn.read-active-badge {
+                display: none;
+            }
+
+            .closed-book-viewport {
+                top: 52px;
+                padding: 1rem 0.5rem;
+            }
+            .closed-book-3d-card {
+                width: 92%;
+                max-width: 400px;
+                height: 72vh;
+                max-height: 580px;
+                min-height: 420px;
+                aspect-ratio: 0.69 / 1;
+                margin: 0 auto;
+            }
+            .cover-hero-title {
+                font-size: 1.8rem;
+            }
+            .cover-surface-plate {
+                padding: 1.6rem 1.2rem;
+            }
+
+            .open-book-viewport {
+                top: 52px;
+                padding: 0.5rem 0.4rem 0.6rem 0.4rem;
+            }
+            .book-spread-container {
+                flex-direction: column;
+                width: 92%;
+                max-width: 400px;
+                height: 72vh;
+                max-height: 580px;
+                min-height: 420px;
+                aspect-ratio: 0.69 / 1;
+                margin: 0 auto;
+                border-radius: 8px;
+            }
+            .book-center-spine-shadow {
+                display: none;
+            }
+            .book-page-half.left-half {
+                display: none; /* Mobile displays 1 focused page at a time */
+                border-right: none;
+            }
+            .book-page-half {
+                padding: 1.2rem 1.1rem 1rem 1.1rem;
+                font-size: 0.96rem;
+                line-height: 1.7;
+            }
+            .flipping-page-leaf.mobile-leaf {
+                width: 100% !important;
+                left: 0 !important;
+                right: 0 !important;
+                transform-origin: left center !important;
+            }
+            .page-header-row {
+                font-size: 0.72rem;
+                margin-bottom: 0.6rem;
+            }
+            .page-footer-row {
+                font-size: 0.75rem;
+                margin-top: 0.5rem;
+            }
+            .part-title-heading {
+                font-size: 1.75rem;
+            }
+            .chapter-title-heading {
+                font-size: 1.6rem;
+            }
+            .bottom-reading-bar {
+                padding: 6px 12px;
+                border-radius: 30px;
+            }
+            .page-count-text {
+                font-size: 0.75rem;
+            }
+            .nav-control-btn span {
+                display: none;
+            }
+            .nav-control-btn {
+                padding: 5px 8px;
+                border-radius: 50%;
+            }
+            .settings-drawer-card {
+                right: 0.5rem;
+                left: 0.5rem;
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Ambient Desk Glow Background -->
+    <div class="ambient-desk-canvas"></div>
+
+    <!-- ==========================================================================
+         1. MINIMAL APPLICATION HEADER
+         ========================================================================== -->
+    <header class="minimal-app-header">
+        <div class="d-flex align-items-center gap-2">
+            <a href="/Stories" class="header-brand-group">
+                <div class="brand-peacock-badge">
+                    <img src="/images/CompanyLogo/Logo_Transperent.png" alt="StoryVerse" style="width: 22px; height: 22px; object-fit: contain;" onerror="this.onerror=null; this.src='/images/CompanyLogo/ColorLogo.png';" />
+                </div>
+                <span class="brand-text">StoryVerse</span>
+            </a>
+            <span class="breadcrumb-sep">›</span>
+            <span class="story-crumb-title" title="@(story?.Title ?? "")">@(story?.Title ?? "Untitled Story")</span>
+            <span class="breadcrumb-sep">›</span>
+            <span class="chapter-crumb-title" id="headerChapterTitle">Cover</span>
+        </div>
+
+        <div class="header-right-actions">
+            <button class="header-btn" onclick="showClosedBookCover()" title="View Book Cover">
+                <i data-lucide="book-open" style="width: 14px; height: 14px;"></i>
+                <span>Cover</span>
+            </button>
+
+            <a href="@(Model != null ? Url.Action("Editor", "Chapters", new { storyId = story?.Id, chapterId = Model.Id }) : Url.Action("Index", "Chapters", new { storyId = story?.Id }))" class="header-btn" title="Write Editor">
+                <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                <span>Write</span>
+            </a>
+
+            <span class="header-btn read-active-badge">Read</span>
+
+            <button class="header-btn" onclick="openSearchModal()" title="Search Novel">
+                <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+            </button>
+
+            <button class="header-btn" onclick="toggleSettingsDrawer()" title="Reading Settings">
+                <span style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700;">Aa</span>
+            </button>
+
+            <button class="header-btn" onclick="toggleEntityPanel()" title="Entity References">
+                <i data-lucide="users" style="width: 14px; height: 14px;"></i>
+            </button>
+
+            <button class="header-btn" onclick="jumpToToc()" title="Contents / Index">
+                <i data-lucide="list" style="width: 14px; height: 14px;"></i>
+            </button>
+
+            <button class="header-btn" onclick="openBookmarksModal()" title="Bookmarks">
+                <i data-lucide="bookmark" style="width: 14px; height: 14px;"></i>
+            </button>
+
+            <button class="header-btn" onclick="toggleFullscreen()" title="Fullscreen Mode">
+                <i data-lucide="maximize-2" id="fullscreenIcon" style="width: 14px; height: 14px;"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ==========================================================================
+         2. CLOSED BOOK COVER STAGE (INITIAL STAGE)
+         ========================================================================== -->
+    <div class="closed-book-viewport" id="closedBookStage">
+        <div class="closed-book-3d-card" id="closedBookCard" onclick="openBookAnimation()">
+            <div class="closed-book-spine"></div>
+            <div class="closed-book-pages-edge"></div>
+
+            <div class="cover-surface-plate" style="background-image: url('@coverImage');">
+                <div class="cover-surface-overlay"></div>
+                <div class="cover-surface-content">
+                    <div class="my-auto text-center w-100">
+                        <h1 class="cover-hero-title">@(story?.Title ?? "Untitled Story")</h1>
+                        
+                        @if (!string.IsNullOrEmpty(story?.Tagline))
+                        {
+                            <div class="cover-tagline-box mx-auto">
+                                <p class="cover-tagline-text">“@story.Tagline”</p>
+                            </div>
+                        }
+                    </div>
+
+                    <div>
+                        <div class="ornament-sep" style="font-size: 1.4rem; margin: 0.4rem 0;">❦</div>
+                        <div class="cover-author-text">@authorName</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cover-action-bar">
+            <button class="btn-open-book-hero" onclick="openBookAnimation()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-book-icon"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                <span>Open Book</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         3. OPEN BOOK STAGE (SPREAD VIEW)
+         ========================================================================== -->
+    <div class="open-book-viewport" id="openBookStage">
+        <!-- MOBILE FLOATING NAVIGATION SIDE ARROWS -->
+        <button class="mobile-side-nav-btn mobile-nav-prev" id="mobilePrevBtn" onclick="goToPrevSpread()" aria-label="Previous Page" title="Previous Page">
+            <i data-lucide="chevron-left" style="width: 24px; height: 24px;"></i>
+        </button>
+        <button class="mobile-side-nav-btn mobile-nav-next" id="mobileNextBtn" onclick="goToNextSpread()" aria-label="Next Page" title="Next Page">
+            <i data-lucide="chevron-right" style="width: 24px; height: 24px;"></i>
+        </button>
+
+        <div class="book-spread-container" id="mainBookSpread">
+            <div class="book-center-spine-shadow"></div>
+
+            <!-- 3D REALISTIC DOUBLE-SIDED FLIPPING PAGE LEAF -->
+            <div class="flipping-page-leaf" id="flippingLeaf">
+                <div class="leaf-face leaf-front" id="flippingLeafFront">
+                    <div class="page-header-row" id="leafFrontHeader"></div>
+                    <div class="page-body-content" id="leafFrontBody"></div>
+                    <div class="page-footer-row" id="leafFrontFooter"></div>
+                </div>
+                <div class="leaf-face leaf-back" id="flippingLeafBack">
+                    <div class="page-header-row" id="leafBackHeader"></div>
+                    <div class="page-body-content" id="leafBackBody"></div>
+                    <div class="page-footer-row" id="leafBackFooter"></div>
+                </div>
+                <div class="leaf-spine-shadow" id="leafSpineShadow"></div>
+            </div>
+
+            <!-- LEFT PAGE HALF -->
+            <div class="book-page-half left-half" id="leftPage" onclick="handlePageClick(event, 'left')">
+                <div class="page-header-row" id="leftHeader">Cover</div>
+                <div class="page-body-content" id="leftBody"></div>
+                <div class="page-footer-row" id="leftFooter">— Cover —</div>
+            </div>
+
+            <!-- RIGHT PAGE HALF -->
+            <div class="book-page-half" id="rightPage" onclick="handlePageClick(event, 'right')">
+                <div class="page-header-row" id="rightHeader">Contents</div>
+                <div class="page-body-content" id="rightBody"></div>
+                <div class="page-footer-row" id="rightFooter">— Page 1 —</div>
+            </div>
+
+            <!-- RIGHT SIDE ENTITY QUICK REFERENCE PANEL -->
+            <div class="entity-sidebar-panel" id="entitySidebarPanel">
+                <div class="entity-panel-title">
+                    <span>Entity References</span>
+                    <button class="btn-close btn-sm ms-auto" onclick="toggleEntityPanel()"></button>
+                </div>
+                <div id="entitySidebarList">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM READING CONTROLS BAR -->
+        <div class="bottom-reading-bar">
+            <button class="nav-control-btn" id="prevSpreadBtn" onclick="goToPrevSpread()">
+                <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+                <span>Previous</span>
+            </button>
+
+            <div class="reading-slider-group">
+                <span class="page-count-text" id="spreadPageIndicator">Page 1 of 1</span>
+                <input type="range" class="progress-range-slider" id="readingProgressSlider" min="0" max="100" value="0" oninput="onSliderProgressChange(this.value)" />
+                <span class="percent-badge" id="percentDisplayBadge">0%</span>
+            </div>
+
+            <button class="nav-control-btn" id="nextSpreadBtn" onclick="goToNextSpread()">
+                <span>Next</span>
+                <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         4. FLOATING READING SETTINGS DRAWER ("Aa")
+         ========================================================================== -->
+    <div class="settings-drawer-backdrop" id="settingsBackdrop" onclick="toggleSettingsDrawer()"></div>
+    <div class="settings-drawer-card" id="settingsDrawer">
+        <div class="drawer-header-bar">
+            <h6 class="drawer-header-title">Reading Settings</h6>
+            <button class="btn-close" onclick="toggleSettingsDrawer()"></button>
+        </div>
+        <div class="drawer-body-content">
+            <!-- Reading Themes -->
+            <div>
+                <div class="setting-block-title">Reading Theme</div>
+                <div class="theme-selector-grid">
+                    <div class="theme-btn-card active-theme" id="themeOptIvory" onclick="applyTheme('ivory')">
+                        <div class="theme-swatch-circle" style="background: #FAF7F2; border-color: #C5A059;"></div>
+                        <span class="theme-card-name">Warm Ivory</span>
+                    </div>
+                    <div class="theme-btn-card" id="themeOptPaper" onclick="applyTheme('paper')">
+                        <div class="theme-swatch-circle" style="background: #FAF6EE; border-color: #D97706;"></div>
+                        <span class="theme-card-name">Classic Paper</span>
+                    </div>
+                    <div class="theme-btn-card" id="themeOptSepia" onclick="applyTheme('sepia')">
+                        <div class="theme-swatch-circle" style="background: #F4ECD8; border-color: #78350F;"></div>
+                        <span class="theme-card-name">Sepia Tone</span>
+                    </div>
+                    <div class="theme-btn-card" id="themeOptDaylight" onclick="applyTheme('daylight')">
+                        <div class="theme-swatch-circle" style="background: #FFFFFF; border-color: #0284C7;"></div>
+                        <span class="theme-card-name">Day Light</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Text Size -->
+            <div>
+                <div class="setting-block-title">Text Size</div>
+                <div class="btn-group btn-group-sm w-100" role="group">
+                    <button class="btn btn-outline-secondary" onclick="adjustFontSize(-1)">A-</button>
+                    <button class="btn btn-outline-secondary disabled fw-bold" id="fontSizeLabelBtn">17px</button>
+                    <button class="btn btn-outline-secondary" onclick="adjustFontSize(1)">A+</button>
+                </div>
+            </div>
+
+            <!-- Line Height -->
+            <div>
+                <div class="setting-block-title">Line Spacing</div>
+                <div class="btn-group btn-group-sm w-100" role="group">
+                    <button class="btn btn-outline-secondary" onclick="setLineHeight(1.6)" id="lhCompact">Compact</button>
+                    <button class="btn btn-outline-secondary active" onclick="setLineHeight(1.82)" id="lhComfortable">Comfortable</button>
+                    <button class="btn btn-outline-secondary" onclick="setLineHeight(2.1)" id="lhSpacious">Spacious</button>
+                </div>
+            </div>
+
+            <!-- Auto Flip -->
+            <div>
+                <div class="setting-block-title">Auto Flip Pages</div>
+                <div class="btn-group btn-group-sm w-100" role="group">
+                    <button class="btn btn-outline-secondary active" onclick="setAutoFlip('off')" id="afOff">Off</button>
+                    <button class="btn btn-outline-secondary" onclick="setAutoFlip('slow')" id="afSlow">Slow</button>
+                    <button class="btn btn-outline-secondary" onclick="setAutoFlip('normal')" id="afNormal">Normal</button>
+                    <button class="btn btn-outline-secondary" onclick="setAutoFlip('fast')" id="afFast">Fast</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================================
+         5. SEARCH & BOOKMARK MODALS
+         ========================================================================== -->
+    <div class="custom-reader-modal-backdrop" id="searchModal">
+        <div class="custom-reader-modal-card">
+            <div class="drawer-header-bar">
+                <h6 class="drawer-header-title">Search in Novel</h6>
+                <button class="btn-close" onclick="closeSearchModal()"></button>
+            </div>
+            <div class="p-3 border-bottom">
+                <input type="text" id="searchInput" class="form-control rounded-pill" placeholder="Search keywords, characters or locations..." oninput="onSearchQueryChange(this.value)" />
+            </div>
+            <div class="p-3 overflow-y-auto" id="searchResultsContainer" style="max-height: 380px;">
+                <div class="text-muted text-center py-4">Type to search inside chapter content...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-reader-modal-backdrop" id="bookmarksModal">
+        <div class="custom-reader-modal-card">
+            <div class="drawer-header-bar">
+                <h6 class="drawer-header-title">Saved Bookmarks & Notes</h6>
+                <button class="btn-close" onclick="closeBookmarksModal()"></button>
+            </div>
+            <div class="p-3 overflow-y-auto" id="bookmarksContainer" style="max-height: 380px;">
+                <div class="text-center py-3">
+                    <button class="btn rounded-pill text-white fw-bold px-4 mb-3" onclick="saveCurrentBookmark()" style="background: var(--novel-accent);">
+                        🔖 Bookmark Current Page
+                    </button>
+                </div>
+                <div id="bookmarksList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOVER POPOVER -->
+    <div class="entity-popover-box" id="entityPopover">
+        <div class="popover-header-group">
+            <img class="popover-avatar" id="popoverImg" src="/images/character_empty_state.png" alt="Entity" />
+            <div>
+                <h6 class="popover-name" id="popoverName">Entity Name</h6>
+                <span class="popover-badge" id="popoverBadge">Character • Protagonist</span>
+            </div>
+        </div>
+        <p class="popover-desc" id="popoverDesc">Description preview...</p>
+        <a href="#" class="popover-link-btn" id="popoverLink">
+            <span>View Entity Details</span>
+            <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+        </a>
+    </div>
+
+    <!-- ==========================================================================
+         6. INTERACTIVE NOVEL ENGINE JAVASCRIPT
+         ========================================================================== -->
+    <script>
+        // Server Ingestion
+        const storyMeta = {
+            id: @Html.Raw(JsonSerializer.Serialize(story?.Id.ToString() ?? "")),
+            title: @Html.Raw(JsonSerializer.Serialize(story?.Title ?? "Untitled Story")),
+            tagline: @Html.Raw(JsonSerializer.Serialize(story?.Tagline ?? "")),
+            synopsis: @Html.Raw(JsonSerializer.Serialize(story?.Synopsis ?? "")),
+            author: @Html.Raw(JsonSerializer.Serialize(authorName)),
+            coverImage: @Html.Raw(JsonSerializer.Serialize(coverImage))
+        };
+
+        const partsList = [
+            @foreach (var p in storyParts)
+            {
+                <text>{ id: @Html.Raw(JsonSerializer.Serialize(p.Id.ToString())), title: @Html.Raw(JsonSerializer.Serialize(p.Title)), order: @p.Order },</text>
+            }
+        ];
+
+        const chaptersList = [
+            @foreach (var c in allChapters)
+            {
+                var contentClean = c.Content ?? "";
+                <text>{
+                    id: @Html.Raw(JsonSerializer.Serialize(c.Id.ToString())),
+                    partId: @Html.Raw(JsonSerializer.Serialize(c.PartId?.ToString() ?? "")),
+                    title: @Html.Raw(JsonSerializer.Serialize(c.Title)),
+                    order: @c.Order,
+                    wordCount: @c.WordCount,
+                    content: @Html.Raw(JsonSerializer.Serialize(contentClean))
+                },</text>
+            }
+        ];
+
+        const characterEntities = [
+            @foreach (var chr in characters)
+            {
+                <text>{
+                    id: @Html.Raw(JsonSerializer.Serialize(chr.Id.ToString())),
+                    name: @Html.Raw(JsonSerializer.Serialize(chr.Name)),
+                    role: @Html.Raw(JsonSerializer.Serialize(chr.Role ?? "Character")),
+                    avatar: @Html.Raw(JsonSerializer.Serialize(chr.AvatarUrl ?? "/images/character_empty_state.png")),
+                    desc: @Html.Raw(JsonSerializer.Serialize(chr.OneLineDescription ?? chr.BackgroundSummary ?? "Character in the story."))
+                },</text>
+            }
+        ];
+
+        const worldEntitiesList = [
+            @foreach (var w in worldEntities)
+            {
+                <text>{
+                    id: @Html.Raw(JsonSerializer.Serialize(w.Id.ToString())),
+                    name: @Html.Raw(JsonSerializer.Serialize(w.Name)),
+                    type: @Html.Raw(JsonSerializer.Serialize(w.EntityType != null ? w.EntityType.Name : "Location")),
+                    image: @Html.Raw(JsonSerializer.Serialize(w.CoverImage ?? "/images/dashboard/globe.png")),
+                    desc: @Html.Raw(JsonSerializer.Serialize(w.Summary ?? w.Description ?? "World location."))
+                },</text>
+            }
+        ];
+
+        const timelineEventsList = [
+            @foreach (var t in timelineEvents)
+            {
+                <text>{
+                    id: @Html.Raw(JsonSerializer.Serialize(t.Id.ToString())),
+                    name: @Html.Raw(JsonSerializer.Serialize(t.Title)),
+                    type: @Html.Raw(JsonSerializer.Serialize(t.Category ?? "Timeline Event")),
+                    image: "/images/timeline-types/chronological.svg",
+                    desc: @Html.Raw(JsonSerializer.Serialize(t.Summary ?? t.Description ?? "Event in story timeline."))
+                },</text>
+            }
+        ];
+
+        // Reader Global State
+        let physicalPages = [];
+        let currentSpreadIndex = 0;
+        let autoFlipTimer = null;
+        let isEntityPanelOpen = false;
+        let touchStartX = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            buildPhysicalNovelPages();
+            populateEntitySidebar();
+            setupTouchGestures();
+            
+            // ALWAYS SHOW THE CLOSED BOOK COVER ON INITIAL PAGE LOAD
+            showClosedBookCover();
+        });
+
+        // ==========================================================
+        // LITERARY NOVEL PAGE BUILDER WITH RIGHT-HAND PAGE ALIGNMENT
+        // ==========================================================
+        function buildPhysicalNovelPages() {
+            physicalPages = [];
+
+            // PAGE 1 (LEFT PAGE - SPREAD 0): BLANK PAGE
+            physicalPages.push({ header: '', html: '', isBlank: true });
+
+            // SECTION OPENER RULE: Check if next page is placed on a RIGHT-HAND PAGE.
+            ensureRightPageSectionOpener();
+
+            // PAGE 1 (RIGHT PAGE - SPREAD 0): CONTENTS / INDEX
+            let tocHtml = `
+                <div class="part-opener-container" style="justify-content: flex-start; padding-top: 0.5rem;">
+                    <div class="part-label-badge">INDEX</div>
+                    <h2 class="part-title-heading" style="font-size: 1.8rem;">CONTENTS</h2>
+                    <div class="ornament-sep" style="margin: 0.4rem 0;">❦</div>
+                    <div class="inside-toc-container w-100">
+            `;
+
+            if (partsList.length > 0) {
+                partsList.forEach(pt => {
+                    tocHtml += `<div class="toc-part-row">Part ${pt.order}: ${escapeHtml(pt.title)}</div>`;
+                    chaptersList.filter(c => c.partId === pt.id).forEach(ch => {
+                        tocHtml += `
+                            <div class="toc-chapter-row" onclick="jumpToChapter('${ch.id}')">
+                                <span class="toc-chapter-title">Chapter ${ch.order}: ${escapeHtml(ch.title)}</span>
+                                <span class="toc-dots"></span>
+                                <span class="small text-muted">Read →</span>
+                            </div>
+                        `;
+                    });
+                });
+            } else {
+                chaptersList.forEach(ch => {
+                    tocHtml += `
+                        <div class="toc-chapter-row" onclick="jumpToChapter('${ch.id}')">
+                            <span class="toc-chapter-title">Chapter ${ch.order}: ${escapeHtml(ch.title)}</span>
+                            <span class="toc-dots"></span>
+                            <span class="small text-muted">Read →</span>
+                        </div>
+                    `;
+                });
+            }
+            if (chaptersList.length === 0) {
+                tocHtml += `<p class="text-muted fst-italic text-center py-4">This story has not been written yet.</p>`;
+            }
+            tocHtml += `</div></div>`;
+            physicalPages.push({ header: 'Contents', html: tocHtml, isToc: true });
+
+            // SECTION OPENER RULE: SYNOPSIS MUST START ON A RIGHT-HAND PAGE
+            ensureRightPageSectionOpener();
+
+            // SYNOPSIS (PAGINATED ACROSS MULTIPLE PHYSICAL PAGES IF LARGE)
+            addSynopsisPages();
+
+            // PARTS & CHAPTERS MANUSCRIPT BUILDER
+            if (partsList.length > 0) {
+                partsList.forEach(part => {
+                    // PART TITLE PAGE MUST START ON A RIGHT-HAND PAGE
+                    ensureRightPageSectionOpener();
+
+                    let partOpenerHtml = `
+                        <div class="part-opener-container">
+                            <div class="ornament-sep" style="font-size: 2.2rem;">❦</div>
+                            <div class="part-label-badge">PART ${part.order}</div>
+                            <h2 class="part-title-heading">${escapeHtml(part.title)}</h2>
+                            <div class="ornament-sep" style="font-size: 2.2rem;">❦</div>
+                        </div>
+                    `;
+                    physicalPages.push({ header: `Part ${part.order}`, html: partOpenerHtml });
+
+                    let partChapters = chaptersList.filter(c => c.partId === part.id);
+                    partChapters.forEach(ch => addChapterPages(ch));
+                });
+            }
+
+            // Unassigned chapters (or stories without parts)
+            let unassignedChapters = partsList.length > 0 
+                ? chaptersList.filter(c => !c.partId || !partsList.some(p => p.id === c.partId))
+                : chaptersList;
+
+            unassignedChapters.forEach(ch => addChapterPages(ch));
+
+            // THE END PAGE (RIGHT-HAND OPENER)
+            ensureRightPageSectionOpener();
+
+            let endBookHtml = `
+                <div class="part-opener-container">
+                    <div class="ornament-sep" style="font-size: 2.2rem;">❦</div>
+                    <h2 class="part-title-heading" style="font-size: 2.6rem; letter-spacing: 0.1em;">THE END</h2>
+                    <div class="ornament-sep" style="font-size: 2.2rem;">❦</div>
+                    <div class="fw-bold fs-4 mt-2" style="font-family: var(--font-heading); color: var(--paper-heading);">${escapeHtml(storyMeta.title)}</div>
+                    <div class="text-muted small text-uppercase mb-3">BY ${escapeHtml(storyMeta.author)}</div>
+
+                    <div class="end-book-actions">
+                        <button class="btn-read-again" onclick="goToSpread(0)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                            <span>Read Again</span>
+                        </button>
+                        <a href="/Stories/Details/${storyMeta.id}" class="btn-back-story">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                            <span>Back to Story Details</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+            physicalPages.push({ header: 'The End', html: endBookHtml });
+        }
+
+        // Guarantees Section Openers always land on a RIGHT-HAND Page (ODD Index)
+        function ensureRightPageSectionOpener() {
+            if (physicalPages.length % 2 === 0) {
+                // Next index is EVEN (Left Page). Insert a decorative blank Left Page!
+                physicalPages.push({
+                    header: '',
+                    html: '',
+                    isBlank: true
+                });
+            }
+        }
+
+        // Synopsis Flow Across Multiple Physical Pages
+        function addSynopsisPages() {
+            const rawSynopsis = storyMeta.synopsis ? storyMeta.synopsis.trim() : '';
+            if (!rawSynopsis) {
+                let emptySynopsisHtml = `
+                    <div class="part-opener-container" style="justify-content: flex-start; padding-top: 0.8rem;">
+                        <div class="part-label-badge">STORY OVERVIEW</div>
+                        <h2 class="part-title-heading" style="font-size: 1.9rem;">${escapeHtml(storyMeta.title)}</h2>
+                        ${storyMeta.tagline ? `<div class="fst-italic text-warning mb-2" style="font-family: var(--font-reader);">“${escapeHtml(storyMeta.tagline)}”</div>` : ''}
+                        <div class="ornament-sep">❦</div>
+                        <p class="text-muted fst-italic text-center py-4">No synopsis available for this story.</p>
+                        <div class="mt-auto pt-3 text-center">
+                            <div class="small text-muted text-uppercase" style="letter-spacing: 0.12em;">WRITTEN BY</div>
+                            <div class="fw-bold fs-5" style="font-family: var(--font-heading); color: var(--paper-heading);">${escapeHtml(storyMeta.author)}</div>
+                        </div>
+                    </div>
+                `;
+                physicalPages.push({ header: 'Synopsis', html: emptySynopsisHtml });
+                return;
+            }
+
+            // Split synopsis into raw paragraph strings
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = rawSynopsis;
+            let paragraphs = Array.from(tempDiv.querySelectorAll('p')).map(p => p.innerHTML);
+            if (paragraphs.length === 0) {
+                let rawSplit = rawSynopsis.split(/\n\n+/);
+                if (rawSplit.length === 1 && rawSynopsis.includes('\n')) {
+                    rawSplit = rawSynopsis.split(/\n+/);
+                }
+                paragraphs = rawSplit.filter(p => p.trim().length > 0);
+            }
+
+            const FIRST_PAGE_MAX_WORDS = 110;
+            const CONT_PAGE_MAX_WORDS = 190;
+
+            let currentPageChunks = [];
+            let wordCountOnPage = 0;
+            let isFirstSynopsisPage = true;
+
+            function flushSynopsisPage() {
+                if (currentPageChunks.length === 0) return;
+
+                let innerHtml = currentPageChunks.map(chunk => {
+                    let decorated = decorateEntityReferencesInText(chunk);
+                    return `<p class="manuscript-p">${decorated}</p>`;
+                }).join('');
+
+                let pageHtml = '';
+                if (isFirstSynopsisPage) {
+                    pageHtml = `
+                        <div class="part-opener-container" style="justify-content: flex-start; padding-top: 0.5rem; height: 100%;">
+                            <div class="part-label-badge">STORY OVERVIEW</div>
+                            <h2 class="part-title-heading" style="font-size: 1.85rem; margin-bottom: 0.3rem;">${escapeHtml(storyMeta.title)}</h2>
+                            ${storyMeta.tagline ? `<div class="fst-italic text-warning mb-2" style="font-family: var(--font-reader); font-size: 0.9rem;">“${escapeHtml(storyMeta.tagline)}”</div>` : ''}
+                            <div class="ornament-sep" style="margin: 0.4rem 0;">❦</div>
+                            <div class="text-justify w-100" style="font-size: 0.96rem; line-height: 1.75; color: var(--paper-text);">
+                                ${innerHtml}
+                            </div>
+                            <div class="mt-auto pt-2 text-center w-100">
+                                <div class="small text-muted text-uppercase" style="letter-spacing: 0.12em;">WRITTEN BY</div>
+                                <div class="fw-bold fs-5" style="font-family: var(--font-heading); color: var(--paper-heading);">${escapeHtml(storyMeta.author)}</div>
+                            </div>
+                        </div>
+                    `;
+                    physicalPages.push({ header: 'Synopsis', html: pageHtml });
+                    isFirstSynopsisPage = false;
+                } else {
+                    pageHtml = `
+                        <div class="part-opener-container" style="justify-content: flex-start; padding-top: 0.5rem; height: 100%;">
+                            <div class="part-label-badge">SYNOPSIS</div>
+                            <div class="ornament-sep" style="margin: 0.4rem 0;">❦</div>
+                            <div class="text-justify w-100" style="font-size: 0.96rem; line-height: 1.75; color: var(--paper-text);">
+                                ${innerHtml}
+                            </div>
+                        </div>
+                    `;
+                    physicalPages.push({ header: 'Synopsis (Cont.)', html: pageHtml });
+                }
+
+                currentPageChunks = [];
+                wordCountOnPage = 0;
+            }
+
+            paragraphs.forEach((pText) => {
+                let currentMax = isFirstSynopsisPage ? FIRST_PAGE_MAX_WORDS : CONT_PAGE_MAX_WORDS;
+                let words = pText.trim().split(/\s+/);
+
+                if (wordCountOnPage + words.length <= currentMax) {
+                    currentPageChunks.push(pText);
+                    wordCountOnPage += words.length;
+                } else {
+                    let roomLeft = currentMax - wordCountOnPage;
+
+                    if (roomLeft < 25 && wordCountOnPage > 0) {
+                        flushSynopsisPage();
+                        currentMax = CONT_PAGE_MAX_WORDS;
+                        roomLeft = currentMax;
+                    }
+
+                    if (words.length <= roomLeft) {
+                        currentPageChunks.push(pText);
+                        wordCountOnPage += words.length;
+                    } else {
+                        let sentences = pText.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [pText];
+                        let activeChunkSentences = [];
+
+                        sentences.forEach((sentence) => {
+                            let sWords = sentence.trim().split(/\s+/);
+                            let maxForNow = isFirstSynopsisPage ? FIRST_PAGE_MAX_WORDS : CONT_PAGE_MAX_WORDS;
+                            let budget = maxForNow - wordCountOnPage;
+
+                            if (budget <= 0 || (budget < 15 && wordCountOnPage > 0)) {
+                                if (activeChunkSentences.length > 0) {
+                                    currentPageChunks.push(activeChunkSentences.join(' '));
+                                    activeChunkSentences = [];
+                                }
+                                flushSynopsisPage();
+                                maxForNow = CONT_PAGE_MAX_WORDS;
+                                budget = maxForNow;
+                            }
+
+                            if (sWords.length <= budget) {
+                                activeChunkSentences.push(sentence);
+                                wordCountOnPage += sWords.length;
+                            } else {
+                                if (activeChunkSentences.length > 0) {
+                                    currentPageChunks.push(activeChunkSentences.join(' '));
+                                    activeChunkSentences = [];
+                                }
+
+                                let part1 = sWords.slice(0, budget).join(' ');
+                                let part2 = sWords.slice(budget).join(' ');
+
+                                if (part1.trim()) {
+                                    currentPageChunks.push(part1);
+                                    wordCountOnPage += budget;
+                                }
+                                flushSynopsisPage();
+
+                                if (part2.trim()) {
+                                    let part2Words = part2.trim().split(/\s+/);
+                                    activeChunkSentences.push(part2);
+                                    wordCountOnPage = part2Words.length;
+                                }
+                            }
+                        });
+
+                        if (activeChunkSentences.length > 0) {
+                            currentPageChunks.push(activeChunkSentences.join(' '));
+                        }
+                    }
+                }
+            });
+
+            if (currentPageChunks.length > 0) {
+                flushSynopsisPage();
+            }
+        }
+
+        // Dynamic Chapter Splitter into paginated pages
+        function addChapterPages(ch) {
+            // CHAPTER OPENER PAGE MUST START ON A RIGHT-HAND PAGE
+            ensureRightPageSectionOpener();
+
+            let chapterOpenerHtml = `
+                <div class="chapter-opener-container">
+                    <div class="ornament-sep">❦</div>
+                    <div class="chapter-label-badge">CHAPTER ${ch.order}</div>
+                    <h2 class="chapter-title-heading">${escapeHtml(ch.title)}</h2>
+                    <div class="ornament-sep">❦</div>
+                </div>
+            `;
+            physicalPages.push({ chapterId: ch.id, header: `Chapter ${ch.order}`, html: chapterOpenerHtml });
+
+            let rawContent = ch.content || '';
+            if (!rawContent.trim()) {
+                physicalPages.push({
+                    chapterId: ch.id,
+                    header: `Chapter ${ch.order}`,
+                    html: `<p class="manuscript-p no-indent text-muted fst-italic text-center py-5">This chapter is waiting to be written.</p>`
+                });
+                return;
+            }
+
+            let paragraphs = parseManuscriptParagraphs(rawContent);
+            let currentPageHtml = '';
+            let currentWords = 0;
+            let isFirstPage = true;
+
+            paragraphs.forEach((pText, idx) => {
+                let decoratedP = decorateEntityReferencesInText(pText);
+                let pClass = (isFirstPage && idx === 0) ? 'manuscript-p has-drop-cap' : 'manuscript-p';
+                let pWordCount = pText.split(/\s+/).length;
+
+                if (currentWords + pWordCount > 280 && currentPageHtml !== '') {
+                    physicalPages.push({ chapterId: ch.id, header: `Chapter ${ch.order}`, html: currentPageHtml });
+                    currentPageHtml = `<p class="${pClass}">${decoratedP}</p>`;
+                    currentWords = pWordCount;
+                    isFirstPage = false;
+                } else {
+                    currentPageHtml += `<p class="${pClass}">${decoratedP}</p>`;
+                    currentWords += pWordCount;
+                }
+            });
+
+            if (currentPageHtml.trim() !== '') {
+                // Chapter End Ornament
+                currentPageHtml += `
+                    <div class="ornament-sep mt-4">❦</div>
+                    <div class="text-center small text-muted text-uppercase" style="letter-spacing: 0.14em; font-family: var(--font-heading);">END OF CHAPTER ${ch.order}</div>
+                    <div class="ornament-sep mb-2">❦</div>
+                `;
+                physicalPages.push({ chapterId: ch.id, header: `Chapter ${ch.order}`, html: currentPageHtml });
+            }
+        }
+
+        function parseManuscriptParagraphs(rawHtml) {
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = rawHtml;
+            let paragraphs = Array.from(tempDiv.querySelectorAll('p')).map(p => p.innerHTML);
+            if (paragraphs.length === 0) paragraphs = [rawHtml];
+            return paragraphs;
+        }
+
+        function decorateEntityReferencesInText(htmlText) {
+            if (!htmlText) return '';
+
+            characterEntities.forEach(c => {
+                if (c.name && c.name.length > 2) {
+                    const regex = new RegExp(`\\b(${escapeRegex(c.name)})\\b`, 'gi');
+                    htmlText = htmlText.replace(regex, `<span class="entity-ref" data-type="character" data-id="${c.id}" onmouseenter="showEntityPopover(event, 'character', '${c.id}')" onmouseleave="hideEntityPopover()">$1</span>`);
+                }
+            });
+
+            worldEntitiesList.forEach(w => {
+                if (w.name && w.name.length > 2) {
+                    const regex = new RegExp(`\\b(${escapeRegex(w.name)})\\b`, 'gi');
+                    htmlText = htmlText.replace(regex, `<span class="entity-ref" data-type="world" data-id="${w.id}" onmouseenter="showEntityPopover(event, 'world', '${w.id}')" onmouseleave="hideEntityPopover()">$1</span>`);
+                }
+            });
+
+            timelineEventsList.forEach(t => {
+                if (t.name && t.name.length > 3) {
+                    const regex = new RegExp(`\\b(${escapeRegex(t.name)})\\b`, 'gi');
+                    htmlText = htmlText.replace(regex, `<span class="entity-ref" data-type="timeline" data-id="${t.id}" onmouseenter="showEntityPopover(event, 'timeline', '${t.id}')" onmouseleave="hideEntityPopover()">$1</span>`);
+                }
+            });
+
+            return htmlText;
+        }
+
+        function escapeRegex(string) {
+            return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        }
+
+        function populateEntitySidebar() {
+            const list = document.getElementById('entitySidebarList');
+            let html = '';
+
+            if (characterEntities.length > 0) {
+                html += `<div class="entity-card-role mb-2">CHARACTERS</div>`;
+                characterEntities.forEach(c => {
+                    html += `
+                        <div class="entity-card-item">
+                            <div class="entity-card-name">${escapeHtml(c.name)}</div>
+                            <div class="entity-card-role">${escapeHtml(c.role)}</div>
+                            <div class="entity-card-desc">${escapeHtml(c.desc)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (worldEntitiesList.length > 0) {
+                html += `<div class="entity-card-role mb-2 mt-3">WORLD & LOCATIONS</div>`;
+                worldEntitiesList.forEach(w => {
+                    html += `
+                        <div class="entity-card-item">
+                            <div class="entity-card-name">${escapeHtml(w.name)}</div>
+                            <div class="entity-card-role">${escapeHtml(w.type)}</div>
+                            <div class="entity-card-desc">${escapeHtml(w.desc)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (timelineEventsList.length > 0) {
+                html += `<div class="entity-card-role mb-2 mt-3">TIMELINE EVENTS</div>`;
+                timelineEventsList.forEach(t => {
+                    html += `
+                        <div class="entity-card-item">
+                            <div class="entity-card-name">${escapeHtml(t.name)}</div>
+                            <div class="entity-card-role">${escapeHtml(t.type)}</div>
+                            <div class="entity-card-desc">${escapeHtml(t.desc)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (!html) {
+                html = `<p class="text-muted small fst-italic py-3">No entity references linked to this story yet.</p>`;
+            }
+
+            list.innerHTML = html;
+        }
+
+        function toggleEntityPanel() {
+            const panel = document.getElementById('entitySidebarPanel');
+            isEntityPanelOpen = !isEntityPanelOpen;
+            panel.style.display = isEntityPanelOpen ? 'flex' : 'none';
+        }
+
+        // ==========================================
+        // 3D PHYSICAL BOOK ANIMATIONS & NAVIGATION
+        // ==========================================
+        function showClosedBookCover() {
+            document.getElementById('closedBookStage').style.display = 'flex';
+            document.getElementById('closedBookStage').style.opacity = '1';
+            document.getElementById('openBookStage').style.display = 'none';
+            document.getElementById('headerChapterTitle').textContent = "Cover";
+        }
+
+        function openBookAnimation() {
+            skipBookAnimation();
+        }
+
+        function skipBookAnimation() {
+            const card = document.getElementById('closedBookCard');
+            card.style.transform = '';
+            
+            const closedStage = document.getElementById('closedBookStage');
+            closedStage.style.opacity = '0';
+            
+            setTimeout(() => {
+                closedStage.style.display = 'none';
+                document.getElementById('openBookStage').style.display = 'flex';
+                currentSpreadIndex = 0;
+                renderSpread();
+            }, 200);
+        }
+
+        function getActivePages() {
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) {
+                return physicalPages.filter(p => !p.isBlank);
+            }
+            return physicalPages;
+        }
+
+        function renderSpread() {
+            const activePages = getActivePages();
+            const totalPages = activePages.length;
+            const isMobile = window.innerWidth < 768;
+            
+            // On mobile, spreads are 1 page per view. On desktop/tablet, spreads are 2 pages.
+            const pagesPerSpread = isMobile ? 1 : 2;
+            const totalSpreads = Math.ceil(totalPages / pagesPerSpread);
+
+            if (currentSpreadIndex < 0) currentSpreadIndex = 0;
+            if (currentSpreadIndex >= totalSpreads) currentSpreadIndex = totalSpreads - 1;
+
+            const leftPageIdx = currentSpreadIndex * pagesPerSpread;
+            const rightPageIdx = leftPageIdx + (pagesPerSpread - 1);
+
+            const leftData = activePages[leftPageIdx];
+            const rightData = (pagesPerSpread > 1) ? activePages[rightPageIdx] : null;
+
+            // Render Left Page
+            const isLeftBlank = leftData && leftData.isBlank;
+            document.getElementById('leftHeader').textContent = (leftData && !isLeftBlank) ? (leftData.header || '') : '';
+            document.getElementById('leftBody').innerHTML = leftData ? (leftData.html || '') : '';
+            document.getElementById('leftFooter').textContent = (leftData && !isLeftBlank) ? `— Page ${leftPageIdx + 1} —` : '';
+
+            // Render Right Page (Desktop)
+            if (pagesPerSpread > 1) {
+                const isRightBlank = rightData && rightData.isBlank;
+                document.getElementById('rightHeader').textContent = (rightData && !isRightBlank) ? (rightData.header || '') : '';
+                document.getElementById('rightBody').innerHTML = rightData ? (rightData.html || '') : '';
+                document.getElementById('rightFooter').textContent = (rightData && !isRightBlank) ? `— Page ${rightPageIdx + 1} —` : '';
+            } else {
+                // Mobile single page view renders leftData into rightBody container
+                document.getElementById('rightHeader').textContent = (leftData && !isLeftBlank) ? (leftData.header || '') : '';
+                document.getElementById('rightBody').innerHTML = leftData ? (leftData.html || '') : '';
+                document.getElementById('rightFooter').textContent = (leftData && !isLeftBlank) ? `— Page ${leftPageIdx + 1} of ${totalPages} —` : '';
+            }
+
+            // Progress Slider Indicator
+            const progressPercent = Math.round(((currentSpreadIndex + 1) / totalSpreads) * 100);
+            const pageRangeText = isMobile ? `Page ${leftPageIdx + 1} of ${totalPages}` : `Page ${leftPageIdx + 1}–${rightPageIdx + 1} of ${totalPages}`;
+            document.getElementById('spreadPageIndicator').textContent = pageRangeText;
+            document.getElementById('readingProgressSlider').value = progressPercent;
+            document.getElementById('percentDisplayBadge').textContent = `${progressPercent}%`;
+
+            document.getElementById('spreadPageIndicator').textContent = pageRangeText;
+            document.getElementById('readingProgressSlider').value = progressPercent;
+            document.getElementById('percentDisplayBadge').textContent = `${progressPercent}%`;
+
+            const isFirst = (currentSpreadIndex === 0);
+            const isLast = (currentSpreadIndex >= totalSpreads - 1);
+
+            document.getElementById('prevSpreadBtn').disabled = isFirst;
+            document.getElementById('nextSpreadBtn').disabled = isLast;
+
+            const mobilePrevBtn = document.getElementById('mobilePrevBtn');
+            const mobileNextBtn = document.getElementById('mobileNextBtn');
+            if (mobilePrevBtn) mobilePrevBtn.disabled = isFirst;
+            if (mobileNextBtn) mobileNextBtn.disabled = isLast;
+
+            // Header Title Sync
+            const activePageData = leftData || rightData;
+            if (activePageData && activePageData.chapterId) {
+                const activeCh = chaptersList.find(c => c.id === activePageData.chapterId);
+                if (activeCh) document.getElementById('headerChapterTitle').textContent = `Chapter ${activeCh.order} — ${activeCh.title}`;
+            } else if (activePageData && activePageData.header) {
+                document.getElementById('headerChapterTitle').textContent = activePageData.header;
+            }
+
+            lucide.createIcons();
+        }
+
+        // 3D Physical Page Turning Physics Animation (Silky Smooth, Hardware Accelerated & Responsive)
+        function animate3DPageTurn(direction, callback) {
+            const leaf = document.getElementById('flippingLeaf');
+            const shadow = document.getElementById('leafSpineShadow');
+            const activePages = getActivePages();
+            const isMobile = window.innerWidth < 768;
+            const pagesPerSpread = isMobile ? 1 : 2;
+
+            const currentSpread = currentSpreadIndex;
+            const targetSpread = direction === 'next' ? currentSpread + 1 : currentSpread - 1;
+
+            if (isMobile) {
+                // MOBILE SINGLE-PAGE REALISTIC 3D PAGE TURN
+                const currentIdx = currentSpread;
+                const targetIdx = targetSpread;
+
+                const frontData = activePages[currentIdx];
+                const backData = activePages[targetIdx];
+
+                if (!backData && direction === 'next') {
+                    if (callback) callback();
+                    return;
+                }
+
+                leaf.className = `flipping-page-leaf mobile-leaf ${direction === 'next' ? 'flip-next' : 'flip-prev'}`;
+
+                if (direction === 'next') {
+                    // NEXT PAGE 3D FLIP: Render current page on leaf, target page underneath in body
+                    document.getElementById('leafFrontHeader').textContent = (frontData && !frontData.isBlank) ? (frontData.header || '') : '';
+                    document.getElementById('leafFrontBody').innerHTML = frontData ? (frontData.html || '') : '';
+                    document.getElementById('leafFrontFooter').textContent = (frontData && !frontData.isBlank) ? `— Page ${currentIdx + 1} of ${activePages.length} —` : '';
+
+                    document.getElementById('leafBackHeader').textContent = (backData && !backData.isBlank) ? (backData.header || '') : '';
+                    document.getElementById('leafBackBody').innerHTML = backData ? (backData.html || '') : '';
+                    document.getElementById('leafBackFooter').textContent = (backData && !backData.isBlank) ? `— Page ${targetIdx + 1} of ${activePages.length} —` : '';
+
+                    // Pre-render target page in background rightBody container
+                    const isTargetBlank = backData && backData.isBlank;
+                    document.getElementById('rightHeader').textContent = (backData && !isTargetBlank) ? (backData.header || '') : '';
+                    document.getElementById('rightBody').innerHTML = backData ? (backData.html || '') : '';
+                    document.getElementById('rightFooter').textContent = (backData && !isTargetBlank) ? `— Page ${targetIdx + 1} of ${activePages.length} —` : '';
+
+                    leaf.style.display = 'block';
+                    shadow.style.opacity = '0.8';
+
+                    leaf.animate([
+                        { transform: 'perspective(1400px) rotateY(0deg) scale(1)', filter: 'brightness(1)' },
+                        { transform: 'perspective(1400px) rotateY(-90deg) scale(0.96)', filter: 'brightness(0.85)', offset: 0.5 },
+                        { transform: 'perspective(1400px) rotateY(-180deg) scale(1)', filter: 'brightness(1)' }
+                    ], {
+                        duration: 480,
+                        easing: 'cubic-bezier(0.25, 1, 0.5, 1)'
+                    }).onfinish = () => {
+                        leaf.style.display = 'none';
+                        shadow.style.opacity = '0';
+                        if (callback) callback();
+                    };
+                } else {
+                    // PREV PAGE 3D FLIP: Leaf starts folded left (-180deg) with target page on front, turns right to 0deg
+                    document.getElementById('leafFrontHeader').textContent = (backData && !backData.isBlank) ? (backData.header || '') : '';
+                    document.getElementById('leafFrontBody').innerHTML = backData ? (backData.html || '') : '';
+                    document.getElementById('leafFrontFooter').textContent = (backData && !backData.isBlank) ? `— Page ${targetIdx + 1} of ${activePages.length} —` : '';
+
+                    document.getElementById('leafBackHeader').textContent = (frontData && !frontData.isBlank) ? (frontData.header || '') : '';
+                    document.getElementById('leafBackBody').innerHTML = frontData ? (frontData.html || '') : '';
+                    document.getElementById('leafBackFooter').textContent = (frontData && !frontData.isBlank) ? `— Page ${currentIdx + 1} of ${activePages.length} —` : '';
+
+                    leaf.style.display = 'block';
+                    shadow.style.opacity = '0.8';
+
+                    leaf.animate([
+                        { transform: 'perspective(1400px) rotateY(-180deg) scale(1)', filter: 'brightness(0.85)' },
+                        { transform: 'perspective(1400px) rotateY(-90deg) scale(0.96)', filter: 'brightness(0.85)', offset: 0.5 },
+                        { transform: 'perspective(1400px) rotateY(0deg) scale(1)', filter: 'brightness(1)' }
+                    ], {
+                        duration: 480,
+                        easing: 'cubic-bezier(0.25, 1, 0.5, 1)'
+                    }).onfinish = () => {
+                        leaf.style.display = 'none';
+                        shadow.style.opacity = '0';
+                        if (callback) callback();
+                    };
+                }
+                return;
+            }
+
+            // DESKTOP & TABLET 2-PAGE SPREAD 3D FLIP
+            if (direction === 'next') {
+                leaf.className = 'flipping-page-leaf flip-next';
+
+                const rightIdx = currentSpread * pagesPerSpread + (pagesPerSpread - 1);
+                const nextLeftIdx = targetSpread * pagesPerSpread;
+
+                const frontData = activePages[rightIdx] || activePages[currentSpread * pagesPerSpread];
+                const backData = activePages[nextLeftIdx];
+
+                document.getElementById('leafFrontHeader').textContent = (frontData && !frontData.isBlank) ? (frontData.header || '') : '';
+                document.getElementById('leafFrontBody').innerHTML = frontData ? (frontData.html || '') : '';
+                document.getElementById('leafFrontFooter').textContent = (frontData && !frontData.isBlank) ? `— Page ${rightIdx + 1} —` : '';
+
+                document.getElementById('leafBackHeader').textContent = (backData && !backData.isBlank) ? (backData.header || '') : '';
+                document.getElementById('leafBackBody').innerHTML = backData ? (backData.html || '') : '';
+                document.getElementById('leafBackFooter').textContent = (backData && !backData.isBlank) ? `— Page ${nextLeftIdx + 1} —` : '';
+
+                leaf.style.display = 'block';
+                shadow.style.opacity = '1';
+
+                leaf.animate([
+                    { transform: 'perspective(2000px) rotateY(0deg) scale(1)', filter: 'brightness(1)' },
+                    { transform: 'perspective(2000px) rotateY(-90deg) scale(0.96)', filter: 'brightness(0.88)', offset: 0.5 },
+                    { transform: 'perspective(2000px) rotateY(-180deg) scale(1)', filter: 'brightness(1)' }
+                ], {
+                    duration: 540,
+                    easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
+                }).onfinish = () => {
+                    leaf.style.display = 'none';
+                    shadow.style.opacity = '0';
+                    if (callback) callback();
+                };
+            } else {
+                leaf.className = 'flipping-page-leaf flip-prev';
+
+                const leftIdx = currentSpread * pagesPerSpread;
+                const prevRightIdx = targetSpread * pagesPerSpread + (pagesPerSpread - 1);
+
+                const frontData = activePages[leftIdx];
+                const backData = activePages[prevRightIdx] || activePages[targetSpread * pagesPerSpread];
+
+                document.getElementById('leafFrontHeader').textContent = (frontData && !frontData.isBlank) ? (frontData.header || '') : '';
+                document.getElementById('leafFrontBody').innerHTML = frontData ? (frontData.html || '') : '';
+                document.getElementById('leafFrontFooter').textContent = (frontData && !frontData.isBlank) ? `— Page ${leftIdx + 1} —` : '';
+
+                document.getElementById('leafBackHeader').textContent = (backData && !backData.isBlank) ? (backData.header || '') : '';
+                document.getElementById('leafBackBody').innerHTML = backData ? (backData.html || '') : '';
+                document.getElementById('leafBackFooter').textContent = (backData && !backData.isBlank) ? `— Page ${prevRightIdx + 1} —` : '';
+
+                leaf.style.display = 'block';
+                shadow.style.opacity = '1';
+
+                leaf.animate([
+                    { transform: 'perspective(2000px) rotateY(0deg) scale(1)', filter: 'brightness(1)' },
+                    { transform: 'perspective(2000px) rotateY(90deg) scale(0.96)', filter: 'brightness(0.88)', offset: 0.5 },
+                    { transform: 'perspective(2000px) rotateY(180deg) scale(1)', filter: 'brightness(1)' }
+                ], {
+                    duration: 540,
+                    easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
+                }).onfinish = () => {
+                    leaf.style.display = 'none';
+                    shadow.style.opacity = '0';
+                    if (callback) callback();
+                };
+            }
+        }
+
+        function goToNextSpread() {
+            const activePages = getActivePages();
+            const isMobile = window.innerWidth < 768;
+            const pagesPerSpread = isMobile ? 1 : 2;
+            const totalSpreads = Math.ceil(activePages.length / pagesPerSpread);
+
+            if (currentSpreadIndex < totalSpreads - 1) {
+                animate3DPageTurn('next', () => {
+                    currentSpreadIndex++;
+                    renderSpread();
+                });
+            }
+        }
+
+        function goToPrevSpread() {
+            if (currentSpreadIndex > 0) {
+                animate3DPageTurn('prev', () => {
+                    currentSpreadIndex--;
+                    renderSpread();
+                });
+            } else {
+                showClosedBookCover();
+            }
+        }
+
+        function goToSpread(index) {
+            currentSpreadIndex = index;
+            renderSpread();
+            skipBookAnimation();
+        }
+
+        function jumpToChapter(chapterId) {
+            const activePages = getActivePages();
+            const pageIdx = activePages.findIndex(p => p.chapterId === chapterId);
+            if (pageIdx !== -1) {
+                const isMobile = window.innerWidth < 768;
+                const pagesPerSpread = isMobile ? 1 : 2;
+                currentSpreadIndex = Math.floor(pageIdx / pagesPerSpread);
+                renderSpread();
+                skipBookAnimation();
+            }
+        }
+
+        function jumpToToc() {
+            currentSpreadIndex = 0;
+            renderSpread();
+            skipBookAnimation();
+        }
+
+        function handlePageClick(evt, side) {
+            if (evt && evt.target) {
+                if (evt.target.closest('.entity-ref') || evt.target.closest('button') || evt.target.closest('a') || evt.target.closest('.toc-chapter-row')) {
+                    return;
+                }
+            }
+            const isMobile = window.innerWidth < 768;
+            if (isMobile && evt) {
+                const rect = evt.currentTarget.getBoundingClientRect();
+                const clickX = evt.clientX - rect.left;
+                if (clickX < rect.width * 0.35) {
+                    goToPrevSpread();
+                } else {
+                    goToNextSpread();
+                }
+                return;
+            }
+            if (side === 'right') goToNextSpread();
+            if (side === 'left') goToPrevSpread();
+        }
+
+        function onSliderProgressChange(val) {
+            const activePages = getActivePages();
+            const isMobile = window.innerWidth < 768;
+            const pagesPerSpread = isMobile ? 1 : 2;
+            const totalSpreads = Math.ceil(activePages.length / pagesPerSpread);
+            const targetSpread = Math.floor((val / 100) * (totalSpreads - 1));
+            currentSpreadIndex = targetSpread;
+            renderSpread();
+        }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') goToNextSpread();
+            if (e.key === 'ArrowLeft') goToPrevSpread();
+            if (e.key === 'Enter' && document.getElementById('closedBookStage').style.display !== 'none') openBookAnimation();
+        });
+
+        // Touch Swipe Gestures for Mobile & Tablet
+        function setupTouchGestures() {
+            const stage = document.getElementById('openBookStage');
+            stage.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            stage.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].screenX;
+                const diff = touchStartX - touchEndX;
+
+                if (Math.abs(diff) > 45) {
+                    if (diff > 0) goToNextSpread(); // Swipe Left -> Next Page
+                    else goToPrevSpread();          // Swipe Right -> Prev Page
+                }
+            }, { passive: true });
+        }
+
+        // Window Resize Handler (Recalculate Responsive Layout)
+        let lastIsMobileView = window.innerWidth < 768;
+        window.addEventListener('resize', () => {
+            const isMobileNow = window.innerWidth < 768;
+            if (isMobileNow !== lastIsMobileView) {
+                lastIsMobileView = isMobileNow;
+                currentSpreadIndex = 0;
+            }
+            renderSpread();
+        });
+
+        // Theme Engine
+        function applyTheme(themeName) {
+            document.documentElement.setAttribute('data-theme', themeName);
+
+            document.querySelectorAll('.theme-btn-card').forEach(c => c.classList.remove('active-theme'));
+            if (themeName === 'ivory') document.getElementById('themeOptIvory').classList.add('active-theme');
+            if (themeName === 'paper') document.getElementById('themeOptPaper').classList.add('active-theme');
+            if (themeName === 'sepia') document.getElementById('themeOptSepia').classList.add('active-theme');
+            if (themeName === 'daylight') document.getElementById('themeOptDaylight').classList.add('active-theme');
+        }
+
+        function toggleSettingsDrawer() {
+            const drawer = document.getElementById('settingsDrawer');
+            const backdrop = document.getElementById('settingsBackdrop');
+            const isVisible = drawer.style.display === 'flex';
+
+            drawer.style.display = isVisible ? 'none' : 'flex';
+            backdrop.style.display = isVisible ? 'none' : 'block';
+        }
+
+        let currentFontSize = 17;
+        function adjustFontSize(delta) {
+            currentFontSize = Math.min(Math.max(currentFontSize + delta, 13), 24);
+            document.getElementById('leftPage').style.fontSize = `${currentFontSize}px`;
+            document.getElementById('rightPage').style.fontSize = `${currentFontSize}px`;
+            document.getElementById('fontSizeLabelBtn').textContent = `${currentFontSize}px`;
+        }
+
+        function setLineHeight(lh) {
+            document.getElementById('leftPage').style.lineHeight = lh;
+            document.getElementById('rightPage').style.lineHeight = lh;
+
+            document.getElementById('lhCompact').classList.remove('active');
+            document.getElementById('lhComfortable').classList.remove('active');
+            document.getElementById('lhSpacious').classList.remove('active');
+
+            if (lh === 1.6) document.getElementById('lhCompact').classList.add('active');
+            if (lh === 1.82) document.getElementById('lhComfortable').classList.add('active');
+            if (lh === 2.1) document.getElementById('lhSpacious').classList.add('active');
+        }
+
+        function setAutoFlip(speed) {
+            if (autoFlipTimer) clearInterval(autoFlipTimer);
+
+            document.getElementById('afOff').classList.remove('active');
+            document.getElementById('afSlow').classList.remove('active');
+            document.getElementById('afNormal').classList.remove('active');
+            document.getElementById('afFast').classList.remove('active');
+
+            if (speed === 'off') {
+                document.getElementById('afOff').classList.add('active');
+                return;
+            }
+
+            let intervalMs = 6000;
+            if (speed === 'slow') { intervalMs = 10000; document.getElementById('afSlow').classList.add('active'); }
+            if (speed === 'normal') { intervalMs = 6000; document.getElementById('afNormal').classList.add('active'); }
+            if (speed === 'fast') { intervalMs = 3500; document.getElementById('afFast').classList.add('active'); }
+
+            autoFlipTimer = setInterval(() => {
+                goToNextSpread();
+            }, intervalMs);
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        // Search Engine
+        function openSearchModal() {
+            document.getElementById('searchModal').style.display = 'flex';
+            document.getElementById('searchInput').focus();
+        }
+
+        function closeSearchModal() {
+            document.getElementById('searchModal').style.display = 'none';
+        }
+
+        function onSearchQueryChange(query) {
+            const container = document.getElementById('searchResultsContainer');
+            if (!query || query.trim().length < 2) {
+                container.innerHTML = `<div class="text-muted text-center py-4">Type to search inside chapter content...</div>`;
+                return;
+            }
+
+            const qLower = query.toLowerCase();
+            let matches = [];
+
+            chaptersList.forEach(ch => {
+                if (ch.content && ch.content.toLowerCase().includes(qLower)) {
+                    matches.push(ch);
+                }
+            });
+
+            if (matches.length === 0) {
+                container.innerHTML = `<div class="text-muted text-center py-4">No results found matching "${escapeHtml(query)}"</div>`;
+                return;
+            }
+
+            let html = '';
+            matches.forEach(ch => {
+                html += `
+                    <div class="p-2 border-bottom hover-bg-light cursor-pointer" onclick="closeSearchModal(); jumpToChapter('${ch.id}');">
+                        <div class="fw-bold text-teal">Chapter ${ch.order}: ${escapeHtml(ch.title)}</div>
+                        <div class="small text-muted">Click to open this chapter in the book</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Bookmark Engine
+        function openBookmarksModal() {
+            document.getElementById('bookmarksModal').style.display = 'flex';
+            renderBookmarks();
+        }
+
+        function closeBookmarksModal() {
+            document.getElementById('bookmarksModal').style.display = 'none';
+        }
+
+        function saveCurrentBookmark() {
+            let bookmarks = JSON.parse(localStorage.getItem(`sv_bookmarks_${storyMeta.id}`) || '[]');
+            const currentSpread = currentSpreadIndex;
+            const isMobile = window.innerWidth < 768;
+            const pagesPerSpread = isMobile ? 1 : 2;
+            const leftIdx = currentSpread * pagesPerSpread;
+            const activePages = getActivePages();
+            const leftData = activePages[leftIdx];
+            
+            const title = leftData ? leftData.header : `Spread ${currentSpread + 1}`;
+            bookmarks.push({ spreadIndex: currentSpread, title: title, date: new Date().toLocaleDateString() });
+            localStorage.setItem(`sv_bookmarks_${storyMeta.id}`, JSON.stringify(bookmarks));
+            renderBookmarks();
+        }
+
+        function renderBookmarks() {
+            const container = document.getElementById('bookmarksList');
+            let bookmarks = JSON.parse(localStorage.getItem(`sv_bookmarks_${storyMeta.id}`) || '[]');
+
+            if (bookmarks.length === 0) {
+                container.innerHTML = `<div class="text-muted text-center py-3">No saved bookmarks yet.</div>`;
+                return;
+            }
+
+            let html = '';
+            bookmarks.forEach((b, i) => {
+                html += `
+                    <div class="d-flex align-items-center justify-content-between p-2 border-bottom">
+                        <div>
+                            <div class="fw-bold cursor-pointer" onclick="closeBookmarksModal(); goToSpread(${b.spreadIndex});">${escapeHtml(b.title)}</div>
+                            <div class="small text-muted">${b.date}</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteBookmark(${i})">Delete</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function deleteBookmark(idx) {
+            let bookmarks = JSON.parse(localStorage.getItem(`sv_bookmarks_${storyMeta.id}`) || '[]');
+            bookmarks.splice(idx, 1);
+            localStorage.setItem(`sv_bookmarks_${storyMeta.id}`, JSON.stringify(bookmarks));
+            renderBookmarks();
+        }
+
+        // Popover Engine
+        function showEntityPopover(evt, type, id) {
+            const popover = document.getElementById('entityPopover');
+            let entityData = null;
+
+            if (type === 'character') entityData = characterEntities.find(c => c.id === id);
+            if (type === 'world') entityData = worldEntitiesList.find(w => w.id === id);
+            if (type === 'timeline') entityData = timelineEventsList.find(t => t.id === id);
+
+            if (!entityData) return;
+
+            document.getElementById('popoverImg').src = entityData.avatar || entityData.image || "/images/character_empty_state.png";
+            document.getElementById('popoverName').textContent = entityData.name;
+            document.getElementById('popoverBadge').textContent = `${type.toUpperCase()} • ${entityData.role || entityData.type || 'Entity'}`;
+            document.getElementById('popoverDesc').textContent = entityData.desc;
+
+            const rect = evt.target.getBoundingClientRect();
+            popover.style.left = `${Math.min(rect.left, window.innerWidth - 300)}px`;
+            popover.style.top = `${rect.bottom + 8}px`;
+            popover.style.display = 'block';
+        }
+
+        function hideEntityPopover() {
+            document.getElementById('entityPopover').style.display = 'none';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+    </script>
+</body>
+</html>
+

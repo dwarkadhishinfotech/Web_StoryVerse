@@ -395,24 +395,24 @@
                             </div>
                         </div>
                         <div class="col-6 col-md-3">
-                            <select id="csFilterPartSelect" class="form-select form-select-sm rounded-3" style="font-size: 12px; border-color: #cbd5e1;" onchange="applyFilters()">
-                                <option value="ALL" selected>All Parts</option>
+                            <select id="csFilterPartSelect" class="form-select select2-filter form-select-sm rounded-3" onchange="applyFilters()">
+                                <option value="ALL" selected data-icon="layers">All Parts</option>
                                 @foreach (var p in storyParts)
                                 {
-                                    <option value="@p.Id">@p.Title</option>
+                                    <option value="@p.Id" data-icon="book-open">@p.Title</option>
                                 }
-                                <option value="UNASSIGNED">Unassigned Chapters</option>
+                                <option value="UNASSIGNED" data-icon="file">Unassigned Chapters</option>
                             </select>
                         </div>
                         <div class="col-6 col-md-3">
-                            <select id="csFilterStatusSelect" class="form-select form-select-sm rounded-3" style="font-size: 12px; border-color: #cbd5e1;" onchange="applyFilters()">
-                                <option value="ALL" selected>All Statuses</option>
-                                <option value="Completed">Completed</option>
-                                <option value="InProgress">In Progress</option>
-                                <option value="Outlining">Outlining</option>
-                                <option value="Planned">Planned</option>
-                                <option value="OnHold">On Hold</option>
-                                <option value="Archived">Archived</option>
+                            <select id="csFilterStatusSelect" class="form-select select2-filter form-select-sm rounded-3" onchange="applyFilters()">
+                                <option value="ALL" selected data-icon="activity">All Statuses</option>
+                                <option value="Completed" data-icon="check-circle">Completed</option>
+                                <option value="InProgress" data-icon="edit-3">In Progress</option>
+                                <option value="Outlining" data-icon="list">Outlining</option>
+                                <option value="Planned" data-icon="calendar">Planned</option>
+                                <option value="OnHold" data-icon="pause-circle">On Hold</option>
+                                <option value="Archived" data-icon="archive">Archived</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-1 text-end">

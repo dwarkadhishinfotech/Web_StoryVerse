@@ -15,6 +15,8 @@ namespace StoryVerse.Web.Models
         public int ActiveStoriesCount { get; set; }
         public int CharactersCount { get; set; }
         public int LocationsCount { get; set; }
+        public int TotalChapters { get; set; }
+        public int CompletedChaptersCount { get; set; }
         
         public UserGoal UserGoal { get; set; } = null!;
         public QuoteModel InspirationQuote { get; set; } = new QuoteModel();

@@ -221,6 +221,24 @@
                 return false;
             }
 
+            function onRequestStart(isExplicitOverlay, message) {
+                activeRequestCount++;
+                if (isExplicitOverlay) {
+                    self.show({ text: message || 'Loading...' });
+                } else {
+                    self.startProgress();
+                }
+            }
+
+            function onRequestEnd(isExplicitOverlay) {
+                activeRequestCount = Math.max(0, activeRequestCount - 1);
+                if (isExplicitOverlay) {
+                    if (activeRequestCount === 0) self.hide();
+                } else {
+                    if (activeRequestCount === 0) self.endProgress();
+                }
+            }
+
             // 1. Intercept native fetch
             if (window.fetch) {
                 const originalFetch = window.fetch;

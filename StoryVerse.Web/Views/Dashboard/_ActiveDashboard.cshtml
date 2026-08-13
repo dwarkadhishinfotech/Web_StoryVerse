@@ -33,6 +33,150 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
     }
     
+    /* Your Progress Hero Card Custom Styling */
+    .progress-hero-card {
+        background: #FFFFFF !important;
+        border: 1px solid rgba(226, 232, 240, 0.8) !important;
+        border-radius: 20px !important;
+        padding: 24px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .progress-hero-card:hover {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06) !important;
+        transform: translateY(-2px);
+    }
+    .progress-ring-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 170px;
+        height: 170px;
+        margin: 0 auto;
+    }
+    .progress-ring-glow {
+        position: absolute;
+        width: 145px;
+        height: 145px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(13, 148, 136, 0.1) 0%, rgba(13, 148, 136, 0) 72%);
+        pointer-events: none;
+    }
+    .progress-pct-val {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #0F172A;
+        font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+        line-height: 1;
+        letter-spacing: -0.04em;
+    }
+    .progress-pct-symbol {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #0D9488;
+        font-family: 'Inter', sans-serif;
+        margin-left: 1px;
+    }
+    .progress-pct-label {
+        font-size: 0.65rem;
+        color: #64748B;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+    .progress-metric-box {
+        background: #F8FAFC;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 14px;
+        padding: 12px 14px;
+        transition: all 0.2s ease;
+    }
+    .progress-metric-box:hover {
+        background: #FFFFFF;
+        border-color: rgba(203, 213, 225, 0.9);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+    .progress-banner-note {
+        background: rgba(13, 148, 136, 0.04);
+        border: 1px solid rgba(13, 148, 136, 0.14);
+        border-radius: 12px;
+        padding: 10px 14px;
+    }
+    .daily-goal-ring-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 140px;
+        height: 140px;
+        margin: 0 auto;
+    }
+    .daily-goal-ring-glow {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(13, 148, 136, 0.14) 0%, rgba(13, 148, 136, 0) 75%);
+        pointer-events: none;
+    }
+    .btn-edit-goal {
+        color: #0D9488 !important;
+        background: rgba(13, 148, 136, 0.08);
+        border: 1px solid rgba(13, 148, 136, 0.15);
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 20px;
+        padding: 4px 12px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .btn-edit-goal:hover {
+        color: #FFFFFF !important;
+        background: #0D9488;
+        border-color: #0D9488;
+        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+    }
+    .daily-goal-status-box {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 10px 14px;
+        text-align: center;
+        margin-top: 14px;
+        font-size: 0.8rem;
+    }
+    
+    .progress-cta-btn {
+        background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+        color: #FFFFFF !important;
+        font-size: 0.925rem;
+        font-weight: 600;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        border-radius: 9999px;
+        min-height: 48px;
+        padding: 12px 24px !important;
+        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.32);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .progress-cta-btn:hover {
+        background: linear-gradient(135deg, #0F766E 0%, #115E59 100%);
+        box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
+        transform: translateY(-1px);
+    }
+    .progress-cta-btn:hover .cta-arrow-icon {
+        transform: translateX(4px);
+    }
+    .cta-arrow-icon {
+        transition: transform 0.2s ease;
+    }
+    
     .activity-item-card {
         background: #F8FAFC;
         border: 1px solid #E2E8F0;
@@ -456,18 +600,18 @@
                     <div class="d-flex gap-3 flex-wrap">
                         @if (Model == null || !Model.RecentStories.Any())
                         {
-                            <a href="@Url.Action("Create", "Stories")" class="btn-teal text-decoration-none d-flex align-items-center gap-2">
-                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Create Your First Story
+                            <a href="@Url.Action("Create", "Stories")" class="btn-teal text-decoration-none d-flex align-items-center">
+                                <i data-lucide="plus" class="me-2" style="width: 16px; height: 16px;"></i> Create Your First Story
                             </a>
                         }
                         else
                         {
-                            <a href="@Url.Action("Index", "Stories")" class="btn-teal text-decoration-none d-flex align-items-center gap-2">
-                                <i data-lucide="book-open" style="width: 16px; height: 16px;"></i> View Your Stories
+                            <a href="@Url.Action("Index", "Stories")" class="btn-teal text-decoration-none d-flex align-items-center">
+                                <i data-lucide="book-open" class="me-2" style="width: 16px; height: 16px;"></i> View Your Stories
                             </a>
                         }
-                        <button class="btn-outline-custom d-flex align-items-center gap-2" disabled style="opacity: 0.65; cursor: not-allowed;" title="Watch 2 Min Tour (Coming Soon)">
-                            <i data-lucide="play" style="width: 16px; height: 16px;"></i> Watch 2 Min Tour
+                        <button class="btn-outline-custom d-flex align-items-center" disabled style="opacity: 0.65; cursor: not-allowed;" title="Watch 2 Min Tour (Coming Soon)">
+                            <i data-lucide="play" class="me-2" style="width: 16px; height: 16px;"></i> Watch 2 Min Tour
                             <span class="badge-soon-light ms-1">SOON</span>
                         </button>
                     </div>
@@ -481,21 +625,139 @@
         
         <!-- Your Progress -->
         <div class="col-12 col-xxl-3 col-xl-4">
-            <div class="db-card h-100 d-flex flex-column text-center">
-                <h3 class="section-title text-start mb-4" style="font-size: 1.15rem;">Your Progress</h3>
-                
-                <div class="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
-                    <div class="stat-card-icon mb-4" style="width: 64px; height: 64px; background: rgba(212, 175, 55, 0.08);">
-                        <i data-lucide="feather" style="color: #13A8A6; width: 28px; height: 28px;"></i>
+            <div class="db-card progress-hero-card h-100 d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-1">
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(13, 148, 136, 0.1); display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="trending-up" style="width: 15px; height: 15px; color: #0D9488;"></i>
+                        </div>
+                        <h3 class="section-title text-start mb-0" style="font-size: 1.15rem; font-weight: 700; color: #0F172A; font-family: 'Playfair Display', serif;">Your Progress</h3>
                     </div>
-                    <h4 class="fw-bold mb-2" style="font-size: 0.95rem; color: #1E293B; font-family: 'Inter', sans-serif; line-height: 1.4;">Your writing journey<br/>starts here</h4>
-                    <p class="mb-4" style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif; max-width: 200px; margin: 0 auto; line-height: 1.5;">
-                        Complete your first chapter to unlock your progress.
-                    </p>
-                    <a href="#" class="text-decoration-none fw-bold mt-auto pb-2" style="color: #13A8A6; font-size: 0.75rem; font-family: 'Inter', sans-serif;">
-                        Learn how StoryVerse works &rarr;
-                    </a>
+                    @if (Model != null && (Model.TotalWords > 0 || Model.TotalChapters > 0))
+                    {
+                        <span style="background: rgba(13, 148, 136, 0.08); color: #0D9488; font-size: 0.72rem; font-family: 'Inter', sans-serif; font-weight: 700; border-radius: 9999px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="width: 6px; height: 6px; border-radius: 50%; background: #0D9488; display: inline-block; box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);"></span> Active Progress
+                        </span>
+                    }
                 </div>
+                
+                @if (Model != null && (Model.TotalWords > 0 || Model.TotalChapters > 0 || (Model.RecentStories != null && Model.RecentStories.Any())))
+                {
+                    <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                        <div class="my-auto py-1">
+                            <!-- Circular Progress Ring (Enlarged Hero Ring) -->
+                            <div class="d-flex align-items-center justify-content-center my-3 py-1">
+                                <div class="progress-ring-wrapper">
+                                    @{
+                                        int progPct = Model.ActiveStoryProgressPercentage > 0 ? Model.ActiveStoryProgressPercentage : Model.GoalProgressPercentage;
+                                        if (progPct == 0 && Model.TotalWords > 0)
+                                        {
+                                            progPct = Math.Min(100, Math.Max(5, (int)Math.Round((double)Model.TotalWords / 100)));
+                                        }
+                                        double circumference = 314.159; // 2 * pi * 50
+                                        double strokeDash = (progPct / 100.0) * circumference;
+                                        if (progPct > 0 && strokeDash < 6.5)
+                                        {
+                                            strokeDash = 6.5; // Ensure dot/capsule is crisp & clearly visible for 1-2%
+                                        }
+                                    }
+                                    <!-- Ambient radial glow behind ring -->
+                                    <div class="progress-ring-glow"></div>
+
+                                    <svg class="w-100 h-100" viewBox="0 0 120 120" style="overflow: visible;">
+                                        <defs>
+                                            <linearGradient id="progressRingGradientHero" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="#0D9488" />
+                                                <stop offset="50%" stop-color="#13A8A6" />
+                                                <stop offset="100%" stop-color="#1E439B" />
+                                            </linearGradient>
+                                        </defs>
+                                        <!-- Background Track Circle -->
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#F1F5F9" stroke-width="8" />
+                                        <!-- Animated Progress Circle -->
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="url(#progressRingGradientHero)" stroke-width="8.5" stroke-linecap="round" 
+                                                stroke-dasharray="@strokeDash.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture), @circumference.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)" 
+                                                transform="rotate(-90 60 60)" 
+                                                style="transition: stroke-dasharray 0.6s ease-in-out; filter: drop-shadow(0 4px 10px rgba(13, 148, 136, 0.35));" />
+                                    </svg>
+                                    <div class="position-absolute d-flex flex-column align-items-center justify-content-center text-center" style="inset: 0;">
+                                        <div class="d-flex align-items-baseline justify-content-center" style="line-height: 1;">
+                                            <span class="progress-pct-val">@(progPct)</span>
+                                            <span class="progress-pct-symbol">%</span>
+                                        </div>
+                                        <span class="progress-pct-label">Completed</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dual Metric Mini Cards -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <div class="progress-metric-box">
+                                        <div class="d-flex align-items-center gap-1.5 mb-1.5">
+                                            <div style="width: 20px; height: 20px; border-radius: 5px; background: rgba(13, 148, 136, 0.1); display: flex; align-items: center; justify-content: center;">
+                                                <i data-lucide="feather" style="width: 11px; height: 11px; color: #0D9488;"></i>
+                                            </div>
+                                            <span style="font-size: 0.65rem; font-weight: 700; color: #64748B; font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">Words</span>
+                                        </div>
+                                        <div class="fw-bold" style="font-size: 1.3rem; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; color: #0F172A; line-height: 1.1; padding-left: 2px;">@(Model.TotalWords.ToString("N0"))</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="progress-metric-box">
+                                        <div class="d-flex align-items-center gap-1.5 mb-1.5">
+                                            <div style="width: 20px; height: 20px; border-radius: 5px; background: rgba(37, 99, 235, 0.1); display: flex; align-items: center; justify-content: center;">
+                                                <i data-lucide="book-open" style="width: 11px; height: 11px; color: #2563EB;"></i>
+                                            </div>
+                                            <span style="font-size: 0.65rem; font-weight: 700; color: #64748B; font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;">Chapters</span>
+                                        </div>
+                                        <div class="fw-bold" style="font-size: 1.3rem; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; color: #0F172A; line-height: 1.1; padding-left: 2px;">@(Model.TotalChapters)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Encouragement Note -->
+                            <div class="progress-banner-note mb-3 d-flex align-items-center gap-2">
+                                <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(13, 148, 136, 0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i data-lucide="sparkles" style="width: 12px; height: 12px; color: #0D9488;"></i>
+                                </div>
+                                <span style="font-size: 0.75rem; color: #334155; font-family: 'Inter', sans-serif; line-height: 1.4;">
+                                    @if (Model.TotalWords > 0)
+                                    {
+                                        <span>Great start! Written <strong style="color: #0F172A;">@(Model.TotalWords.ToString("N0")) words</strong> across <strong style="color: #0F172A;">@(Model.TotalChapters) chapter@(Model.TotalChapters == 1 ? "" : "s")</strong>.</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Created <strong style="color: #0F172A;">@(Model.TotalChapters) chapter@(Model.TotalChapters == 1 ? "" : "s")</strong>. Write content to track words!</span>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- CTA Button -->
+                        <a href="@(Model.ActiveStory != null ? Url.Action("Index", "Chapters", new { storyId = Model.ActiveStory.Id }) : Url.Action("Index", "Stories"))" class="progress-cta-btn text-decoration-none w-100 mt-auto">
+                            <i data-lucide="pen-tool" style="width: 17px; height: 17px;"></i>
+                            <span>Continue Writing</span>
+                            <i data-lucide="arrow-right" style="width: 17px; height: 17px;" class="cta-arrow-icon"></i>
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex-grow-1 d-flex flex-column justify-content-center align-items-center text-center py-4">
+                        <div style="width: 64px; height: 64px; background: rgba(13, 148, 136, 0.08); border-radius: 16px; display: flex; align-items: center; justify-content: center;" class="mb-3">
+                            <i data-lucide="feather" style="color: #0D9488; width: 28px; height: 28px;"></i>
+                        </div>
+                        <h4 class="fw-bold mb-2" style="font-size: 0.98rem; color: #0F172A; font-family: 'Inter', sans-serif; line-height: 1.4;">Your writing journey<br/>starts here</h4>
+                        <p class="mb-4" style="font-size: 0.78rem; color: #64748B; font-family: 'Inter', sans-serif; max-width: 220px; margin: 0 auto; line-height: 1.5;">
+                            Create your first story and write a chapter to start tracking your progress.
+                        </p>
+                        <a href="@Url.Action("Create", "Stories")" class="progress-cta-btn text-decoration-none mt-auto">
+                            <i data-lucide="plus" style="width: 17px; height: 17px;"></i>
+                            <span>Create Your First Story</span>
+                        </a>
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -581,52 +843,96 @@
                     <div class="d-flex flex-column gap-2 text-start my-auto">
                         @foreach (var activity in Model.RecentActivities.Take(4))
                         {
-                            var actionType = activity.ActionType ?? "";
-                            var iconName = "edit-3";
-                            var iconColor = "#13A8A6";
-                            var iconBg = "#F0FDFA";
+                            var actionTypeStr = activity.ActionType ?? "General";
+                            var descStr = activity.Description ?? "";
+                            var combinedText = $"{actionTypeStr} {descStr}";
 
-                            if (actionType.Contains("Story", StringComparison.OrdinalIgnoreCase))
+                            var displayType = "Chapter";
+                            if (actionTypeStr.Contains("Character", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Character", StringComparison.OrdinalIgnoreCase))
+                                displayType = "Character";
+                            else if (actionTypeStr.Contains("Location", StringComparison.OrdinalIgnoreCase) || actionTypeStr.Contains("World", StringComparison.OrdinalIgnoreCase) || descStr.Contains("World", StringComparison.OrdinalIgnoreCase))
+                                displayType = "World Building";
+                            else if (actionTypeStr.Contains("Timeline", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Timeline", StringComparison.OrdinalIgnoreCase))
+                                displayType = "Timeline";
+
+                            bool isDelete = combinedText.Contains("delete", StringComparison.OrdinalIgnoreCase) || combinedText.Contains("remove", StringComparison.OrdinalIgnoreCase) || combinedText.Contains("trash", StringComparison.OrdinalIgnoreCase);
+                            bool isAdd = !isDelete && (combinedText.Contains("create", StringComparison.OrdinalIgnoreCase) || combinedText.Contains("add", StringComparison.OrdinalIgnoreCase) || combinedText.Contains("new", StringComparison.OrdinalIgnoreCase));
+
+                            string iconName;
+                            string iconColor;
+                            string iconBg;
+                            string cardBg;
+                            string cardBorder;
+                            string cardLeftBorder;
+
+                            if (isDelete)
                             {
-                                iconName = "book";
-                                iconColor = "#13A8A6";
-                                iconBg = "#F0FDFA";
+                                iconName = "trash-2";
+                                iconColor = "#EF4444";
+                                iconBg = "#FEE2E2";
+                                cardBg = "linear-gradient(135deg, #FEF2F2 0%, #FFFFFF 100%)";
+                                cardBorder = "1px solid #FECACA";
+                                cardLeftBorder = "3px solid #EF4444";
                             }
-                            else if (actionType.Contains("Character", StringComparison.OrdinalIgnoreCase))
+                            else if (isAdd)
                             {
-                                iconName = "users";
-                                iconColor = "#3B82F6";
-                                iconBg = "#EFF6FF";
+                                iconName = displayType == "Character" ? "user-plus" : displayType == "Timeline" ? "calendar-plus" : "file-plus";
+                                iconColor = "#10B981";
+                                iconBg = "#DCFCE7";
+                                cardBg = "linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)";
+                                cardBorder = "1px solid #A7F3D0";
+                                cardLeftBorder = "3px solid #10B981";
                             }
-                            else if (actionType.Contains("Chapter", StringComparison.OrdinalIgnoreCase))
+                            else
                             {
-                                iconName = "file-text";
-                                iconColor = "#8B5CF6";
-                                iconBg = "#F5F3FF";
-                            }
-                            else if (actionType.Contains("Location", StringComparison.OrdinalIgnoreCase) || actionType.Contains("World", StringComparison.OrdinalIgnoreCase))
-                            {
-                                iconName = "globe-2";
-                                iconColor = "#F59E0B";
-                                iconBg = "#FEF3C7";
-                            }
-                            else if (actionType.Contains("Timeline", StringComparison.OrdinalIgnoreCase))
-                            {
-                                iconName = "clock";
-                                iconColor = "#EC4899";
-                                iconBg = "#FCE7F3";
+                                if (displayType == "Character")
+                                {
+                                    iconName = "user-check";
+                                    iconColor = "#D97706";
+                                    iconBg = "#FEF3C7";
+                                    cardBg = "linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #FDE68A";
+                                    cardLeftBorder = "3px solid #D97706";
+                                }
+                                else if (displayType == "World Building")
+                                {
+                                    iconName = "globe";
+                                    iconColor = "#7C3AED";
+                                    iconBg = "#F3E8FF";
+                                    cardBg = "linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #E9D5FF";
+                                    cardLeftBorder = "3px solid #7C3AED";
+                                }
+                                else if (displayType == "Timeline")
+                                {
+                                    iconName = "clock";
+                                    iconColor = "#DB2777";
+                                    iconBg = "#FCE7F3";
+                                    cardBg = "linear-gradient(135deg, #FDF2F8 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #FBCFE8";
+                                    cardLeftBorder = "3px solid #DB2777";
+                                }
+                                else
+                                {
+                                    iconName = "edit-3";
+                                    iconColor = "#2563EB";
+                                    iconBg = "#DBEAFE";
+                                    cardBg = "linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #BFDBFE";
+                                    cardLeftBorder = "3px solid #2563EB";
+                                }
                             }
 
                             var actTitle = string.IsNullOrWhiteSpace(activity.Description) ? activity.ActionType : activity.Description;
 
-                            <div class="activity-item-card d-flex align-items-center gap-3.5 w-100 mb-2" style="min-width: 0;">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-1" style="width: 36px; height: 36px; background-color: @iconBg; border: 1px solid rgba(0,0,0,0.04);">
-                                    <i data-lucide="@iconName" style="width: 16px; height: 16px; color: @iconColor;"></i>
+                            <div class="activity-item-card d-flex align-items-center gap-3.5 w-100 mb-2 p-2.5 rounded-3" style="min-width: 0; background: @cardBg; border: @cardBorder; border-left: @cardLeftBorder;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-1" style="width: 34px; height: 34px; background-color: @iconBg; border: 1px solid rgba(0,0,0,0.06);">
+                                    <i data-lucide="@iconName" style="width: 15px; height: 15px; color: @iconColor;"></i>
                                 </div>
                                 <div class="flex-grow-1 overflow-hidden" style="min-width: 0;">
                                     <div class="d-flex align-items-center justify-content-between gap-1.5" style="min-width: 0;">
                                         <span class="fw-semibold text-slate-800 text-truncate d-block" style="font-size: 0.8rem; font-family: 'Inter', sans-serif; min-width: 0; flex: 1;" title="@actTitle">@actTitle</span>
-                                        <span class="text-muted flex-shrink-0" style="font-size: 0.675rem; font-family: 'Inter', sans-serif; background: #F1F5F9; padding: 2px 7px; border-radius: 6px; font-weight: 500; color: #64748B;">@GetTimeAgo(activity.Timestamp)</span>
+                                        <span class="text-muted flex-shrink-0" style="font-size: 0.675rem; font-family: 'Inter', sans-serif; background: rgba(255,255,255,0.7); padding: 2px 7px; border-radius: 6px; font-weight: 500; color: #64748B;">@GetTimeAgo(activity.Timestamp)</span>
                                     </div>
                                     @if (!string.IsNullOrWhiteSpace(activity.RelatedEntityName) && activity.RelatedEntityName != activity.Description)
                                     {
@@ -636,7 +942,7 @@
                             </div>
                         }
                     </div>
-                    <a href="@Url.Action("Index", "Stories")" class="btn btn-outline-custom text-decoration-none d-flex align-items-center justify-content-center gap-2 w-100 mt-3 fw-semibold" style="font-size: 0.8rem; padding: 9px 16px; border-radius: 10px; border: 1px solid #E2E8F0;">
+                    <a href="@Url.Action("Activity", "Dashboard")" class="btn btn-outline-custom text-decoration-none d-flex align-items-center justify-content-center gap-2 w-100 mt-3 fw-semibold" style="font-size: 0.8rem; padding: 9px 16px; border-radius: 10px; border: 1px solid #E2E8F0;">
                         <span>View All Activity</span>
                         <i data-lucide="arrow-right" style="width: 14px; height: 14px; color: #13A8A6;"></i>
                     </a>
@@ -794,33 +1100,109 @@
             </div>
         </div>
         
+@{
+    var userGoalObj = Model?.UserGoal;
+    int dailyGoalTarget = userGoalObj?.DailyWordCountGoal > 0 ? userGoalObj.DailyWordCountGoal : 1000;
+    int monthlyGoalTarget = userGoalObj?.MonthlyWordCountGoal > 0 ? userGoalObj.MonthlyWordCountGoal : 20000;
+    int dailyWritten = userGoalObj?.WordsWrittenToday ?? 0;
+    int goalProgressPercent = userGoalObj != null && dailyGoalTarget > 0 
+        ? Math.Clamp((int)Math.Round(((double)dailyWritten / dailyGoalTarget) * 100), 0, 100) 
+        : 0;
+    double maxCircumference = 314.159; // 2 * PI * 50
+    double dashOffset = maxCircumference * (1.0 - ((double)goalProgressPercent / 100.0));
+    if (goalProgressPercent > 0 && (maxCircumference - dashOffset) < 7.0)
+    {
+        dashOffset = maxCircumference - 7.0; // Ensure visible dot/capsule even at 1-2%
+    }
+}
+
         <!-- Col 3: Daily Goal & Inspiration -->
         <div class="col-12 col-lg-12 col-xl-3 d-flex flex-column gap-4">
             <!-- Daily Goal -->
-            <div class="db-card">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="section-title mb-0" style="font-size: 1.15rem;">Daily Goal</h3>
-                    <a href="#" class="text-decoration-none fw-bold" style="color: #13A8A6; font-size: 0.75rem; font-family: 'Inter', sans-serif;">Edit Goal</a>
-                </div>
-                
-                <div class="d-flex align-items-center justify-content-center gap-3 my-3">
-                    <div class="position-relative d-flex align-items-center justify-content-center flex-shrink-0" style="width: 72px; height: 72px;">
-                        <svg class="w-100 h-100" style="transform: rotate(-90deg);">
-                            <circle cx="36" cy="36" r="30" fill="none" stroke="#F1F5F9" stroke-width="6"></circle>
-                            <circle cx="36" cy="36" r="30" fill="none" stroke="#13A8A6" stroke-width="6" stroke-dasharray="188.5" stroke-dashoffset="188.5" stroke-linecap="round"></circle>
-                        </svg>
-                        <div class="position-absolute fw-bold" style="font-size: 0.85rem; color: #64748B; font-family: 'Inter', sans-serif;">
-                            0%
+            <div class="db-card d-flex flex-column justify-content-between">
+                <div>
+                    <!-- Card Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(13, 148, 136, 0.1); display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="target" style="width: 17px; height: 17px; color: #0D9488;"></i>
+                            </div>
+                            <h3 class="section-title mb-0" style="font-size: 1.15rem; font-weight: 700; color: #0F172A;">Daily Goal</h3>
+                        </div>
+                        <a href="javascript:void(0)" class="btn-edit-goal text-decoration-none" data-bs-toggle="modal" data-bs-target="#dashboardEditGoalModal">
+                            Edit Goal
+                        </a>
+                    </div>
+                    
+                    <!-- Enlarged Circular Progress Gauge -->
+                    <div class="my-3 py-1 text-center">
+                        <div class="daily-goal-ring-wrapper">
+                            <div class="daily-goal-ring-glow"></div>
+                            <svg class="w-100 h-100" viewBox="0 0 120 120" style="overflow: visible; transform: rotate(-90deg);">
+                                <defs>
+                                    <linearGradient id="dailyGoalRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#0D9488" />
+                                        <stop offset="50%" stop-color="#13A8A6" />
+                                        <stop offset="100%" stop-color="#2563EB" />
+                                    </linearGradient>
+                                </defs>
+                                <!-- Track circle -->
+                                <circle cx="60" cy="60" r="50" fill="none" stroke="#F1F5F9" stroke-width="8.5"></circle>
+                                <!-- Progress circle -->
+                                <circle cx="60" cy="60" r="50" fill="none" stroke="url(#dailyGoalRingGradient)" stroke-width="8.5" 
+                                        stroke-dasharray="314.159" 
+                                        stroke-dashoffset="@dashOffset.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)" 
+                                        stroke-linecap="round" 
+                                        style="transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);"></circle>
+                            </svg>
+                            
+                            <!-- Inner content inside circle -->
+                            <div class="position-absolute d-flex flex-column align-items-center justify-content-center text-center">
+                                <div class="fw-extrabold text-slate-900" style="font-size: 1.65rem; font-weight: 800; line-height: 1; font-family: 'Inter', sans-serif; letter-spacing: -0.02em;">
+                                    @goalProgressPercent%
+                                </div>
+                                <span style="font-size: 0.65rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px;">
+                                    Completed
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Word Count Metrics -->
+                        <div class="mt-3">
+                            <div class="fw-bold text-slate-900" style="font-size: 1.8rem; color: #1E3A8A; line-height: 1.1; font-family: 'Playfair Display', serif;">
+                                @dailyWritten.ToString("N0")
+                            </div>
+                            <div style="font-size: 0.8rem; color: #64748B; font-family: 'Inter', sans-serif; font-weight: 500; margin-top: 3px;">
+                                / @dailyGoalTarget.ToString("N0") words per day
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <div class="fw-bold" style="font-size: 1.7rem; color: #1E3A8A; line-height: 1; font-family: 'Playfair Display', serif;">0</div>
-                        <div style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif; margin-top: 4px;">/ 1,500 words per day</div>
-                    </div>
                 </div>
                 
-                <div style="height: 1px; width: 100%; background: #F1F5F9; margin-bottom: 12px; margin-top: 12px;"></div>
-                <div style="font-size: 0.75rem; color: #64748B; font-family: 'Inter', sans-serif; font-weight: 500;">Start writing to set your pace.</div>
+                <!-- Bottom Status Pill Box -->
+                <div class="daily-goal-status-box">
+                    @if (dailyWritten >= dailyGoalTarget)
+                    {
+                        <span class="fw-bold d-inline-flex align-items-center gap-1.5" style="color: #059669;">
+                            <i data-lucide="check-circle-2" style="width: 15px; height: 15px; color: #059669;"></i>
+                            Daily goal accomplished! 🎉
+                        </span>
+                    }
+                    else if (dailyWritten > 0)
+                    {
+                        <span class="fw-semibold d-inline-flex align-items-center gap-1.5" style="color: #475569;">
+                            <i data-lucide="pen-tool" style="width: 14px; height: 14px; color: #0D9488;"></i>
+                            <strong>@((dailyGoalTarget - dailyWritten).ToString("N0"))</strong> words left for today's goal
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="fw-medium text-slate-500 d-inline-flex align-items-center gap-1.5">
+                            <i data-lucide="sparkles" style="width: 14px; height: 14px; color: #F59E0B;"></i>
+                            Start writing to hit today's goal!
+                        </span>
+                    }
+                </div>
             </div>
             
             <!-- Inspiration -->
@@ -846,6 +1228,37 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Writing Goal Modal -->
+<div class="modal fade" id="dashboardEditGoalModal" tabindex="-1" aria-labelledby="dashboardEditGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-slate-900" id="dashboardEditGoalModalLabel">Set Your Writing Goals</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="UpdateGoal" asp-controller="Stories" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body py-4">
+                    <div class="mb-3">
+                        <label for="dashMonthlyWordCountGoal" class="form-label fw-semibold text-slate-700">Monthly Word Count Goal</label>
+                        <input type="number" class="form-control rounded-3" id="dashMonthlyWordCountGoal" name="monthlyWordCountGoal" value="@monthlyGoalTarget" min="100" step="500" required>
+                        <div class="form-text text-muted">Set your target number of words for this month.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dashDailyWordCountGoal" class="form-label fw-semibold text-slate-700">Daily Word Count Goal</label>
+                        <input type="number" class="form-control rounded-3" id="dashDailyWordCountGoal" name="dailyWordCountGoal" value="@dailyGoalTarget" min="10" step="50" required>
+                        <div class="form-text text-muted">Set your daily target number of words.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-3 px-4 fw-semibold text-slate-600" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-teal rounded-3 px-4 fw-semibold shadow-sm">Save Goals</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

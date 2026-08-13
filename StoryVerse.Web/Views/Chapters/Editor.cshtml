@@ -75,19 +75,55 @@
 
         /* TOP NAVBAR */
         .sv-top-header {
-            height: 60px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
+            height: 62px;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--sv-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 16px;
+            padding: 0 20px;
             z-index: 1000;
+            width: 100%;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+        }
+
+        .header-left-group {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            min-width: 0;
+            flex-shrink: 0;
+        }
+
+        .header-center-group,
+        .view-mode-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #F1F5F9;
+            padding: 3px;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            flex-shrink: 0;
+            margin: 0 20px;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .header-right-group {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            min-width: 0;
+            margin-left: auto;
+            flex-shrink: 0;
         }
 
         .back-dashboard-btn {
-            background: #F1F5F9;
+            background: #F8FAFC;
             border: 1px solid #E2E8F0;
             border-radius: 8px;
             padding: 6px 12px;
@@ -98,44 +134,59 @@
             align-items: center;
             gap: 6px;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            white-space: nowrap;
         }
         .back-dashboard-btn:hover {
-            background: #E2E8F0;
+            background: #F1F5F9;
             color: #0F172A;
+            border-color: #CBD5E1;
+            transform: translateY(-1px);
         }
 
         .brand-badge {
-            background: linear-gradient(135deg, #0F172A, #1E439B);
+            background: linear-gradient(135deg, #0F172A 0%, #1E439B 100%);
             color: white;
             padding: 6px 14px;
             border-radius: 10px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 700;
             letter-spacing: 0.02em;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+            white-space: nowrap;
         }
 
         .dropdown-select-btn {
-            background: #F1F5F9;
+            background: #F8FAFC;
             border: 1px solid #E2E8F0;
             border-radius: 8px;
             padding: 6px 12px;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 600;
             color: #1E293B;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             text-decoration: none;
+            white-space: nowrap;
+            max-width: 200px;
+        }
+        .dropdown-select-btn .fw-bold {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 130px;
+            display: inline-block;
+            vertical-align: middle;
         }
         .dropdown-select-btn:hover {
-            background: #E2E8F0;
+            background: #F1F5F9;
             color: var(--sv-navy);
+            border-color: #CBD5E1;
         }
 
         .save-status-pill {
@@ -145,45 +196,40 @@
             font-size: 12px;
             font-weight: 600;
             color: #0D9488;
-            background: #F0FDF4;
-            padding: 4px 10px;
+            background: #F0FDFA;
+            padding: 5px 12px;
             border-radius: 20px;
-            border: 1px solid #DCFCE7;
+            border: 1px solid #CCFBF1;
+            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(13, 148, 136, 0.05);
+            margin-right: 4px;
         }
 
-        .view-mode-toggle {
-            background: #F8FAFC;
-            padding: 3px 4px;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            border: 1px solid #E2E8F0;
-        }
         .mode-btn {
             border: none;
             background: transparent;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 600;
             padding: 6px 16px;
             border-radius: 8px;
-            color: #334155;
+            color: #475569;
             transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 7px;
             position: relative;
             cursor: pointer;
+            white-space: nowrap;
         }
-        .mode-btn:not(:first-child) {
-            border-left: 1px solid #E2E8F0;
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
+        .mode-btn:hover {
+            color: #0F172A;
+            background: rgba(255, 255, 255, 0.6);
         }
         .mode-btn.active {
-            background: #E8F7F7;
+            background: #FFFFFF;
             color: #0E7490;
-            border-bottom: 2px solid #0E7490;
-            border-radius: 8px 8px 2px 2px;
+            box-shadow: 0 2px 6px rgba(14, 116, 144, 0.12), 0 1px 2px rgba(15, 23, 42, 0.05);
+            border-radius: 8px;
         }
 
         .avatar-circle {
@@ -197,6 +243,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 6px rgba(19, 168, 166, 0.25);
         }
 
         /* 3-PANEL WORKSPACE LAYOUT */
@@ -386,17 +433,25 @@
         .canvas-scroll-area {
             flex: 1;
             overflow-y: auto;
-            padding: 2.5rem 2rem 4rem;
+            padding: 2.5rem 2rem 5rem;
             display: flex;
             flex-direction: column;
             align-items: center;
             position: relative;
+            background-color: #F8FAFC;
+            background-image: radial-gradient(rgba(19, 168, 166, 0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
         }
         .writing-paper {
-            max-width: 780px;
+            max-width: 860px;
             width: 100%;
-            background: transparent;
-            min-height: 70vh;
+            background: #FFFFFF;
+            min-height: 75vh;
+            padding: 3.5rem 4.5rem 5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.06), 0 2px 10px -2px rgba(15, 23, 42, 0.03);
+            border: 1px solid #E2E8F0;
+            transition: all 0.25s ease;
         }
 
         .chapter-title-input {
@@ -736,7 +791,30 @@
             display: block;
         }
 
-        /* Large Laptops / Desktop Screens (>= 1200px) */
+        /* -------------------------------------------------------------
+           RESPONSIVE MEDIA QUERIES & BIG SCREEN BEAUTIFICATION
+           ------------------------------------------------------------- */
+        
+        /* Ultra-Wide & Large 2K/4K Displays (>= 1600px) */
+        @@media (min-width: 1600px) {
+            :root {
+                --left-panel-width: 320px;
+                --right-panel-width: 380px;
+            }
+            .writing-paper {
+                max-width: 900px;
+                padding: 4rem 5rem 6rem;
+            }
+            .chapter-title-input {
+                font-size: 2.5rem !important;
+            }
+            .manuscript-editable {
+                font-size: 1.2rem !important;
+                line-height: 2.1 !important;
+            }
+        }
+
+        /* Large Laptops & Standard Desktop (>= 1200px) */
         @@media (min-width: 1200px) {
             .left-panel-mobile-toggle,
             .right-panel-mobile-toggle {
@@ -785,7 +863,7 @@
         /* Tablets (< 992px) */
         @@media (max-width: 991.98px) {
             .editor-header {
-                padding: 8px 12px;
+                padding: 8px 14px;
                 gap: 8px;
             }
 
@@ -801,7 +879,7 @@
 
             .manuscript-editable {
                 font-size: 1.05rem !important;
-                line-height: 1.8 !important;
+                line-height: 1.85 !important;
             }
 
             .editor-formatting-toolbar {
@@ -826,15 +904,16 @@
                 padding: 6px 12px !important;
                 gap: 8px !important;
                 height: auto !important;
-                overflow-x: auto !important;
-                overflow-y: hidden !important;
-                white-space: nowrap !important;
-                -webkit-overflow-scrolling: touch;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
+                flex-wrap: wrap !important;
             }
-            .editor-header::-webkit-scrollbar {
-                display: none !important;
+            .header-left-group {
+                flex: none !important;
+                width: auto !important;
+            }
+            .header-right-group {
+                flex: none !important;
+                width: auto !important;
+                margin-left: auto !important;
             }
 
             .brand-badge {
@@ -842,11 +921,10 @@
             }
 
             .view-mode-toggle {
-                order: 0 !important;
-                width: auto !important;
-                justify-content: flex-start !important;
-                margin-top: 0 !important;
-                flex-shrink: 0 !important;
+                order: 3 !important;
+                width: 100% !important;
+                justify-content: center !important;
+                margin-top: 4px !important;
             }
             .view-mode-toggle .mode-btn {
                 padding: 4px 10px;
@@ -905,12 +983,6 @@
                 padding: 3px 8px !important;
             }
 
-            /* Unclip Dropdown Menus in Toolbar on Mobile */
-            .editor-formatting-toolbar {
-                position: relative;
-                overflow-x: auto;
-                overflow-y: visible !important;
-            }
             .editor-formatting-toolbar .dropdown-menu {
                 z-index: 2500 !important;
                 box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2) !important;
@@ -924,68 +996,16 @@
             }
         }
 
-            .view-mode-toggle {
-                order: 3;
-                width: 100%;
-                justify-content: center;
-                margin-top: 4px;
-            }
-            .view-mode-toggle .mode-btn {
-                padding: 4px 12px;
-                font-size: 11.5px;
-            }
-
-            .left-panel {
-                width: 85% !important;
-                max-width: 320px;
-            }
-
-            .right-panel {
-                width: 90% !important;
-                max-width: 360px;
-            }
-
+        /* Small Mobile Phones (< 576px) */
+        @@media (max-width: 575.98px) {
             .writing-paper {
-                padding: 1.5rem 1rem !important;
-                margin: 8px auto !important;
-                border-radius: 8px;
-                border: none !important;
-                box-shadow: none !important;
-            }
-
-            .chapter-title-input {
-                font-size: 1.5rem !important;
-                margin-bottom: 1rem !important;
-            }
-
-            .manuscript-editable {
-                font-size: 1rem !important;
-                line-height: 1.75 !important;
-                min-height: 350px !important;
-            }
-
-            .suggestions-floating-card {
-                padding: 12px 14px !important;
-                border-radius: 14px !important;
-                margin: 16px auto !important;
-            }
-
-            .suggestion-filter-pill {
-                font-size: 10.5px !important;
-                padding: 4px 10px !important;
+                padding: 1.25rem 0.75rem !important;
             }
 
             .quick-drawer-overlay .drawer-content {
                 width: 100% !important;
                 max-width: 100% !important;
                 border-radius: 16px 16px 0 0 !important;
-            }
-        }
-
-        /* Small Mobile Phones (< 480px) */
-        @@media (max-width: 479.98px) {
-            .writing-paper {
-                padding: 1.25rem 0.75rem !important;
             }
         }
     </style>
@@ -996,7 +1016,7 @@
     <div class="editor-app-container">
         <!-- 1. TOP NAVBAR HEADER -->
         <header class="sv-top-header editor-header">
-            <div class="d-flex align-items-center gap-2">
+            <div class="header-left-group">
                 <!-- Mobile Left Panel Toggle Button -->
                 <button class="btn btn-light btn-sm border d-xl-none p-1.5 rounded-3 me-1 left-panel-mobile-toggle" onclick="toggleLeftPanelMobile()" title="Manuscript Explorer">
                     <i data-lucide="menu" style="width:16px;height:16px;color:#0E7490;"></i>
@@ -1048,16 +1068,10 @@
                         }
                     </ul>
                 </div>
-
-                <!-- Save Status Pill -->
-                <div class="save-status-pill" id="saveIndicatorBox">
-                    <i data-lucide="check" style="width:14px;height:14px;" id="saveIcon"></i>
-                    <span id="saveStatusText" class="d-none d-sm-inline">Saved just now</span>
-                </div>
             </div>
 
             <!-- View Mode Toggles (Center) -->
-            <div class="view-mode-toggle">
+            <div class="view-mode-toggle header-center-group">
                 <button class="mode-btn active" id="btnModeWrite" onclick="switchViewMode('write')">
                     <i data-lucide="edit-3" style="width:14px;height:14px;color:#0E7490;"></i>
                     <span>Write</span>
@@ -1073,7 +1087,13 @@
             </div>
 
             <!-- Right Actions & Profile -->
-            <div class="d-flex align-items-center gap-2">
+            <div class="header-right-group">
+                <!-- Save Status Pill -->
+                <div class="save-status-pill me-1" id="saveIndicatorBox">
+                    <i data-lucide="check" style="width:14px;height:14px;" id="saveIcon"></i>
+                    <span id="saveStatusText" class="d-none d-sm-inline">Saved just now</span>
+                </div>
+
                 <button class="btn btn-light btn-sm rounded-circle p-2 border position-relative d-none d-sm-inline-flex" title="Search Manuscript (Coming Soon)" disabled style="width: 36px; height: 36px; align-items: center; justify-content: center; opacity: 0.75; cursor: not-allowed;">
                     <i data-lucide="search" style="width:15px;height:15px;color:#64748B;"></i>
                 </button>
@@ -1891,17 +1911,10 @@
                 titleInput.style.pointerEvents = "auto";
                 showToast("👁 Focus mode enabled.");
             } else if (mode === 'read') {
-                const btn = document.getElementById('btnModeRead');
-                btn.classList.add('active');
-                const icon = btn.querySelector('i');
-                if (icon) icon.style.color = '#0E7490';
-                document.body.classList.remove('focus-mode');
-                document.body.classList.add('read-mode');
-                // DISALLOW EDITING IN READ MODE
-                editor.contentEditable = "false";
-                titleInput.readOnly = true;
-                titleInput.style.pointerEvents = "none";
-                showToast("📖 Book Chapter Preview Mode (Read Only - Editing Disabled)");
+                const storyId = '@(ViewBag.Story?.Id ?? Guid.Empty)';
+                const chapterId = '@Model.Id';
+                window.location.href = `/Chapters/Read?storyId=${storyId}&chapterId=${chapterId}`;
+                return;
             }
         }
 

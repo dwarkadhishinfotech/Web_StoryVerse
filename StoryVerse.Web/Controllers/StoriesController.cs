@@ -559,6 +559,12 @@ namespace StoryVerse.Web.Controllers
                 // Fallback log error
             }
 
+            var referer = Request.Headers["Referer"].ToString();
+            if (!string.IsNullOrEmpty(referer) && Uri.TryCreate(referer, UriKind.Absolute, out var uri) && uri.Host == Request.Host.Host)
+            {
+                return Redirect(referer);
+            }
+
             return RedirectToAction(nameof(Index));
         }
 

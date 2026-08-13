@@ -65,13 +65,18 @@ public class DashboardController : Controller
             userGoal = await _context.UserGoals
                 .AsNoTracking()
                 .FirstOrDefaultAsync(g => g.UserId == user.Id) ?? new UserGoal { UserId = user.Id };
+
+            if (userGoal != null && userGoal.LastUpdated.Date != DateTime.UtcNow.Date)
+            {
+                userGoal.WordsWrittenToday = 0;
+            }
         }
         catch
         {
             userGoal = new UserGoal { UserId = user.Id, MonthlyWordCountGoal = 50000 };
         }
 
-        var totalWords = activeStory != null ? activeStory.CurrentWordCount : allStories.Sum(s => s.CurrentWordCount);
+        var totalWords = allStories.Sum(s => s.CurrentWordCount);
         var activeStoriesCount = allStories.Count(s => string.IsNullOrEmpty(s.Status) || s.Status != "Archived");
         
         var charactersCount = activeStory != null 
@@ -82,6 +87,14 @@ public class DashboardController : Controller
             ? await _context.Locations.AsNoTracking().CountAsync(l => l.StoryId == activeStory.Id) 
             : await _context.Locations.AsNoTracking().CountAsync(l => l.Story != null && l.Story.UserId == user.Id);
 
+        var totalChapters = await _context.Chapters
+            .AsNoTracking()
+            .CountAsync(c => c.Story != null && c.Story.UserId == user.Id);
+
+        var completedChaptersCount = await _context.Chapters
+            .AsNoTracking()
+            .CountAsync(c => c.Story != null && c.Story.UserId == user.Id && (c.Status == "Completed" || c.WordCount > 0));
+
         var viewModel = new DashboardViewModel
         {
             ActiveStory = activeStory,
@@ -91,11 +104,121 @@ public class DashboardController : Controller
             ActiveStoriesCount = activeStoriesCount,
             CharactersCount = charactersCount,
             LocationsCount = locationsCount,
+            TotalChapters = totalChapters,
+            CompletedChaptersCount = completedChaptersCount,
             UserGoal = userGoal,
             InspirationQuote = _quoteService.GetDailyQuote()
         };
 
         return View(viewModel);
+    }
+
+    [HttpGet("/dashboard/activity")]
+    public async Task<IActionResult> Activity(string? type = null, Guid? storyId = null, string? search = null, string? dateRange = null)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return RedirectToAction("Login", "Account", new { area = "Identity" });
+        }
+
+        var allUserStories = await _context.Stories
+            .AsNoTracking()
+            .Where(s => s.UserId == user.Id)
+            .OrderByDescending(s => s.UpdatedAt)
+            .ToListAsync();
+
+        var query = _context.ActivityLogs
+            .AsNoTracking()
+            .Where(a => a.UserId == user.Id);
+
+        DateTime? startDate = null;
+        DateTime? endDate = null;
+
+        if (!string.IsNullOrWhiteSpace(dateRange))
+        {
+            var parts = dateRange.Split(new[] { " to ", ",", " - " }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 1 && DateTime.TryParse(parts[0].Trim(), out var pStart))
+            {
+                startDate = pStart.Date;
+                query = query.Where(a => a.Timestamp >= startDate.Value);
+            }
+            if (parts.Length >= 2 && DateTime.TryParse(parts[1].Trim(), out var pEnd))
+            {
+                endDate = pEnd.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(a => a.Timestamp <= endDate.Value);
+            }
+        }
+
+        if (storyId.HasValue)
+        {
+            var selectedStory = allUserStories.FirstOrDefault(s => s.Id == storyId.Value);
+            if (selectedStory != null)
+            {
+                var title = selectedStory.Title;
+                query = query.Where(a => a.RelatedEntityName.Contains(title) || a.Description.Contains(title));
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(type) && !type.Equals("all", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(a => a.ActionType.Contains(type) || a.Description.Contains(type));
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(a => a.Description.ToLower().Contains(searchLower) || 
+                                     a.RelatedEntityName.ToLower().Contains(searchLower) || 
+                                     a.ActionType.ToLower().Contains(searchLower));
+        }
+
+        var allUserActivities = await _context.ActivityLogs
+            .AsNoTracking()
+            .Where(a => a.UserId == user.Id)
+            .OrderByDescending(a => a.Timestamp)
+            .ToListAsync();
+
+        var filteredActivities = await query
+            .OrderByDescending(a => a.Timestamp)
+            .Take(200)
+            .ToListAsync();
+
+        // Calculate real DB metrics for the summary side-card
+        var userStoryIds = allUserStories.Select(s => s.Id).ToList();
+
+        var totalActivitiesCount = allUserActivities.Count;
+        var chaptersUpdatedCount = await _context.Chapters.CountAsync(c => userStoryIds.Contains(c.StoryId));
+        var charactersAddedCount = await _context.Characters.CountAsync(c => userStoryIds.Contains(c.StoryId));
+        var worldEntitiesCount = await _context.WorldEntities.CountAsync(w => userStoryIds.Contains(w.StoryId))
+                                + await _context.Locations.CountAsync(l => userStoryIds.Contains(l.StoryId));
+        var timelineEventsCount = await _context.TimelineEvents.CountAsync(t => userStoryIds.Contains(t.StoryId));
+        var notesResearchCount = await _context.ResearchNotes.CountAsync(n => userStoryIds.Contains(n.StoryId));
+
+        // Count per-story activities for recent stories side-card
+        var storyActivityCounts = new Dictionary<Guid, int>();
+        foreach (var story in allUserStories)
+        {
+            var count = allUserActivities.Count(a => (!string.IsNullOrEmpty(a.RelatedEntityName) && a.RelatedEntityName.Contains(story.Title)) || (!string.IsNullOrEmpty(a.Description) && a.Description.Contains(story.Title)));
+            storyActivityCounts[story.Id] = count;
+        }
+
+        ViewBag.UserStories = allUserStories;
+        ViewBag.StoryActivityCounts = storyActivityCounts;
+        ViewBag.CurrentTypeFilter = type ?? "all";
+        ViewBag.CurrentStoryId = storyId;
+        ViewBag.SearchQuery = search ?? "";
+        ViewBag.CurrentDateRange = dateRange;
+        ViewBag.StartDate = startDate;
+        ViewBag.EndDate = endDate;
+        ViewBag.TotalActivitiesCount = totalActivitiesCount;
+        ViewBag.ChaptersUpdatedCount = chaptersUpdatedCount;
+        ViewBag.CharactersAddedCount = charactersAddedCount;
+        ViewBag.WorldEntitiesCount = worldEntitiesCount;
+        ViewBag.TimelineEventsCount = timelineEventsCount;
+        ViewBag.NotesResearchCount = notesResearchCount;
+
+        return View(filteredActivities);
     }
 
     [HttpGet]

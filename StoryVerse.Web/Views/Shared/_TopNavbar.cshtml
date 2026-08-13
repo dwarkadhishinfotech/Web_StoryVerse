@@ -90,33 +90,39 @@
         </div>
 
         <!-- Actions on Right -->
-        <div class="d-flex align-items-center gap-2 gap-md-3 flex-wrap">
-            <a href="@Url.Action("Create", "Stories")" class="btn px-3 px-md-4 py-2 rounded-pill fw-bold d-inline-flex align-items-center gap-2 bg-white" 
-               style="border: 1px solid #E2E8F0; color: #334155; font-size: 0.85rem; font-family: 'Inter', sans-serif; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> New Story
-            </a>
-
-            @if (hasStories)
-            {
-                <a href="@Url.Action("Details", "Stories", new { id = activeStoryId })" class="btn px-3 px-md-4 py-2 rounded-pill text-white fw-bold d-inline-flex align-items-center gap-2 shadow-sm" 
-                   style="background-color: #13A8A6; border: none; font-size: 0.85rem; font-family: 'Inter', sans-serif;">
-                    <i data-lucide="pen-tool" style="width: 16px; height: 16px;"></i> Continue Writing
+        <div class="top-navbar-actions d-flex align-items-center gap-2 gap-md-3 flex-wrap">
+            <!-- Primary Action Buttons Group -->
+            <div class="d-flex align-items-center gap-2 flex-grow-1 flex-sm-grow-0">
+                <a href="@Url.Action("Create", "Stories")" class="btn top-cta-btn px-2.5 px-sm-3 px-md-4 py-2 rounded-pill fw-bold d-inline-flex align-items-center justify-content-center bg-white text-nowrap flex-fill flex-sm-grow-0" 
+                   style="border: 1px solid #E2E8F0; color: #334155; font-size: clamp(0.78rem, 2.5vw, 0.85rem); font-family: 'Inter', sans-serif; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <i data-lucide="plus" class="me-2 flex-shrink-0" style="width: 16px; height: 16px;"></i><span>New Story</span>
                 </a>
-            }
 
-            <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0 position-relative" disabled title="Notifications (Coming Soon)" style="width: 40px; height: 40px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); opacity: 0.65; cursor: not-allowed;">
-                <i data-lucide="bell" style="width: 18px; height: 18px; color: #64748B;"></i>
-                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
-            </button>
+                @if (hasStories)
+                {
+                    <a href="@Url.Action("Details", "Stories", new { id = activeStoryId })" class="btn top-cta-btn px-2.5 px-sm-3 px-md-4 py-2 rounded-pill text-white fw-bold d-inline-flex align-items-center justify-content-center shadow-sm text-nowrap flex-fill flex-sm-grow-0" 
+                       style="background-color: #13A8A6; border: none; font-size: clamp(0.78rem, 2.5vw, 0.85rem); font-family: 'Inter', sans-serif;">
+                        <i data-lucide="pen-tool" class="me-2 flex-shrink-0" style="width: 16px; height: 16px;"></i><span>Continue Writing</span>
+                    </a>
+                }
+            </div>
 
-            <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0 position-relative" disabled title="Toggle Theme (Coming Soon)" style="width: 40px; height: 40px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); opacity: 0.65; cursor: not-allowed;">
-                <i data-lucide="sun" style="width: 18px; height: 18px; color: #64748B;"></i>
-                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
-            </button>
+            <!-- Utility Icon Buttons Group (Bell & Sun always stay together) -->
+            <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto ms-sm-0">
+                <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0 position-relative flex-shrink-0" disabled title="Notifications (Coming Soon)" style="width: 38px; height: 38px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); opacity: 0.65; cursor: not-allowed;">
+                    <i data-lucide="bell" style="width: 17px; height: 17px; color: #64748B;"></i>
+                    <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
+                </button>
+
+                <button class="btn btn-white rounded-circle bg-white d-inline-flex align-items-center justify-content-center p-0 position-relative flex-shrink-0" disabled title="Toggle Theme (Coming Soon)" style="width: 38px; height: 38px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); opacity: 0.65; cursor: not-allowed;">
+                    <i data-lucide="sun" style="width: 17px; height: 17px; color: #64748B;"></i>
+                    <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
+                </button>
+            </div>
         </div>
     </header>
 }
-else if (!(controller == "Stories" && (action == "Index" || action == "Create" || action == "Edit" || action == "Details")) && !(controller == "Characters" && (action == "Index" || action == "Create" || action == "Edit" || action == "Details")) && !(controller == "WorldBuilding" && (action == "Index" || action == "Create" || action == "Edit" || action == "Details")) && !(controller == "Timeline" && (action == "Index" || action == "Create" || action == "Edit" || action == "Details")) && !(controller == "Chapters" && (action == "Index" || action == "Editor" || action == "Create" || action == "Edit")))
+else if (!(controller == "Stories" && (action == "Index" || action == "Create" || action == "Edit" || action == "Details")) && !(controller == "Characters" && (action == "Index" || action == "Create" || action == "Edit" || action == "Details")) && !(controller == "WorldBuilding" && (action == "Index" || action == "Create" || action == "Edit" || action == "Details")) && !(controller == "Timeline" && (action == "Index" || action == "Create" || action == "Edit" || action == "Details")) && !(controller == "Chapters" && (action == "Index" || action == "Editor" || action == "Create" || action == "Edit")) && !(controller == "Dashboard" && action == "Activity"))
 {
     <!-- Compact Top bar for other pages -->
     <header class="d-flex align-items-center justify-content-end py-2 mb-4" style="background: transparent;">

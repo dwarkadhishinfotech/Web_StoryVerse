@@ -1154,13 +1154,13 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-uppercase">Select Category</label>
-                        <select name="category" class="form-select rounded-3">
-                            <option value="All Events" selected="@(Model.SelectedCategory == "All Events")">All Categories</option>
-                            <option value="Birth" selected="@(Model.SelectedCategory == "Birth")">Birth</option>
-                            <option value="Meeting" selected="@(Model.SelectedCategory == "Meeting")">Meeting</option>
-                            <option value="Career" selected="@(Model.SelectedCategory == "Career")">Career</option>
-                            <option value="Investigation" selected="@(Model.SelectedCategory == "Investigation")">Investigation</option>
-                            <option value="Incident" selected="@(Model.SelectedCategory == "Incident")">Incident</option>
+                        <select name="category" class="form-select select2-themed rounded-3">
+                            <option value="All Events" selected="@(Model.SelectedCategory == "All Events")" data-icon="layers">All Categories</option>
+                            <option value="Birth" selected="@(Model.SelectedCategory == "Birth")" data-icon="sparkles">Birth</option>
+                            <option value="Meeting" selected="@(Model.SelectedCategory == "Meeting")" data-icon="users">Meeting</option>
+                            <option value="Career" selected="@(Model.SelectedCategory == "Career")" data-icon="briefcase">Career</option>
+                            <option value="Investigation" selected="@(Model.SelectedCategory == "Investigation")" data-icon="search">Investigation</option>
+                            <option value="Incident" selected="@(Model.SelectedCategory == "Incident")" data-icon="alert-triangle">Incident</option>
                         </select>
                     </div>
 

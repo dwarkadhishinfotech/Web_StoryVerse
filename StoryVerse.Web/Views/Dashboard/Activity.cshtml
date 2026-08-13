@@ -1,0 +1,920 @@
+@model IEnumerable<StoryVerse.Core.Entities.ActivityLog>
+@using StoryVerse.Core.Entities
+@{
+    ViewData["Title"] = "Activity Feed - StoryVerse";
+    var userStories = ViewBag.UserStories as List<Story> ?? new List<Story>();
+    var storyActivityCounts = ViewBag.StoryActivityCounts as Dictionary<Guid, int> ?? new Dictionary<Guid, int>();
+    var currentFilter = (string)(ViewBag.CurrentTypeFilter ?? "all");
+    var currentStoryId = ViewBag.CurrentStoryId as Guid?;
+    var searchQuery = (string)(ViewBag.SearchQuery ?? "");
+
+    var totalCount = (int)(ViewBag.TotalActivitiesCount ?? 0);
+    var chaptersUpdated = (int)(ViewBag.ChaptersUpdatedCount ?? 0);
+    var charactersAdded = (int)(ViewBag.CharactersAddedCount ?? 0);
+    var worldEntities = (int)(ViewBag.WorldEntitiesCount ?? 0);
+    var timelineEvents = (int)(ViewBag.TimelineEventsCount ?? 0);
+    var notesResearch = (int)(ViewBag.NotesResearchCount ?? 0);
+
+    string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        if (span.TotalMinutes < 1) return "Just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} mins ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours} hours ago";
+        if (span.TotalDays < 7) return $"{(int)span.TotalDays} days ago";
+        return dateTime.ToString("MMM dd, yyyy");
+    }
+
+    // Group activities by date header (Today, Yesterday, Date)
+    var groupedActivities = Model?
+        .GroupBy(a => a.Timestamp.Date)
+        .OrderByDescending(g => g.Key)
+        .ToList() ?? new List<IGrouping<DateTime, ActivityLog>>();
+}
+
+<style>
+    .activity-feed-page {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: #1E293B;
+    }
+    
+    .font-serif {
+        font-family: 'Playfair Display', Georgia, serif;
+    }
+    
+    /* Top Toolbar Styling */
+    .filter-toolbar-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 12px 18px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+    
+    .toolbar-select {
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 7px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        background-color: #FFFFFF;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .toolbar-select:focus, .toolbar-select:hover {
+        border-color: #13A8A6;
+        outline: none;
+    }
+    
+    .date-range-badge {
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 7px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        background-color: #FFFFFF;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .btn-export {
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 7px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        background-color: #FFFFFF;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-export:hover {
+        background-color: #F8FAFC;
+        border-color: #CBD5E1;
+        color: #0F172A;
+    }
+
+    /* Date Header */
+    .date-group-header {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 16px;
+        margin-top: 24px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Timeline Structure */
+    .timeline-container {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    .timeline-container::before {
+        content: '';
+        position: absolute;
+        left: 96px;
+        top: 20px;
+        bottom: 20px;
+        width: 2px;
+        background-color: #E2E8F0;
+        z-index: 1;
+    }
+
+    .timeline-item-row {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        z-index: 2;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .timeline-timestamp {
+        width: 76px;
+        font-size: 0.725rem;
+        font-weight: 600;
+        color: #64748B;
+        text-align: right;
+        padding-top: 10px;
+        flex-shrink: 0;
+    }
+
+    .timeline-node-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 14px;
+        flex-shrink: 0;
+        z-index: 3;
+        box-shadow: 0 0 0 4px #FFFFFF;
+    }
+
+    /* Card Box */
+    .activity-item-card {
+        flex-grow: 1;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 14px 18px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    .activity-item-card:hover {
+        border-color: #CBD5E1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        transform: translateY(-1px);
+    }
+
+    .activity-action-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748B;
+        margin-bottom: 2px;
+    }
+
+    .activity-item-title {
+        font-size: 0.925rem;
+        font-weight: 700;
+        color: #0F172A;
+        margin-bottom: 2px;
+        line-height: 1.35;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .activity-item-subtext {
+        font-size: 0.75rem;
+        color: #64748B;
+        font-weight: 500;
+    }
+
+    /* Tag Badges */
+    .story-name-tag {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 8px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        max-width: 100%;
+    }
+
+    .cat-pill {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 12px;
+        text-transform: capitalize;
+        display: inline-flex;
+        align-items: center;
+    }
+    .cat-pill-created { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
+    .cat-pill-deleted { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
+    .cat-pill-chapters { background: #DBEAFE; color: #1D4ED8; border: 1px solid #93C5FD; }
+    .cat-pill-characters { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
+    .cat-pill-world { background: #F3E8FF; color: #6D28D9; border: 1px solid #DDD6FE; }
+    .cat-pill-timeline { background: #FCE7F3; color: #BE185D; border: 1px solid #FBCFE8; }
+    .cat-pill-notes { background: #CCFBF1; color: #0F766E; border: 1px solid #99F6E4; }
+    .cat-pill-research { background: #E0F2FE; color: #0369A1; border: 1px solid #7DD3FC; }
+
+    /* Side Panels */
+    .side-panel-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        padding: 20px 22px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        margin-bottom: 20px;
+    }
+
+    .side-panel-title {
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: #0F172A;
+    }
+
+    /* Summary Metric Cells */
+    .summary-metric-box {
+        text-align: center;
+        padding: 10px 4px;
+    }
+    .summary-metric-num {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1.1;
+    }
+    .summary-metric-lbl {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #64748B;
+        margin-top: 4px;
+        line-height: 1.25;
+    }
+
+    /* Filter Side List */
+    .side-filter-btn {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 9px 14px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #475569;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .side-filter-btn:hover {
+        background: #F8FAFC;
+        color: #0F172A;
+    }
+    .side-filter-btn.active {
+        background: #F0FDFA;
+        color: #13A8A6;
+        font-weight: 700;
+    }
+
+    /* Story Item in Side Card */
+    .story-side-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: background 0.2s ease;
+        border: 1px solid transparent;
+    }
+    .story-side-item:hover {
+        background: #F8FAFC;
+        border-color: #E2E8F0;
+    }
+
+    /* Mobile Responsiveness (< 768px) */
+    @@media (max-width: 767.98px) {
+        .filter-toolbar-card {
+            padding: 12px 14px;
+        }
+        .filter-toolbar-card form {
+            width: 100%;
+        }
+        .toolbar-select, .date-range-badge, .btn-export {
+            width: 100% !important;
+            justify-content: center;
+        }
+        .timeline-container::before {
+            left: 17px !important;
+        }
+        .timeline-timestamp {
+            display: none !important;
+        }
+        .timeline-timestamp-mobile {
+            display: block !important;
+            font-size: 0.7rem;
+            color: #64748B;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .date-group-header {
+            margin-left: 44px !important;
+            padding-left: 0 !important;
+        }
+        .timeline-node-icon {
+            width: 34px !important;
+            height: 34px !important;
+            margin: 0 !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 6px !important;
+        }
+        .activity-item-card {
+            margin-left: 44px !important;
+            width: calc(100% - 44px) !important;
+            max-width: calc(100% - 44px) !important;
+            padding: 12px 14px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+        }
+        .activity-item-card .card-main-content {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        .activity-item-card .right-tags-wrapper {
+            width: 100% !important;
+            justify-content: space-between !important;
+            flex-wrap: wrap !important;
+            padding-top: 8px;
+            border-top: 1px dashed #F1F5F9;
+        }
+    }
+
+    @@media (min-width: 768px) {
+        .timeline-timestamp-mobile {
+            display: none !important;
+        }
+    }
+</style>
+
+<div class="activity-feed-page py-3 px-1 w-100">
+    <!-- Page Header (Matching Stories, Characters, Timeline, Chapters header design) -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h1 class="fw-bold mb-0 text-slate-900" style="font-size: 1.85rem; font-family: 'Playfair Display', Georgia, serif;">Activity Feed</h1>
+                <div class="d-flex align-items-center justify-content-center rounded-circle p-1.5 ms-1" style="background-color: rgba(13, 148, 136, 0.1); color: #0d9488;">
+                    <i data-lucide="activity" style="width: 22px; height: 22px;"></i>
+                </div>
+                <span style="color: #D97706; font-size: 20px; line-height: 1;" class="ms-1">✦</span>
+            </div>
+            <p class="text-secondary mb-0" style="font-size: 0.925rem;">Track all your writing and management activities across StoryVerse.</p>
+        </div>
+        
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Global Search Bar -->
+            <form method="get" action="@Url.Action("Activity", "Dashboard")" class="d-flex align-items-center">
+                <input type="hidden" name="type" value="@currentFilter" />
+                <input type="hidden" name="storyId" value="@(currentStoryId?.ToString() ?? "")" />
+                <div class="position-relative" style="min-width: 240px; max-width: 320px;">
+                    <i data-lucide="search" class="position-absolute" style="left: 14px; top: 11px; width: 15px; height: 15px; color: #94A3B8;"></i>
+                    <input type="text" name="search" class="form-control rounded-3 pe-4" placeholder="Search anything... ⌘K" value="@searchQuery" style="padding-left: 38px; font-size: 13px; border-color: #E2E8F0; background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.02); height: 38px; border-radius: 10px;">
+                </div>
+            </form>
+
+            <!-- Notifications (Bell) Button -->
+            <button class="btn btn-white bg-white border rounded-circle d-inline-flex align-items-center justify-content-center p-0 position-relative flex-shrink-0" disabled title="Notifications (Coming Soon)" style="width: 38px; height: 38px; border-color: #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); opacity: 0.65; cursor: not-allowed;">
+                <i data-lucide="bell" style="width: 17px; height: 17px; color: #64748B;"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
+            </button>
+
+            <!-- Theme Toggle (Sun) Button -->
+            <button class="btn btn-white bg-white border rounded-circle d-inline-flex align-items-center justify-content-center p-0 position-relative flex-shrink-0" disabled title="Toggle Theme (Coming Soon)" style="width: 38px; height: 38px; border-color: #E2E8F0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); opacity: 0.65; cursor: not-allowed;">
+                <i data-lucide="sun" style="width: 17px; height: 17px; color: #64748B;"></i>
+                <span class="badge-soon-light position-absolute" style="top: -6px; right: -8px; font-size: 7.5px; padding: 1px 4px;">SOON</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Toolbar Header Row -->
+    <div class="filter-toolbar-card d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <form method="get" action="@Url.Action("Activity", "Dashboard")" class="d-flex align-items-center gap-2 flex-wrap m-0 w-100 w-md-auto">
+            <input type="hidden" name="search" value="@searchQuery" />
+            
+            <!-- Filter 1: Activity Type -->
+            <div style="min-width: 170px;" class="flex-grow-1 flex-md-grow-0">
+                <select name="type" class="form-select select2-themed toolbar-select" onchange="this.form.submit()">
+                    <option value="all" selected="@(currentFilter == "all")" data-icon="zap">All Activities</option>
+                    <option value="Chapter" selected="@(currentFilter == "Chapter")" data-icon="message-square">Chapters</option>
+                    <option value="Character" selected="@(currentFilter == "Character")" data-icon="user">Characters</option>
+                    <option value="Location" selected="@(currentFilter == "Location" || currentFilter == "World")" data-icon="globe">World Building</option>
+                    <option value="Timeline" selected="@(currentFilter == "Timeline")" data-icon="clock">Timeline</option>
+                </select>
+            </div>
+
+            <!-- Filter 2: Story Selector -->
+            <div style="min-width: 170px;" class="flex-grow-1 flex-md-grow-0">
+                <select name="storyId" class="form-select select2-themed toolbar-select" onchange="this.form.submit()">
+                    <option value="" selected="@(!currentStoryId.HasValue)" data-icon="book-open">All Stories</option>
+                    @foreach (var s in userStories)
+                    {
+                        <option value="@s.Id" selected="@(currentStoryId == s.Id)" data-icon="book">@s.Title</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Filter 3: Module Filter -->
+            <div style="min-width: 150px;" class="flex-grow-1 flex-md-grow-0">
+                <select class="form-select select2-themed toolbar-select">
+                    <option value="all" data-icon="layers">All Modules</option>
+                    <option value="authoring" data-icon="feather">Authoring</option>
+                    <option value="world" data-icon="compass">World Engine</option>
+                </select>
+            </div>
+
+            <!-- Date Range Badge (Interactive Date Range Picker) -->
+            <div class="date-range-badge justify-content-center position-relative" id="dateRangeBadgeBtn" style="cursor: pointer;">
+                <span id="dateRangeDisplayText" class="me-2">@(ViewBag.StartDate != null && ViewBag.EndDate != null ? $"{((DateTime)ViewBag.StartDate).ToString("MMM d, yyyy")} - {((DateTime)ViewBag.EndDate).ToString("MMM d, yyyy")}" : $"{DateTime.UtcNow.AddDays(-12).ToString("MMM d, yyyy")} - {DateTime.UtcNow.ToString("MMM d, yyyy")}")</span>
+                <i data-lucide="calendar" style="width: 14px; height: 14px; color: #64748B;" class="ms-1"></i>
+                <input type="text" id="activityDateRangePicker" name="dateRange" value="@(ViewBag.CurrentDateRange ?? "")" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor: pointer;" readonly />
+            </div>
+        </form>
+
+        <a href="javascript:window.print()" class="btn-export d-inline-flex align-items-center justify-content-center">
+            <i data-lucide="download" style="width: 14px; height: 14px;" class="me-2"></i> Export
+        </a>
+    </div>
+
+    <!-- Main Content Area: 2 Columns Grid -->
+    <div class="row g-4">
+        <!-- LEFT COLUMN: Activity Timeline (8 cols) -->
+        <div class="col-12 col-lg-8">
+            @if (groupedActivities.Any())
+            {
+                <div class="timeline-container">
+                    @foreach (var group in groupedActivities)
+                    {
+                        var groupDate = group.Key;
+                        var dateLabel = groupDate == DateTime.UtcNow.Date ? $"Today - {groupDate:MMM d, yyyy}" :
+                                        groupDate == DateTime.UtcNow.Date.AddDays(-1) ? $"Yesterday - {groupDate:MMM d, yyyy}" :
+                                        groupDate.ToString("MMM d, yyyy");
+
+                        <div class="date-group-header">
+                            @dateLabel
+                        </div>
+
+                        @foreach (var activity in group)
+                        {
+                            var actionTypeStr = activity.ActionType ?? "General";
+                            var descStr = activity.Description ?? "";
+                            var combinedText = $"{actionTypeStr} {descStr}";
+
+                            // 1. Identify Entity Type
+                            var displayType = "Chapter";
+                            if (actionTypeStr.Contains("Character", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Character", StringComparison.OrdinalIgnoreCase))
+                            {
+                                displayType = "Character";
+                            }
+                            else if (actionTypeStr.Contains("Location", StringComparison.OrdinalIgnoreCase) || actionTypeStr.Contains("World", StringComparison.OrdinalIgnoreCase) || descStr.Contains("World", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Location", StringComparison.OrdinalIgnoreCase))
+                            {
+                                displayType = "World Building";
+                            }
+                            else if (actionTypeStr.Contains("Timeline", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Timeline", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Event", StringComparison.OrdinalIgnoreCase))
+                            {
+                                displayType = "Timeline";
+                            }
+                            else if (actionTypeStr.Contains("Note", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Note", StringComparison.OrdinalIgnoreCase))
+                            {
+                                displayType = "Notes";
+                            }
+                            else if (actionTypeStr.Contains("Research", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Research", StringComparison.OrdinalIgnoreCase))
+                            {
+                                displayType = "Research";
+                            }
+                            else if (actionTypeStr.Contains("Story", StringComparison.OrdinalIgnoreCase) || descStr.Contains("Story", StringComparison.OrdinalIgnoreCase))
+                            {
+                                displayType = "Story";
+                            }
+
+                            // 2. Identify Action Verb (Delete vs Add vs Update)
+                            bool isDelete = combinedText.Contains("delete", StringComparison.OrdinalIgnoreCase) || 
+                                            combinedText.Contains("remove", StringComparison.OrdinalIgnoreCase) || 
+                                            combinedText.Contains("trash", StringComparison.OrdinalIgnoreCase);
+
+                            bool isAdd = !isDelete && (combinedText.Contains("create", StringComparison.OrdinalIgnoreCase) || 
+                                                       combinedText.Contains("add", StringComparison.OrdinalIgnoreCase) || 
+                                                       combinedText.Contains("new", StringComparison.OrdinalIgnoreCase) ||
+                                                       combinedText.Contains("generate", StringComparison.OrdinalIgnoreCase));
+
+                            string iconName;
+                            string iconBg;
+                            string iconColor;
+                            string iconBorder;
+                            string cardBg;
+                            string cardBorder;
+                            string cardLeftBorder;
+                            string actionLabel;
+                            string actionLabelColor;
+                            string pillClass;
+
+                            if (isDelete)
+                            {
+                                iconName = "trash-2";
+                                iconBg = "#FEE2E2";
+                                iconColor = "#EF4444";
+                                iconBorder = "2px solid #FCA5A5";
+                                cardBg = "linear-gradient(135deg, #FEF2F2 0%, #FFFFFF 100%)";
+                                cardBorder = "1px solid #FECACA";
+                                cardLeftBorder = "4px solid #EF4444";
+                                actionLabel = $"You deleted {displayType}";
+                                actionLabelColor = "#B91C1C";
+                                pillClass = "cat-pill-deleted";
+                            }
+                            else if (isAdd)
+                            {
+                                if (displayType == "Character") iconName = "user-plus";
+                                else if (displayType == "Timeline") iconName = "calendar-plus";
+                                else if (displayType == "World Building") iconName = "compass";
+                                else iconName = "file-plus";
+
+                                iconBg = "#DCFCE7";
+                                iconColor = "#10B981";
+                                iconBorder = "2px solid #86EFAC";
+                                cardBg = "linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)";
+                                cardBorder = "1px solid #A7F3D0";
+                                cardLeftBorder = "4px solid #10B981";
+                                actionLabel = $"You created {displayType}";
+                                actionLabelColor = "#15803D";
+                                pillClass = "cat-pill-created";
+                            }
+                            else
+                            {
+                                // UPDATE / EDIT / MODIFY - Color-coded by entity type
+                                actionLabel = $"You updated {displayType}";
+
+                                if (displayType == "Character")
+                                {
+                                    iconName = "user-check";
+                                    iconBg = "#FEF3C7";
+                                    iconColor = "#D97706";
+                                    iconBorder = "2px solid #FDE68A";
+                                    cardBg = "linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #FDE68A";
+                                    cardLeftBorder = "4px solid #D97706";
+                                    actionLabelColor = "#B45309";
+                                    pillClass = "cat-pill-characters";
+                                }
+                                else if (displayType == "World Building")
+                                {
+                                    iconName = "globe";
+                                    iconBg = "#F3E8FF";
+                                    iconColor = "#7C3AED";
+                                    iconBorder = "2px solid #DDD6FE";
+                                    cardBg = "linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #E9D5FF";
+                                    cardLeftBorder = "4px solid #7C3AED";
+                                    actionLabelColor = "#6D28D9";
+                                    pillClass = "cat-pill-world";
+                                }
+                                else if (displayType == "Timeline")
+                                {
+                                    iconName = "clock";
+                                    iconBg = "#FCE7F3";
+                                    iconColor = "#DB2777";
+                                    iconBorder = "2px solid #FBCFE8";
+                                    cardBg = "linear-gradient(135deg, #FDF2F8 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #FBCFE8";
+                                    cardLeftBorder = "4px solid #DB2777";
+                                    actionLabelColor = "#BE185D";
+                                    pillClass = "cat-pill-timeline";
+                                }
+                                else if (displayType == "Notes" || displayType == "Research")
+                                {
+                                    iconName = "refresh-cw";
+                                    iconBg = "#CCFBF1";
+                                    iconColor = "#0D9488";
+                                    iconBorder = "2px solid #99F6E4";
+                                    cardBg = "linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #99F6E4";
+                                    cardLeftBorder = "4px solid #0D9488";
+                                    actionLabelColor = "#0F766E";
+                                    pillClass = "cat-pill-notes";
+                                }
+                                else
+                                {
+                                    // Default Chapter / Story update
+                                    iconName = "edit-3";
+                                    iconBg = "#DBEAFE";
+                                    iconColor = "#2563EB";
+                                    iconBorder = "2px solid #93C5FD";
+                                    cardBg = "linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%)";
+                                    cardBorder = "1px solid #BFDBFE";
+                                    cardLeftBorder = "4px solid #2563EB";
+                                    actionLabelColor = "#1D4ED8";
+                                    pillClass = "cat-pill-chapters";
+                                }
+                            }
+
+                            var titleText = string.IsNullOrWhiteSpace(activity.Description) ? activity.ActionType : activity.Description;
+                            var storyName = !string.IsNullOrWhiteSpace(activity.RelatedEntityName) ? activity.RelatedEntityName : "StoryVerse Project";
+
+                            <div class="timeline-item-row">
+                                <!-- Timestamp (Desktop) -->
+                                <div class="timeline-timestamp">
+                                    @activity.Timestamp.ToString("hh:mm tt")
+                                </div>
+
+                                <!-- Node Icon -->
+                                <div class="timeline-node-icon" style="background-color: @iconBg; border: @iconBorder; box-shadow: 0 0 0 4px #FFFFFF, 0 2px 8px rgba(0,0,0,0.06);">
+                                    <i data-lucide="@iconName" style="width: 17px; height: 17px; color: @iconColor;"></i>
+                                </div>
+
+                                <!-- Card Content -->
+                                <div class="activity-item-card" style="background: @cardBg; border: @cardBorder; border-left: @cardLeftBorder; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);">
+                                    <div class="card-main-content pe-md-3">
+                                        <div class="timeline-timestamp-mobile">
+                                            @activity.Timestamp.ToString("hh:mm tt")
+                                        </div>
+                                        <div class="activity-action-label" style="color: @actionLabelColor; font-weight: 700;">
+                                            <span>@actionLabel</span>
+                                        </div>
+                                        <div class="activity-item-title" title="@titleText">
+                                            @titleText
+                                        </div>
+                                        <div class="activity-item-subtext">
+                                            @GetTimeAgo(activity.Timestamp)
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Side Tags -->
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0 right-tags-wrapper">
+                                        <div class="story-name-tag">
+                                            <i data-lucide="book-open" style="width: 12px; height: 12px; color: #64748B;" class="me-1.5 flex-shrink-0"></i>
+                                            <span class="text-truncate" style="max-width: 130px;">@storyName</span>
+                                        </div>
+                                        <span class="cat-pill @pillClass">
+                                            @displayType
+                                        </span>
+                                        <button class="btn btn-sm btn-link text-muted p-0 border-0 ms-1 shadow-none" style="opacity: 0.6;">
+                                            <i data-lucide="more-horizontal" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- Load More Activities Button -->
+                <div class="text-center my-4 pt-2">
+                    <button class="btn btn-light border rounded-pill px-4 py-2 fw-semibold text-slate-700 shadow-xs" style="font-size: 0.825rem; font-family: 'Inter', sans-serif;">
+                        Load More Activities <i data-lucide="chevron-down" style="width: 14px; height: 14px;" class="ms-1"></i>
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="side-panel-card text-center py-5 my-3">
+                    <div class="my-3 d-flex align-items-center justify-content-center">
+                        <img src="/images/dashboard/quill_ink.png" alt="Quill" style="width: 75px; height: auto; opacity: 0.85;" onerror="this.style.display='none'" />
+                    </div>
+                    <h4 class="fw-bold text-slate-900 mb-2" style="font-size: 1.2rem;">No Activities Found</h4>
+                    <p class="text-muted mb-4" style="max-width: 380px; margin: 0 auto; font-size: 0.85rem;">
+                        No activity records match your filter. Every chapter write, character add, and world update will be tracked here live.
+                    </p>
+                    <a href="@Url.Action("Activity", "Dashboard")" class="btn btn-teal px-4 py-2 rounded-pill fw-semibold shadow-xs">
+                        Clear Filters
+                    </a>
+                </div>
+            }
+        </div>
+
+        <!-- RIGHT COLUMN: Side Panels (4 cols) -->
+        <div class="col-12 col-lg-4">
+            <!-- Panel 1: Activity Summary -->
+            <div class="side-panel-card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="side-panel-title d-flex align-items-center">
+                        <i data-lucide="trending-up" style="width: 16px; height: 16px; color: #13A8A6;" class="me-2"></i>
+                        Activity Summary
+                    </div>
+                    <div style="width: 130px;">
+                        <select class="form-select select2-themed form-select-sm border-0 bg-light text-muted fw-semibold rounded-3" data-no-search="true">
+                            <option data-icon="calendar">This Month</option>
+                            <option data-icon="history">All Time</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 6 Metrics Grid -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6 col-sm-4 border-bottom border-end pb-2">
+                        <div class="summary-metric-box">
+                            <div class="summary-metric-num">@totalCount</div>
+                            <div class="summary-metric-lbl">Total Activities</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 border-bottom border-end-sm pb-2">
+                        <div class="summary-metric-box">
+                            <div class="summary-metric-num">@chaptersUpdated</div>
+                            <div class="summary-metric-lbl">Chapters Updated</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 border-bottom pb-2">
+                        <div class="summary-metric-box">
+                            <div class="summary-metric-num">@charactersAdded</div>
+                            <div class="summary-metric-lbl">Characters Added</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 border-end pb-2 pt-sm-2">
+                        <div class="summary-metric-box">
+                            <div class="summary-metric-num">@worldEntities</div>
+                            <div class="summary-metric-lbl">World Entities</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 border-end-sm pt-2">
+                        <div class="summary-metric-box">
+                            <div class="summary-metric-num">@timelineEvents</div>
+                            <div class="summary-metric-lbl">Timeline Events</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 pt-2">
+                        <div class="summary-metric-box">
+                            <div class="summary-metric-num">@notesResearch</div>
+                            <div class="summary-metric-lbl">Notes & Research</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teal Sparkline Chart SVG -->
+                <div class="pt-2">
+                    <svg viewBox="0 0 300 45" class="w-100" style="height: 45px; overflow: visible;">
+                        <defs>
+                            <linearGradient id="summarySparklineGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#13A8A6" stop-opacity="0.3" />
+                                <stop offset="100%" stop-color="#13A8A6" stop-opacity="0.0" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M 0 30 Q 30 15, 60 25 T 120 10 T 180 28 T 240 18 T 300 12 L 300 45 L 0 45 Z" fill="url(#summarySparklineGrad)" />
+                        <path d="M 0 30 Q 30 15, 60 25 T 120 10 T 180 28 T 240 18 T 300 12" fill="none" stroke="#13A8A6" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Panel 2: Filter Activities Sidebar -->
+            <div class="side-panel-card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="side-panel-title">Filter Activities</div>
+                    <a href="@Url.Action("Activity", "Dashboard")" class="text-decoration-none fw-semibold" style="font-size: 0.75rem; color: #13A8A6;">Clear All</a>
+                </div>
+
+                <div class="d-flex flex-column gap-1">
+                    <a href="@Url.Action("Activity", "Dashboard", new { type = "all", storyId = currentStoryId })" class="side-filter-btn @(currentFilter == "all" ? "active" : "")">
+                        <i data-lucide="zap" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>All Activities</span>
+                    </a>
+                    <a href="@Url.Action("Activity", "Dashboard", new { type = "Chapter", storyId = currentStoryId })" class="side-filter-btn @(currentFilter == "Chapter" ? "active" : "")">
+                        <i data-lucide="message-square" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>Chapters</span>
+                    </a>
+                    <a href="@Url.Action("Activity", "Dashboard", new { type = "Character", storyId = currentStoryId })" class="side-filter-btn @(currentFilter == "Character" ? "active" : "")">
+                        <i data-lucide="user" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>Characters</span>
+                    </a>
+                    <a href="@Url.Action("Activity", "Dashboard", new { type = "Location", storyId = currentStoryId })" class="side-filter-btn @(currentFilter == "Location" || currentFilter == "World" ? "active" : "")">
+                        <i data-lucide="globe" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>World Building</span>
+                    </a>
+                    <a href="@Url.Action("Activity", "Dashboard", new { type = "Timeline", storyId = currentStoryId })" class="side-filter-btn @(currentFilter == "Timeline" ? "active" : "")">
+                        <i data-lucide="clock" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>Timeline</span>
+                    </a>
+                    <a href="@Url.Action("Activity", "Dashboard", new { type = "Note", storyId = currentStoryId })" class="side-filter-btn @(currentFilter == "Note" ? "active" : "")">
+                        <i data-lucide="file-text" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>Notes</span>
+                    </a>
+                    <a href="@Url.Action("Activity", "Dashboard", new { type = "Research", storyId = currentStoryId })" class="side-filter-btn @(currentFilter == "Research" ? "active" : "")">
+                        <i data-lucide="file" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>Research</span>
+                    </a>
+                    <a href="javascript:void(0)" class="side-filter-btn text-muted opacity-75">
+                        <i data-lucide="folder" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>Assets</span>
+                    </a>
+                    <a href="javascript:void(0)" class="side-filter-btn text-muted opacity-75">
+                        <i data-lucide="settings" style="width: 16px; height: 16px;" class="me-2.5"></i>
+                        <span>System</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Panel 3: Recent Stories Sidebar -->
+            <div class="side-panel-card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="side-panel-title">Recent Stories</div>
+                </div>
+
+                @if (userStories.Any())
+                {
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        @foreach (var story in userStories.Take(4))
+                        {
+                            var actCount = storyActivityCounts.ContainsKey(story.Id) ? storyActivityCounts[story.Id] : 0;
+                            var coverImg = !string.IsNullOrWhiteSpace(story.CoverImageUrl) ? story.CoverImageUrl : "/images/empty-states/live_preview_book.png";
+
+                            <a href="@Url.Action("Activity", "Dashboard", new { storyId = story.Id, type = currentFilter })" class="story-side-item">
+                                <div class="d-flex align-items-center overflow-hidden flex-grow-1">
+                                    <img src="@coverImg" alt="@story.Title" class="rounded-2 flex-shrink-0 me-3" style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #E2E8F0;" onerror="this.src='/images/empty-states/live_preview_book.png'" />
+                                    <div class="overflow-hidden">
+                                        <div class="fw-bold text-slate-900 text-truncate" style="font-size: 0.85rem;" title="@story.Title">@story.Title</div>
+                                        <div class="text-muted" style="font-size: 0.725rem; margin-top: 2px;">@actCount @(actCount == 1 ? "activity" : "activities")</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: #94A3B8;" class="flex-shrink-0 ms-2"></i>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-3 text-muted small">No stories created yet.</div>
+                }
+
+                <a href="@Url.Action("Index", "Stories")" class="text-decoration-none fw-bold d-inline-flex align-items-center" style="font-size: 0.8rem; color: #13A8A6;">
+                    <span>View All Stories</span>
+                    <i data-lucide="arrow-right" style="width: 14px; height: 14px;" class="ms-1.5"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // Initialize Peacock Flatpickr Date Range Picker
+            if (typeof flatpickr !== 'undefined') {
+                var startVal = "@(ViewBag.StartDate != null ? ((DateTime)ViewBag.StartDate).ToString("yyyy-MM-dd") : DateTime.UtcNow.AddDays(-12).ToString("yyyy-MM-dd"))";
+                var endVal = "@(ViewBag.EndDate != null ? ((DateTime)ViewBag.EndDate).ToString("yyyy-MM-dd") : DateTime.UtcNow.ToString("yyyy-MM-dd"))";
+
+                var fpInstance = flatpickr("#activityDateRangePicker", {
+                    mode: "range",
+                    dateFormat: "Y-m-d",
+                    defaultDate: [startVal, endVal],
+                    maxDate: "today",
+                    onReady: function(selectedDates, dateStr, instance) {
+                        if (selectedDates.length === 2) {
+                            var sText = flatpickr.formatDate(selectedDates[0], "M j, Y");
+                            var eText = flatpickr.formatDate(selectedDates[1], "M j, Y");
+                            var displayEl = document.getElementById('dateRangeDisplayText');
+                            if (displayEl) displayEl.innerText = sText + " - " + eText;
+                        }
+                    },
+                    onChange: function(selectedDates, dateStr, instance) {
+                        if (selectedDates.length === 2) {
+                            var sText = flatpickr.formatDate(selectedDates[0], "M j, Y");
+                            var eText = flatpickr.formatDate(selectedDates[1], "M j, Y");
+                            var displayEl = document.getElementById('dateRangeDisplayText');
+                            if (displayEl) displayEl.innerText = sText + " - " + eText;
+
+                            var form = document.getElementById('activityDateRangePicker').closest('form');
+                            if (form) {
+                                form.submit();
+                            }
+                        }
+                    }
+                });
+
+                var badgeBtn = document.getElementById('dateRangeBadgeBtn');
+                if (badgeBtn) {
+                    badgeBtn.addEventListener('click', function(e) {
+                        if (fpInstance) fpInstance.open();
+                    });
+                }
+            }
+        });
+    </script>
+}
+

@@ -247,3 +247,53 @@
         to { opacity: 1; transform: translateY(0); }
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const refreshBtn = document.getElementById('btn-refresh-quote-welcome');
+        const quoteContent = document.getElementById('welcome-quote-content');
+        const quoteAuthor = document.getElementById('welcome-quote-author');
+        const refreshIcon = document.getElementById('welcome-quote-refresh-icon');
+
+        if (refreshBtn && quoteContent && quoteAuthor) {
+            let isRefreshing = false;
+            let currentRotation = 0;
+
+            refreshBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (isRefreshing) return;
+                isRefreshing = true;
+
+                currentRotation += 360;
+                if (refreshIcon) {
+                    refreshIcon.style.transform = `rotate(${currentRotation}deg)`;
+                }
+
+                quoteContent.style.opacity = '0';
+                quoteAuthor.style.opacity = '0';
+
+                const currentText = quoteContent.textContent.trim().replace(/^"|"$/g, '');
+
+                fetch(`/Dashboard/GetRandomQuote?currentContent=${encodeURIComponent(currentText)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        setTimeout(() => {
+                            if (data && data.content) {
+                                quoteContent.textContent = '"' + data.content + '"';
+                                quoteAuthor.textContent = '- ' + data.author;
+                            }
+                            quoteContent.style.opacity = '1';
+                            quoteAuthor.style.opacity = '1';
+                            isRefreshing = false;
+                        }, 300);
+                    })
+                    .catch(err => {
+                        console.error('Error fetching quote:', err);
+                        quoteContent.style.opacity = '1';
+                        quoteAuthor.style.opacity = '1';
+                        isRefreshing = false;
+                    });
+            });
+        }
+    });
+</script>
