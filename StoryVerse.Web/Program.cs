@@ -230,29 +230,35 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 
+// Response Compression for fast site assets & responses
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+});
+
 // ============================================================
 // BUILD APPLICATION
 // ============================================================
 
 var app = builder.Build();
 
-
-// ============================================================
-// HTTP REQUEST PIPELINE
-// ============================================================
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-
-    // Enable after HTTPS/SSL is configured.
-    // app.UseHsts();
 }
 
-// Enable after HTTPS/SSL is configured.
-// app.UseHttpsRedirection();
+app.UseResponseCompression();
 
-app.UseStaticFiles();
+// Static asset caching headers
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=604800");
+    }
+});
 
 app.UseRouting();
 

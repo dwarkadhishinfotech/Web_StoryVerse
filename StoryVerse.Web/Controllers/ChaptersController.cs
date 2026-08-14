@@ -44,6 +44,7 @@ namespace StoryVerse.Web.Controllers
             
             Story? selectedStory = activeStoryIdGuid.HasValue
                 ? await _context.Stories
+                    .AsNoTracking()
                     .Include(s => s.Chapters)
                     .Include(s => s.StoryParts)
                     .Include(s => s.Characters)
@@ -56,6 +57,7 @@ namespace StoryVerse.Web.Controllers
             if (selectedStory == null && userStories.Any())
             {
                 selectedStory = await _context.Stories
+                    .AsNoTracking()
                     .Include(s => s.Chapters)
                     .Include(s => s.StoryParts)
                     .Include(s => s.Characters)
@@ -147,11 +149,13 @@ namespace StoryVerse.Web.Controllers
             if (user == null) return Challenge();
 
             var story = await _context.Stories
+                .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == storyId && s.UserId == user.Id);
 
             if (story == null) return NotFound();
 
             var chapter = await _context.Chapters
+                .AsNoTracking()
                 .Include(c => c.Part)
                 .FirstOrDefaultAsync(c => c.Id == chapterId && c.StoryId == storyId);
 
@@ -162,60 +166,71 @@ namespace StoryVerse.Web.Controllers
 
             // Manuscript structure for left panel
             var storyParts = await _context.StoryParts
+                .AsNoTracking()
                 .Where(p => p.StoryId == storyId)
                 .OrderBy(p => p.Order)
                 .ToListAsync();
 
             var allChapters = await _context.Chapters
+                .AsNoTracking()
                 .Where(c => c.StoryId == storyId)
                 .OrderBy(c => c.Order)
                 .ToListAsync();
 
             // Story context items for right panel
             var characters = await _context.Characters
+                .AsNoTracking()
                 .Where(c => c.StoryId == storyId)
                 .OrderBy(c => c.Name)
                 .ToListAsync();
 
             var worldEntities = await _context.WorldEntities
+                .AsNoTracking()
                 .Include(w => w.EntityType)
                 .Where(w => w.StoryId == storyId && w.ActiveStatus)
                 .OrderBy(w => w.Name)
                 .ToListAsync();
 
             var timelineEvents = await _context.TimelineEvents
+                .AsNoTracking()
                 .Where(t => t.StoryId == storyId)
                 .OrderBy(t => t.DisplayOrder)
                 .ThenBy(t => t.CreatedAt)
                 .ToListAsync();
 
             var researchNotes = await _context.ResearchNotes
+                .AsNoTracking()
                 .Where(r => r.StoryId == storyId)
                 .OrderByDescending(r => r.UpdatedAt)
                 .ToListAsync();
 
             var storyArcs = await _context.StoryArcs
+                .AsNoTracking()
                 .Where(a => a.StoryId == storyId)
                 .OrderBy(a => a.DisplayOrder)
                 .ToListAsync();
 
             // Linked entity IDs for active chapter
             var linkedCharacterIds = await _context.ChapterCharacters
+                .AsNoTracking()
                 .Where(cc => cc.ChapterId == chapterId)
                 .Select(cc => cc.CharacterId)
                 .ToListAsync();
 
             var linkedWorldEntityIds = await _context.ChapterWorldEntities
+                .AsNoTracking()
                 .Where(cw => cw.ChapterId == chapterId)
                 .Select(cw => cw.WorldEntityId)
                 .ToListAsync();
 
             var linkedTimelineEventIds = await _context.TimelineEventChapters
+                .AsNoTracking()
                 .Where(tc => tc.ChapterId == chapterId)
                 .Select(tc => tc.TimelineEventId)
                 .ToListAsync();
 
             var linkedResearchNoteIds = await _context.ResearchChapters
+                .AsNoTracking()
                 .Where(rc => rc.ChapterId == chapterId)
                 .Select(rc => rc.ResearchNoteId)
                 .ToListAsync();
@@ -259,6 +274,7 @@ namespace StoryVerse.Web.Controllers
             var storyIdGuid = activeStoryIdGuid.Value;
 
             var story = await _context.Stories
+                .AsNoTracking()
                 .Include(s => s.User)
                 .Include(s => s.StoryGenres)
                     .ThenInclude(sg => sg.Genre)
@@ -275,6 +291,7 @@ namespace StoryVerse.Web.Controllers
             ViewBag.AuthorName = authorName;
 
             var allChapters = await _context.Chapters
+                .AsNoTracking()
                 .Include(c => c.Part)
                 .Where(c => c.StoryId == storyIdGuid)
                 .OrderBy(c => c.Order)
@@ -307,38 +324,45 @@ namespace StoryVerse.Web.Controllers
             }
 
             var storyParts = await _context.StoryParts
+                .AsNoTracking()
                 .Where(p => p.StoryId == storyIdGuid)
                 .OrderBy(p => p.Order)
                 .ToListAsync();
 
             var characters = await _context.Characters
+                .AsNoTracking()
                 .Where(c => c.StoryId == storyIdGuid)
                 .OrderBy(c => c.Name)
                 .ToListAsync();
 
             var worldEntities = await _context.WorldEntities
+                .AsNoTracking()
                 .Include(w => w.EntityType)
                 .Where(w => w.StoryId == storyIdGuid && w.ActiveStatus)
                 .OrderBy(w => w.Name)
                 .ToListAsync();
 
             var timelineEvents = await _context.TimelineEvents
+                .AsNoTracking()
                 .Where(t => t.StoryId == storyIdGuid)
                 .OrderBy(t => t.DisplayOrder)
                 .ThenBy(t => t.CreatedAt)
                 .ToListAsync();
 
             var linkedCharacterIds = await _context.ChapterCharacters
+                .AsNoTracking()
                 .Where(cc => cc.ChapterId == chapter.Id)
                 .Select(cc => cc.CharacterId)
                 .ToListAsync();
 
             var linkedWorldEntityIds = await _context.ChapterWorldEntities
+                .AsNoTracking()
                 .Where(cw => cw.ChapterId == chapter.Id)
                 .Select(cw => cw.WorldEntityId)
                 .ToListAsync();
 
             var linkedTimelineEventIds = await _context.TimelineEventChapters
+                .AsNoTracking()
                 .Where(tc => tc.ChapterId == chapter.Id)
                 .Select(tc => tc.TimelineEventId)
                 .ToListAsync();
@@ -439,10 +463,13 @@ namespace StoryVerse.Web.Controllers
             chapter.Story.CurrentWordCount = totalWords;
             chapter.Story.UpdatedAt = DateTime.UtcNow;
 
-            // 6. Update user daily word count progress if words increased
+            // 6. Update user daily word count progress & writing streak if words increased
             var diff = chapter.WordCount - oldWordCount;
             if (diff > 0)
             {
+                var todayUtc = DateTime.UtcNow.Date;
+                var yesterdayUtc = todayUtc.AddDays(-1);
+
                 var userGoal = await _context.UserGoals.FirstOrDefaultAsync(g => g.UserId == user.Id);
                 if (userGoal == null)
                 {
@@ -462,17 +489,51 @@ namespace StoryVerse.Web.Controllers
                 }
                 else
                 {
-                    if (userGoal.LastUpdated.Date != DateTime.UtcNow.Date)
+                    var lastUpdatedDate = userGoal.LastUpdated.Date;
+
+                    if (lastUpdatedDate != todayUtc)
                     {
                         userGoal.WordsWrittenToday = diff;
+
+                        if (lastUpdatedDate == yesterdayUtc)
+                        {
+                            // Consecutive day writing: increment streak
+                            userGoal.CurrentStreakDays += 1;
+                        }
+                        else
+                        {
+                            // Missed one or more days: reset streak to 1 today
+                            userGoal.CurrentStreakDays = 1;
+                        }
                     }
                     else
                     {
                         userGoal.WordsWrittenToday += diff;
+                        if (userGoal.CurrentStreakDays <= 0)
+                        {
+                            userGoal.CurrentStreakDays = 1;
+                        }
                     }
                     userGoal.WordsWrittenThisWeek += diff;
                     userGoal.WordsWrittenThisMonth += diff;
                     userGoal.LastUpdated = DateTime.UtcNow;
+                }
+
+                // Log Activity so daily activity indicators in sidebar highlight today
+                var hasLoggedToday = await _context.ActivityLogs
+                    .AnyAsync(a => a.UserId == user.Id && a.Timestamp.Date == todayUtc && a.ActionType == "Writing");
+
+                if (!hasLoggedToday)
+                {
+                    _context.ActivityLogs.Add(new ActivityLog
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id,
+                        ActionType = "Writing",
+                        Description = $"Wrote {diff} words in chapter '{chapter.Title}'",
+                        RelatedEntityName = chapter.Title,
+                        Timestamp = DateTime.UtcNow
+                    });
                 }
             }
 
@@ -526,6 +587,10 @@ namespace StoryVerse.Web.Controllers
                     c.Id,
                     c.Name,
                     c.Role,
+                    c.Nicknames,
+                    c.Age,
+                    c.Occupation,
+                    c.Status,
                     c.OneLineDescription,
                     c.AvatarUrl,
                     isLinked = _context.ChapterCharacters.Any(cc => cc.ChapterId == chapterId && cc.CharacterId == c.Id)
@@ -934,6 +999,10 @@ namespace StoryVerse.Web.Controllers
                     character.Id,
                     character.Name,
                     character.Role,
+                    character.Nicknames,
+                    character.Age,
+                    character.Occupation,
+                    character.Status,
                     character.OneLineDescription,
                     character.AvatarUrl,
                     isLinked = true

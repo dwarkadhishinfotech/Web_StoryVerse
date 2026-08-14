@@ -66,9 +66,19 @@ public class DashboardController : Controller
                 .AsNoTracking()
                 .FirstOrDefaultAsync(g => g.UserId == user.Id) ?? new UserGoal { UserId = user.Id };
 
-            if (userGoal != null && userGoal.LastUpdated.Date != DateTime.UtcNow.Date)
+            if (userGoal != null)
             {
-                userGoal.WordsWrittenToday = 0;
+                var todayUtc = DateTime.UtcNow.Date;
+                var yesterdayUtc = todayUtc.AddDays(-1);
+
+                if (userGoal.LastUpdated.Date != todayUtc)
+                {
+                    userGoal.WordsWrittenToday = 0;
+                }
+                if (userGoal.LastUpdated.Date < yesterdayUtc)
+                {
+                    userGoal.CurrentStreakDays = 0;
+                }
             }
         }
         catch
@@ -188,12 +198,12 @@ public class DashboardController : Controller
         var userStoryIds = allUserStories.Select(s => s.Id).ToList();
 
         var totalActivitiesCount = allUserActivities.Count;
-        var chaptersUpdatedCount = await _context.Chapters.CountAsync(c => userStoryIds.Contains(c.StoryId));
-        var charactersAddedCount = await _context.Characters.CountAsync(c => userStoryIds.Contains(c.StoryId));
-        var worldEntitiesCount = await _context.WorldEntities.CountAsync(w => userStoryIds.Contains(w.StoryId))
-                                + await _context.Locations.CountAsync(l => userStoryIds.Contains(l.StoryId));
-        var timelineEventsCount = await _context.TimelineEvents.CountAsync(t => userStoryIds.Contains(t.StoryId));
-        var notesResearchCount = await _context.ResearchNotes.CountAsync(n => userStoryIds.Contains(n.StoryId));
+        var chaptersUpdatedCount = await _context.Chapters.AsNoTracking().CountAsync(c => userStoryIds.Contains(c.StoryId));
+        var charactersAddedCount = await _context.Characters.AsNoTracking().CountAsync(c => userStoryIds.Contains(c.StoryId));
+        var worldEntitiesCount = await _context.WorldEntities.AsNoTracking().CountAsync(w => userStoryIds.Contains(w.StoryId))
+                                + await _context.Locations.AsNoTracking().CountAsync(l => userStoryIds.Contains(l.StoryId));
+        var timelineEventsCount = await _context.TimelineEvents.AsNoTracking().CountAsync(t => userStoryIds.Contains(t.StoryId));
+        var notesResearchCount = await _context.ResearchNotes.AsNoTracking().CountAsync(n => userStoryIds.Contains(n.StoryId));
 
         // Count per-story activities for recent stories side-card
         var storyActivityCounts = new Dictionary<Guid, int>();

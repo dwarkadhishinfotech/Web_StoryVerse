@@ -142,6 +142,7 @@ namespace StoryVerse.Web.Controllers
             _context.Database.SetCommandTimeout(120);
 
             var story = await _context.Stories
+                .AsNoTracking()
                 .AsSplitQuery()
                 .Include(s => s.StoryParts.OrderBy(p => p.Order))
                     .ThenInclude(p => p.Chapters.OrderBy(c => c.Order))

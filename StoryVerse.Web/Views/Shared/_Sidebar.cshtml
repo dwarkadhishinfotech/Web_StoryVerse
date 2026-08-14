@@ -84,7 +84,15 @@
 
         if (userGoal != null)
         {
-            streakDays = userGoal.CurrentStreakDays;
+            var yesterdayUtc = todayUtc.AddDays(-1);
+            if (userGoal.LastUpdated.Date < yesterdayUtc)
+            {
+                streakDays = 0;
+            }
+            else
+            {
+                streakDays = userGoal.CurrentStreakDays;
+            }
         }
 
         var startOfWeek = todayUtc.AddDays(-todayIndex);

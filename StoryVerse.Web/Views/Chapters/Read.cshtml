@@ -545,7 +545,6 @@
             position: relative;
             overflow: hidden;
             transition: background-color 0.4s ease, box-shadow 0.4s ease;
-            transform-style: preserve-3d;
         }
 
         /* Spine Center Fold Shadow */
@@ -668,6 +667,18 @@
             flex-direction: column;
             justify-content: flex-start;
             overflow: hidden;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .page-body-content::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+        .page-body-content::-webkit-scrollbar-thumb {
+            display: none;
         }
 
         .page-footer-row {
@@ -2078,8 +2089,8 @@
                 paragraphs = rawSplit.filter(p => p.trim().length > 0);
             }
 
-            const FIRST_PAGE_MAX_WORDS = 110;
-            const CONT_PAGE_MAX_WORDS = 190;
+            const FIRST_PAGE_MAX_WORDS = 95;
+            const CONT_PAGE_MAX_WORDS = 115;
 
             let currentPageChunks = [];
             let wordCountOnPage = 0;
@@ -2205,7 +2216,7 @@
             }
         }
 
-        // Dynamic Chapter Splitter into paginated pages
+        // Dynamic Chapter Splitter into paginated pages with smart word & sentence management
         function addChapterPages(ch) {
             // CHAPTER OPENER PAGE MUST START ON A RIGHT-HAND PAGE
             ensureRightPageSectionOpener();
@@ -2231,42 +2242,151 @@
             }
 
             let paragraphs = parseManuscriptParagraphs(rawContent);
-            let currentPageHtml = '';
-            let currentWords = 0;
-            let isFirstPage = true;
+            const FIRST_PAGE_MAX_WORDS = 95;
+            const CONT_PAGE_MAX_WORDS = 115;
 
-            paragraphs.forEach((pText, idx) => {
-                let decoratedP = decorateEntityReferencesInText(pText);
-                let pClass = (isFirstPage && idx === 0) ? 'manuscript-p has-drop-cap' : 'manuscript-p';
-                let pWordCount = pText.split(/\s+/).length;
+            let currentPageChunks = [];
+            let wordCountOnPage = 0;
+            let isFirstChapterPage = true;
 
-                if (currentWords + pWordCount > 280 && currentPageHtml !== '') {
-                    physicalPages.push({ chapterId: ch.id, header: `Chapter ${ch.order}`, html: currentPageHtml });
-                    currentPageHtml = `<p class="${pClass}">${decoratedP}</p>`;
-                    currentWords = pWordCount;
-                    isFirstPage = false;
+            function flushChapterPage() {
+                if (currentPageChunks.length === 0) return;
+
+                let innerHtml = currentPageChunks.map((chunk, idx) => {
+                    let decorated = decorateEntityReferencesInText(chunk);
+                    let pClass = (isFirstChapterPage && idx === 0) ? 'manuscript-p has-drop-cap' : 'manuscript-p';
+                    return `<p class="${pClass}">${decorated}</p>`;
+                }).join('');
+
+                physicalPages.push({ chapterId: ch.id, header: `Chapter ${ch.order}`, html: innerHtml });
+
+                currentPageChunks = [];
+                wordCountOnPage = 0;
+                isFirstChapterPage = false;
+            }
+
+            paragraphs.forEach((pText) => {
+                let currentMax = isFirstChapterPage ? FIRST_PAGE_MAX_WORDS : CONT_PAGE_MAX_WORDS;
+                let words = pText.trim().split(/\s+/).filter(w => w.length > 0);
+                if (words.length === 0) return;
+
+                if (wordCountOnPage + words.length <= currentMax) {
+                    currentPageChunks.push(pText);
+                    wordCountOnPage += words.length;
                 } else {
-                    currentPageHtml += `<p class="${pClass}">${decoratedP}</p>`;
-                    currentWords += pWordCount;
+                    let roomLeft = currentMax - wordCountOnPage;
+
+                    if (roomLeft < 20 && wordCountOnPage > 0) {
+                        flushChapterPage();
+                        currentMax = CONT_PAGE_MAX_WORDS;
+                        roomLeft = currentMax;
+                    }
+
+                    if (words.length <= roomLeft) {
+                        currentPageChunks.push(pText);
+                        wordCountOnPage += words.length;
+                    } else {
+                        // Split long paragraph into sentences
+                        let sentences = pText.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) || [pText];
+                        let activeChunkSentences = [];
+
+                        sentences.forEach((sentence) => {
+                            let sWords = sentence.trim().split(/\s+/).filter(w => w.length > 0);
+                            let maxForNow = isFirstChapterPage ? FIRST_PAGE_MAX_WORDS : CONT_PAGE_MAX_WORDS;
+                            let budget = maxForNow - wordCountOnPage;
+
+                            if (budget <= 0 || (budget < 12 && wordCountOnPage > 0)) {
+                                if (activeChunkSentences.length > 0) {
+                                    currentPageChunks.push(activeChunkSentences.join(' '));
+                                    activeChunkSentences = [];
+                                }
+                                flushChapterPage();
+                                maxForNow = CONT_PAGE_MAX_WORDS;
+                                budget = maxForNow;
+                            }
+
+                            if (sWords.length <= budget) {
+                                activeChunkSentences.push(sentence);
+                                wordCountOnPage += sWords.length;
+                            } else {
+                                if (activeChunkSentences.length > 0) {
+                                    currentPageChunks.push(activeChunkSentences.join(' '));
+                                    activeChunkSentences = [];
+                                }
+
+                                let part1 = sWords.slice(0, budget).join(' ');
+                                let part2 = sWords.slice(budget).join(' ');
+
+                                if (part1.trim()) {
+                                    currentPageChunks.push(part1);
+                                    wordCountOnPage += budget;
+                                }
+                                flushChapterPage();
+
+                                if (part2.trim()) {
+                                    let part2Words = part2.trim().split(/\s+/).filter(w => w.length > 0);
+                                    activeChunkSentences.push(part2);
+                                    wordCountOnPage = part2Words.length;
+                                }
+                            }
+                        });
+
+                        if (activeChunkSentences.length > 0) {
+                            currentPageChunks.push(activeChunkSentences.join(' '));
+                        }
+                    }
                 }
             });
 
-            if (currentPageHtml.trim() !== '') {
-                // Chapter End Ornament
-                currentPageHtml += `
-                    <div class="ornament-sep mt-4">❦</div>
-                    <div class="text-center small text-muted text-uppercase" style="letter-spacing: 0.14em; font-family: var(--font-heading);">END OF CHAPTER ${ch.order}</div>
-                    <div class="ornament-sep mb-2">❦</div>
-                `;
-                physicalPages.push({ chapterId: ch.id, header: `Chapter ${ch.order}`, html: currentPageHtml });
+            if (currentPageChunks.length > 0) {
+                flushChapterPage();
+            }
+
+            // Append Chapter End Ornament on the last physical page of this chapter
+            if (physicalPages.length > 0) {
+                let lastPage = physicalPages[physicalPages.length - 1];
+                if (lastPage.chapterId === ch.id) {
+                    lastPage.html += `
+                        <div class="ornament-sep mt-3 mb-1">❦</div>
+                        <div class="text-center small text-muted text-uppercase" style="letter-spacing: 0.14em; font-family: var(--font-heading);">END OF CHAPTER ${ch.order}</div>
+                    `;
+                }
             }
         }
 
         function parseManuscriptParagraphs(rawHtml) {
+            if (!rawHtml) return [];
             let tempDiv = document.createElement('div');
             tempDiv.innerHTML = rawHtml;
-            let paragraphs = Array.from(tempDiv.querySelectorAll('p')).map(p => p.innerHTML);
-            if (paragraphs.length === 0) paragraphs = [rawHtml];
+
+            let paragraphs = [];
+            let blocks = tempDiv.querySelectorAll('p, div, blockquote, section');
+
+            if (blocks.length > 0) {
+                blocks.forEach(el => {
+                    let hasChildBlocks = el.querySelector('p, div, blockquote, section') !== null;
+                    if (!hasChildBlocks) {
+                        let html = el.innerHTML.trim();
+                        if (html) {
+                            let subChunks = html.split(/(?:<br\s*\/?>\s*){2,}/i);
+                            subChunks.forEach(chunk => {
+                                let trimmed = chunk.trim();
+                                if (trimmed) paragraphs.push(trimmed);
+                            });
+                        }
+                    }
+                });
+            }
+
+            if (paragraphs.length === 0) {
+                let chunks = rawHtml.split(/(?:<br\s*\/?>\s*){2,}|\n\s*\n+/i);
+                paragraphs = chunks.map(c => c.trim()).filter(c => c.length > 0);
+            }
+
+            if (paragraphs.length === 0 && rawHtml.trim()) {
+                paragraphs = [rawHtml.trim()];
+            }
+
             return paragraphs;
         }
 

@@ -28,7 +28,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@Model.Title - StoryVerse Chapter Editor</title>
-    <!-- Fonts -->
+    <!-- Fonts Preconnect & CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Courier+Prime&family=Garamond&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -446,7 +448,8 @@
             max-width: 860px;
             width: 100%;
             background: #FFFFFF;
-            min-height: 75vh;
+            min-height: fit-content;
+            height: auto;
             padding: 3.5rem 4.5rem 5rem;
             border-radius: 16px;
             box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.06), 0 2px 10px -2px rgba(15, 23, 42, 0.03);
@@ -475,7 +478,8 @@
             line-height: 2;
             color: #1E293B;
             outline: none;
-            min-height: 500px;
+            min-height: fit-content;
+            height: auto;
         }
         .manuscript-editable p {
             margin-bottom: 1.5rem;
@@ -490,29 +494,81 @@
             position: relative;
             font-weight: 500;
         }
-        .sv-entity-character {
-            color: #0D9488;
-            border-bottom: 1.5px dotted #0D9488;
-            background: rgba(13, 148, 136, 0.08);
+        .entity-character, .sv-entity-character {
+            color: #0F766E;
+            border-bottom: 2px dotted #13A8A6;
+            background: rgba(19, 168, 166, 0.08);
+            border-radius: 2px;
+            padding: 0 2px;
+            text-decoration: none;
+            cursor: pointer;
         }
-        .sv-entity-character:hover {
-            background: rgba(13, 148, 136, 0.18);
+        .entity-character:hover, .sv-entity-character:hover {
+            background: rgba(19, 168, 166, 0.18);
         }
-        .sv-entity-location {
+        .entity-location, .sv-entity-location {
             color: #B45309;
-            border-bottom: 1.5px dashed #D97706;
-            background: rgba(251, 191, 36, 0.15);
+            border-bottom: 2px dotted #D97706;
+            background: rgba(217, 119, 6, 0.08);
+            border-radius: 2px;
+            padding: 0 2px;
+            text-decoration: none;
+            cursor: pointer;
         }
-        .sv-entity-location:hover {
-            background: rgba(251, 191, 36, 0.28);
+        .entity-location:hover, .sv-entity-location:hover {
+            background: rgba(217, 119, 6, 0.18);
         }
-        .sv-entity-event {
+        .entity-world, .sv-entity-world {
             color: #6D28D9;
-            border-bottom: 1.5px dashed #8B5CF6;
-            background: rgba(139, 92, 246, 0.12);
+            border-bottom: 2px dotted #7C3AED;
+            background: rgba(124, 58, 237, 0.08);
+            border-radius: 2px;
+            padding: 0 2px;
+            text-decoration: none;
+            cursor: pointer;
         }
-        .sv-entity-event:hover {
-            background: rgba(139, 92, 246, 0.22);
+        .entity-world:hover, .sv-entity-world:hover {
+            background: rgba(124, 58, 237, 0.18);
+        }
+        .entity-timeline, .sv-entity-timeline, .sv-entity-event {
+            color: #1D4ED8;
+            border-bottom: 2px dotted #2563EB;
+            background: rgba(37, 99, 235, 0.08);
+            border-radius: 2px;
+            padding: 0 2px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .entity-timeline:hover, .sv-entity-timeline:hover, .sv-entity-event:hover {
+            background: rgba(37, 99, 235, 0.18);
+        }
+        .entity-unknown, .sv-entity-unknown {
+            color: #D97706;
+            border-bottom: 2px dotted #F59E0B;
+            background: rgba(245, 158, 11, 0.08);
+            border-radius: 2px;
+            padding: 0 2px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .entity-unknown:hover, .sv-entity-unknown:hover {
+            background: rgba(245, 158, 11, 0.20);
+        }
+
+        /* STORY INTELLIGENCE FLYOUT */
+        .story-intelligence-flyout {
+            position: absolute;
+            top: 58px;
+            right: 200px;
+            width: 320px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 12px 35px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+            border: 1px solid #E2E8F0;
+            padding: 16px;
+            z-index: 2500;
+            display: none;
+            animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* FLOATING HOVER CARD PREVIEW */
@@ -569,6 +625,7 @@
 
         /* STORYVERSE SUGGESTIONS FLOATING CARD CONTAINER */
         .suggestions-floating-card {
+            display: none !important;
             background: #FFFFFF;
             border: 1px solid #E2E8F0;
             border-radius: 18px;
@@ -647,30 +704,155 @@
             flex-direction: column;
             overflow: hidden;
         }
+        /* BEAUTIFIED RIGHT PANEL TABS & HEADER TOOLBAR */
         .context-tabs-bar {
             display: flex;
-            border-bottom: 1px solid var(--sv-border);
-            background: #F8FAFC;
-            padding: 6px 8px 0;
-            gap: 4px;
+            align-items: flex-end;
+            min-height: 44px;
+            border-bottom: 1px solid #E2E8F0;
+            background: #FAFAFC;
+            padding: 6px 10px 0;
+            gap: 3px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+        }
+        .context-tabs-bar::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
         }
         .context-tab-item {
-            flex: 1;
-            padding: 8px 4px;
-            font-size: 11px;
-            font-weight: 700;
-            text-align: center;
-            border: none;
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 7px 11px;
+            font-size: 11.5px;
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            border-bottom: none;
             background: transparent;
             color: #64748B;
-            border-bottom: 2.5px solid transparent;
-            transition: all 0.2s;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            box-sizing: border-box;
+        }
+        .context-tab-item:hover {
+            color: #0F172A;
+            background: #F1F5F9;
         }
         .context-tab-item.active {
             color: #0D9488;
-            border-bottom-color: #0D9488;
-            background: white;
-            border-radius: 6px 6px 0 0;
+            background: #FFFFFF;
+            font-weight: 700;
+            border-color: #E2E8F0;
+            box-shadow: 0 -2px 6px rgba(15, 23, 42, 0.03);
+        }
+        .context-tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2.5px;
+            background: linear-gradient(90deg, #13A8A6, #1E439B);
+            border-radius: 2px 2px 0 0;
+        }
+        .context-tab-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 9999px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+        }
+
+        .right-panel-header-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+            padding-bottom: 2px;
+        }
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+        }
+        .search-input-wrapper .search-icon {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            color: #94A3B8;
+            pointer-events: none;
+        }
+        .context-search-input {
+            width: 100%;
+            padding: 6px 12px 6px 32px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #1E293B;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .context-search-input:focus {
+            background: #FFFFFF;
+            border-color: #13A8A6;
+            box-shadow: 0 0 0 3px rgba(19, 168, 166, 0.12);
+        }
+        .context-search-input::placeholder {
+            color: #94A3B8;
+        }
+        .btn-add-entity {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 6px 14px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #FFFFFF;
+            background: linear-gradient(135deg, #13A8A6 0%, #1E439B 100%);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 3px 10px rgba(19, 168, 166, 0.22);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            text-decoration: none;
+        }
+        .btn-add-entity:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 5px 15px rgba(19, 168, 166, 0.32);
+            color: #FFFFFF;
+            opacity: 0.98;
+        }
+        .btn-add-entity:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(19, 168, 166, 0.2);
         }
 
         /* Quick Action Tiles Grid */
@@ -763,6 +945,154 @@
         .btn-peacock:hover {
             opacity: 0.95;
             color: white;
+        }
+
+        /* -------------------------------------------------------------
+           DETECTED IN WRITING BEAUTIFIED CARDS & BADGES
+           ------------------------------------------------------------- */
+        .detected-section-header {
+            font-size: 10.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            margin-bottom: 10px;
+        }
+        .detected-section-header.amber { color: #D97706; }
+        .detected-section-header.teal { color: #0D9488; }
+        .detected-section-header.purple { color: #7C3AED; }
+        .detected-section-header.blue { color: #2563EB; }
+
+        .detected-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        }
+        .detected-card:hover {
+            transform: translateY(-1.5px);
+        }
+
+        .detected-card-amber {
+            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+            border: 1px solid #FCD34D;
+        }
+        .detected-card-amber:hover {
+            border-color: #F59E0B;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.15);
+        }
+
+        .detected-card-teal {
+            background: linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%);
+            border: 1px solid #99F6E4;
+        }
+        .detected-card-teal:hover {
+            border-color: #14B8A6;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+        }
+
+        .detected-card-blue {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border: 1px solid #BFDBFE;
+        }
+        .detected-card-blue:hover {
+            border-color: #60A5FA;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .detected-card-purple {
+            background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+            border: 1px solid #DDD6FE;
+        }
+        .detected-card-purple:hover {
+            border-color: #A78BFA;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+        }
+
+        .btn-amber {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            color: #ffffff !important;
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.28);
+            transition: all 0.2s ease;
+        }
+        .btn-amber:hover {
+            background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.35);
+        }
+
+        .btn-teal {
+            background: linear-gradient(135deg, #13A8A6 0%, #0D9488 100%);
+            color: #ffffff !important;
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(13, 148, 136, 0.28);
+            transition: all 0.2s ease;
+        }
+        .btn-teal:hover {
+            background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
+        }
+
+        .btn-purple {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: #ffffff !important;
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(124, 58, 237, 0.28);
+            transition: all 0.2s ease;
+        }
+        .btn-purple:hover {
+            background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(124, 58, 237, 0.35);
+        }
+
+        .btn-blue {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: #ffffff !important;
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
+            transition: all 0.2s ease;
+        }
+        .btn-blue:hover {
+            background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+        }
+
+        .detected-ref-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10.5px;
+            font-weight: 500;
+            color: #64748B;
+            margin-top: 2px;
+        }
+        .detected-ref-count {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 12px;
+            padding: 1px 7px;
+            font-weight: 700;
+            font-size: 10px;
         }
 
         @@keyframes fadeIn {
@@ -968,7 +1298,8 @@
             .manuscript-editable {
                 font-size: 1rem !important;
                 line-height: 1.75 !important;
-                min-height: 300px !important;
+                min-height: fit-content !important;
+                height: auto !important;
             }
 
             .suggestions-floating-card {
@@ -1094,6 +1425,12 @@
                     <span id="saveStatusText" class="d-none d-sm-inline">Saved just now</span>
                 </div>
 
+                <!-- Story Intelligence Button -->
+                <button class="btn btn-sm btn-light border rounded-pill d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-bold text-slate-800 me-1" onclick="toggleStoryIntelligenceFlyout()" title="Story Intelligence Overview">
+                    <i data-lucide="sparkles" style="width:14px;height:14px;color:#13A8A6;"></i>
+                    <span class="d-none d-md-inline" style="font-size:12px;">✨ Story Intelligence</span>
+                </button>
+
                 <button class="btn btn-light btn-sm rounded-circle p-2 border position-relative d-none d-sm-inline-flex" title="Search Manuscript (Coming Soon)" disabled style="width: 36px; height: 36px; align-items: center; justify-content: center; opacity: 0.75; cursor: not-allowed;">
                     <i data-lucide="search" style="width:15px;height:15px;color:#64748B;"></i>
                 </button>
@@ -1118,6 +1455,44 @@
                 </button>
             </div>
         </header>
+
+        <!-- STORY INTELLIGENCE COMPACT FLYOUT PANEL -->
+        <div id="storyIntelligenceFlyout" class="story-intelligence-flyout">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <span class="fw-bold text-slate-800 d-flex align-items-center gap-1.5" style="font-size: 13.5px;">
+                    <i data-lucide="sparkles" style="width:16px;height:16px;color:#13A8A6;"></i>
+                    ✨ Story Intelligence
+                </span>
+                <button class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" onclick="toggleStoryIntelligenceFlyout()">✕</button>
+            </div>
+            
+            <div class="mb-3">
+                <div class="fw-bold text-slate-800 mb-1" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;">Chapter Context Overview</div>
+                <div class="d-flex justify-content-between py-1 border-bottom" style="font-size: 12px;">
+                    <span class="text-secondary">Characters</span>
+                    <span class="fw-bold text-teal-700" id="siCountChars">0 linked</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom" style="font-size: 12px;">
+                    <span class="text-secondary">Locations</span>
+                    <span class="fw-bold text-amber-700" id="siCountLocs">0 linked</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom" style="font-size: 12px;">
+                    <span class="text-secondary">World Entities</span>
+                    <span class="fw-bold text-purple-700" id="siCountWorld">0 linked</span>
+                </div>
+                <div class="d-flex justify-content-between py-1" style="font-size: 12px;">
+                    <span class="text-secondary">Timeline Events</span>
+                    <span class="fw-bold text-blue-700" id="siCountTimeline">0 linked</span>
+                </div>
+            </div>
+
+            <div>
+                <div id="siDetectedHeaderTitle" class="fw-bold text-slate-800 mb-1.5" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;">New Things Detected</div>
+                <div id="siDetectedList" class="custom-scrollbar" style="max-height: 180px; overflow-y: auto;">
+                    <div class="text-muted fst-italic py-2" style="font-size: 11.5px;">✓ All mentioned entities match your story database!</div>
+                </div>
+            </div>
+        </div>
 
         <!-- Mobile Panel Backdrop -->
         <div class="mobile-panel-backdrop" id="mobilePanelBackdrop" onclick="closeMobilePanels()"></div>
@@ -1427,7 +1802,7 @@
                 </div>
 
                 <!-- DYNAMIC STORYVERSE SUGGESTIONS FLOATING CARD CONTAINER -->
-                <div class="suggestions-floating-card" id="suggestionsDock">
+                <div class="suggestions-floating-card" id="suggestionsDock" style="display: none !important;">
                     <!-- Header Row -->
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -1472,31 +1847,35 @@
                 <!-- Context Tabs Header -->
                 <div class="context-tabs-bar">
                     <button class="context-tab-item active" onclick="switchTab('characters')" id="tabBtn-characters">
-                        Characters
+                        <i data-lucide="users" style="width:13px;height:13px;"></i> Characters <span class="context-tab-badge bg-teal-subtle text-teal-800">@linkedCharsList.Count</span>
                     </button>
                     <button class="context-tab-item" onclick="switchTab('world')" id="tabBtn-world">
-                        World
+                        <i data-lucide="globe" style="width:13px;height:13px;"></i> World <span class="context-tab-badge bg-amber-subtle text-amber-800">@linkedWorldList.Count</span>
                     </button>
                     <button class="context-tab-item" onclick="switchTab('timeline')" id="tabBtn-timeline">
-                        Timeline
+                        <i data-lucide="clock" style="width:13px;height:13px;"></i> Timeline <span class="context-tab-badge bg-purple-subtle text-purple-800">@linkedTimelineList.Count</span>
                     </button>
                     <button class="context-tab-item" onclick="switchTab('research')" id="tabBtn-research">
-                        Research
+                        <i data-lucide="flask-conical" style="width:13px;height:13px;"></i> Research
                     </button>
                     <button class="context-tab-item" onclick="switchTab('notes')" id="tabBtn-notes">
-                        Notes
+                        <i data-lucide="sticky-note" style="width:13px;height:13px;"></i> Notes
                     </button>
                     <button class="context-tab-item" onclick="switchTab('assets')" id="tabBtn-assets">
-                        Assets
+                        <i data-lucide="image" style="width:13px;height:13px;"></i> Assets
                     </button>
                 </div>
 
                 <!-- Tab Content: Characters -->
                 <div class="flex-grow-1 overflow-y-auto p-3 tab-pane-content" id="tabContent-characters">
-                    <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
-                        <input type="text" class="form-control form-control-sm rounded-3 border bg-white" placeholder="Search characters..." oninput="filterContextItems('characters', this.value)" style="font-size: 12px; flex: 1;">
-                        <button class="btn btn-sm btn-peacock rounded-pill fw-bold text-nowrap" onclick="openDrawer('character')" style="font-size: 11px;">
-                            + Add Character
+                    <div class="right-panel-header-toolbar">
+                        <div class="search-input-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" class="context-search-input" placeholder="Search characters..." oninput="filterContextItems('characters', this.value)">
+                        </div>
+                        <button class="btn-add-entity" onclick="openDrawer('character')">
+                            <i data-lucide="plus" style="width:13px;height:13px;"></i>
+                            <span>Add Character</span>
                         </button>
                     </div>
 
@@ -1629,10 +2008,14 @@
 
                 <!-- Tab Content: World -->
                 <div class="flex-grow-1 overflow-y-auto p-3 tab-pane-content d-none" id="tabContent-world">
-                    <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
-                        <input type="text" class="form-control form-control-sm rounded-3 border bg-white" placeholder="Search world..." oninput="filterContextItems('world', this.value)" style="font-size: 12px; flex: 1;">
-                        <button class="btn btn-sm btn-peacock rounded-pill fw-bold text-nowrap" onclick="openDrawer('world')" style="font-size: 11px;">
-                            + Add Entity
+                    <div class="right-panel-header-toolbar">
+                        <div class="search-input-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" class="context-search-input" placeholder="Search world..." oninput="filterContextItems('world', this.value)">
+                        </div>
+                        <button class="btn-add-entity" onclick="openDrawer('world')">
+                            <i data-lucide="plus" style="width:13px;height:13px;"></i>
+                            <span>Add Entity</span>
                         </button>
                     </div>
 
@@ -1667,10 +2050,14 @@
 
                 <!-- Tab Content: Timeline -->
                 <div class="flex-grow-1 overflow-y-auto p-3 tab-pane-content d-none" id="tabContent-timeline">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <input type="text" class="form-control form-control-sm rounded-3 border bg-white" placeholder="Search timeline..." oninput="filterContextItems('timeline', this.value)" style="font-size: 12px; width: 60%;">
-                        <button class="btn btn-sm btn-peacock rounded-pill fw-bold" onclick="openDrawer('timeline')" style="font-size: 11px;">
-                            + Add Event
+                    <div class="right-panel-header-toolbar">
+                        <div class="search-input-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" class="context-search-input" placeholder="Search timeline..." oninput="filterContextItems('timeline', this.value)">
+                        </div>
+                        <button class="btn-add-entity" onclick="openDrawer('timeline')">
+                            <i data-lucide="plus" style="width:13px;height:13px;"></i>
+                            <span>Add Event</span>
                         </button>
                     </div>
 
@@ -1704,10 +2091,14 @@
 
                 <!-- Tab Content: Research -->
                 <div class="flex-grow-1 overflow-y-auto p-3 tab-pane-content d-none" id="tabContent-research">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <input type="text" class="form-control form-control-sm rounded-3 border bg-white" placeholder="Search notes..." oninput="filterContextItems('research', this.value)" style="font-size: 12px; width: 60%;">
-                        <button class="btn btn-sm btn-peacock rounded-pill fw-bold" onclick="openDrawer('research')" style="font-size: 11px;">
-                            + Add Note
+                    <div class="right-panel-header-toolbar">
+                        <div class="search-input-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" class="context-search-input" placeholder="Search notes..." oninput="filterContextItems('research', this.value)">
+                        </div>
+                        <button class="btn-add-entity" onclick="openDrawer('research')">
+                            <i data-lucide="plus" style="width:13px;height:13px;"></i>
+                            <span>Add Note</span>
                         </button>
                     </div>
 
@@ -1799,8 +2190,8 @@
         <span id="svToastMsg">Notification message</span>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/story-intelligence.js" asp-append-version="true"></script>
     <script>
         lucide.createIcons();
 
@@ -1808,353 +2199,1144 @@
         const chapterId = "@Model.Id";
         let currentVersion = parseInt("@Model.Version") || 1;
 
-        // Existing story entities for live matching
-        const existingCharactersList = @Html.Raw(Json.Serialize(characters.Select(c => c.Name.ToLower())));
-        const existingLocationsList = @Html.Raw(Json.Serialize(worldEntities.Select(w => w.Name.ToLower())));
-        const existingTimelineEventsList = @Html.Raw(Json.Serialize(timelineEvents.Select(t => t.Title.ToLower())));
+        // 1. CLIENT-SIDE STORY ENTITY CACHE (Scoped to Current Story)
+        let StoryEntityCache = {
+            storyId: storyId,
+            chapterId: chapterId,
+            characters: @Html.Raw(Json.Serialize(characters.Select(c => new {
+                id = c.Id,
+                name = c.Name,
+                role = c.Role ?? "Character",
+                nicknames = !string.IsNullOrEmpty(c.Nicknames) ? c.Nicknames.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(n => n.Trim()).ToList() : new List<string>(),
+                oneLineDescription = c.OneLineDescription ?? c.BackgroundSummary ?? "No description available.",
+                avatarUrl = c.AvatarUrl,
+                age = c.Age,
+                occupation = c.Occupation,
+                status = c.Status ?? "Active",
+                isLinked = linkedCharacterIds.Contains(c.Id)
+            }))),
+            locations: @Html.Raw(Json.Serialize(worldEntities.Where(w => w.EntityType == null || w.EntityType.Name == "Location" || w.EntityType.Name == "City" || w.EntityType.Category == "Locations").Select(w => new {
+                id = w.Id,
+                name = w.Name,
+                typeName = w.EntityType != null ? w.EntityType.Name : "Location",
+                summary = w.Summary ?? w.Description ?? "No description available.",
+                coverImage = w.CoverImage,
+                importance = w.Importance ?? "Major",
+                isLinked = linkedWorldEntityIds.Contains(w.Id)
+            }))),
+            worldEntities: @Html.Raw(Json.Serialize(worldEntities.Where(w => w.EntityType != null && w.EntityType.Name != "Location" && w.EntityType.Name != "City" && w.EntityType.Category != "Locations").Select(w => new {
+                id = w.Id,
+                name = w.Name,
+                typeName = w.EntityType.Name,
+                summary = w.Summary ?? w.Description ?? "No description available.",
+                coverImage = w.CoverImage,
+                importance = w.Importance ?? "Major",
+                isLinked = linkedWorldEntityIds.Contains(w.Id)
+            }))),
+            timelineEvents: @Html.Raw(Json.Serialize(timelineEvents.Select(t => new {
+                id = t.Id,
+                title = t.Title,
+                category = t.Category ?? "General",
+                storyDate = t.StoryDate ?? "",
+                importance = t.Importance ?? "Medium",
+                summary = t.Summary ?? t.Description ?? "No details provided.",
+                isLinked = linkedTimelineEventIds.Contains(t.Id)
+            })))
+        };
 
         const titleInput = document.getElementById('chapterTitle');
         const editor = document.getElementById('editorCanvas');
         const saveStatusText = document.getElementById('saveStatusText');
+        const hoverCard = document.getElementById('entityHoverCard');
+        const selectionMenu = document.getElementById('selectionContextMenu');
+        let selectedText = "";
 
         let autoSaveTimer = null;
         let isSaving = false;
         let saveStatus = "saved";
+        let savedEditorRange = null;
+        let detectionDebounceTimer = null;
+        let detectedUnknownEntities = [];
+        let detectedAmbiguousEntities = [];
+        let detectedExistingEntities = [];
+        let activeChapterIgnoredCandidates = new Set();
 
-        // Hover Card element
-        const hoverCard = document.getElementById('entityHoverCard');
+        function ignoreCandidate(name) {
+            if (!name) return;
+            activeChapterIgnoredCandidates.add(name.trim().toLowerCase());
+            analyzeManuscriptEntities();
+        }
 
-        // Selection Context Toolbar
-        const selectionMenu = document.getElementById('selectionContextMenu');
-        let selectedText = "";
+        // 2. SELECTION & CURSOR PRESERVATION
+        function saveEditorSelection() {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                if (editor && editor.contains(range.commonAncestorContainer)) {
+                    savedEditorRange = range.cloneRange();
+                }
+            }
+        }
+
+        function restoreEditorSelection() {
+            if (savedEditorRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(savedEditorRange);
+            } else if (editor) {
+                editor.focus();
+            }
+        }
 
         document.addEventListener('selectionchange', () => {
             if (document.body.classList.contains('read-mode')) return;
+            saveEditorSelection();
             const selection = window.getSelection();
-            const text = selection.toString().trim();
-            if (text.length > 1 && editor.contains(selection.anchorNode)) {
+            const text = selection ? selection.toString().trim() : "";
+            if (text.length > 1 && editor && editor.contains(selection.anchorNode)) {
                 selectedText = text;
                 const range = selection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
-                selectionMenu.style.top = (rect.bottom + window.scrollY + 6) + 'px';
-                selectionMenu.style.left = (rect.left + window.scrollX) + 'px';
-                selectionMenu.style.display = 'flex';
+                if (selectionMenu) {
+                    selectionMenu.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+                    selectionMenu.style.left = (rect.left + window.scrollX) + 'px';
+                    selectionMenu.style.display = 'flex';
+                }
             } else {
-                if (!selectionMenu.contains(document.activeElement)) {
+                if (selectionMenu && !selectionMenu.contains(document.activeElement)) {
                     selectionMenu.style.display = 'none';
                 }
             }
         });
 
-        // Entity Reference Hover Preview Setup
+        // 3. HOVER CARD ENGINE (Known & Unknown Entities)
         document.addEventListener('mouseover', (e) => {
-            const target = e.target.closest('.sv-entity-ref');
-            if (target) {
-                const name = target.getAttribute('data-name') || target.innerText;
-                const type = target.getAttribute('data-type') || 'character';
-                showEntityHoverCard(target, type, name);
+            const knownTarget = e.target.closest('.sv-entity-ref, .entity-character, .entity-location, .entity-world, .entity-timeline');
+            if (knownTarget) {
+                const id = knownTarget.getAttribute('data-id');
+                const name = knownTarget.getAttribute('data-name') || knownTarget.innerText;
+                const type = knownTarget.getAttribute('data-type') || 'character';
+                showKnownEntityHoverCard(knownTarget, type, id, name);
+                return;
+            }
+
+            const unknownTarget = e.target.closest('.entity-unknown, .sv-entity-unknown');
+            if (unknownTarget) {
+                const name = unknownTarget.getAttribute('data-name') || unknownTarget.innerText;
+                showUnknownEntityHoverCard(unknownTarget, name);
+                return;
             }
         });
 
         document.addEventListener('mouseout', (e) => {
-            const target = e.target.closest('.sv-entity-ref');
+            const target = e.target.closest('.sv-entity-ref, .entity-character, .entity-location, .entity-world, .entity-timeline, .entity-unknown, .sv-entity-unknown');
             if (target) {
                 setTimeout(() => {
-                    if (!hoverCard.matches(':hover')) {
+                    if (hoverCard && !hoverCard.matches(':hover')) {
                         hoverCard.style.display = 'none';
                     }
                 }, 300);
             }
         });
 
-        hoverCard.addEventListener('mouseleave', () => {
-            hoverCard.style.display = 'none';
-        });
+        if (hoverCard) {
+            hoverCard.addEventListener('mouseleave', () => {
+                hoverCard.style.display = 'none';
+            });
+        }
 
-        async function showEntityHoverCard(element, type, name) {
+        function showKnownEntityHoverCard(element, type, id, name) {
+            if (!hoverCard) return;
             const rect = element.getBoundingClientRect();
             hoverCard.style.top = (rect.bottom + window.scrollY + 6) + 'px';
             hoverCard.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 330) + 'px';
 
-            document.getElementById('hoverName').textContent = name;
-            document.getElementById('hoverRole').textContent = type.toUpperCase();
+            let entity = null;
+            if (type === 'character') entity = StoryEntityCache.characters.find(c => c.id === id || c.name.toLowerCase() === name.toLowerCase());
+            if (type === 'location') entity = StoryEntityCache.locations.find(l => l.id === id || l.name.toLowerCase() === name.toLowerCase());
+            if (type === 'world') entity = StoryEntityCache.worldEntities.find(w => w.id === id || w.name.toLowerCase() === name.toLowerCase());
+            if (type === 'timeline') entity = StoryEntityCache.timelineEvents.find(t => t.id === id || t.title.toLowerCase() === name.toLowerCase());
+
+            const displayName = entity ? (entity.name || entity.title) : name;
+            const roleText = entity ? (entity.role || entity.typeName || entity.category || type.toUpperCase()) : type.toUpperCase();
+            const statusText = entity ? (entity.status || entity.importance || "Active") : "Active";
+            const descText = entity ? (entity.oneLineDescription || entity.summary || "No description provided.") : "Story Entity.";
+            const avatarUrl = entity && entity.avatarUrl ? entity.avatarUrl : (entity && entity.coverImage ? entity.coverImage : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150");
+
+            const hoverImg = document.getElementById('hoverAvatar');
+            if (hoverImg) hoverImg.src = avatarUrl;
+            document.getElementById('hoverName').textContent = displayName;
+            document.getElementById('hoverRole').textContent = roleText;
+            document.getElementById('hoverStatus').textContent = statusText;
+            document.getElementById('hoverDesc').textContent = descText;
+            document.getElementById('hoverAppearsCount').textContent = `Story Entity (${type})`;
+
+            const viewBtn = hoverCard.querySelector('a[href="javascript:void(0)"]');
+            if (viewBtn) {
+                viewBtn.onclick = () => openEntityProfileDrawer(type, entity ? entity.id : id);
+            }
+
             hoverCard.style.display = 'block';
         }
 
-        // VIEW MODE SWITCHER (Write, Focus, Read/Book Preview)
-        function switchViewMode(mode) {
-            document.querySelectorAll('.mode-btn').forEach(btn => {
-                btn.classList.remove('active');
-                const icon = btn.querySelector('i');
-                if (icon) icon.style.color = '#334155';
-            });
+        function showUnknownEntityHoverCard(element, name) {
+            if (!hoverCard) return;
+            const rect = element.getBoundingClientRect();
+            hoverCard.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+            hoverCard.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 340) + 'px';
 
-            if (mode === 'write') {
-                const btn = document.getElementById('btnModeWrite');
-                btn.classList.add('active');
-                const icon = btn.querySelector('i');
-                if (icon) icon.style.color = '#0E7490';
-                document.body.classList.remove('focus-mode', 'read-mode');
-                editor.contentEditable = "true";
-                titleInput.readOnly = false;
-                titleInput.style.pointerEvents = "auto";
-                showToast("✏️ Write mode enabled.");
-            } else if (mode === 'focus') {
-                const btn = document.getElementById('btnModeFocus');
-                btn.classList.add('active');
-                const icon = btn.querySelector('i');
-                if (icon) icon.style.color = '#0E7490';
-                document.body.classList.remove('read-mode');
-                document.body.classList.add('focus-mode');
-                editor.contentEditable = "true";
-                titleInput.readOnly = false;
-                titleInput.style.pointerEvents = "auto";
-                showToast("👁 Focus mode enabled.");
-            } else if (mode === 'read') {
-                const storyId = '@(ViewBag.Story?.Id ?? Guid.Empty)';
-                const chapterId = '@Model.Id';
-                window.location.href = `/Chapters/Read?storyId=${storyId}&chapterId=${chapterId}`;
+            const hoverImg = document.getElementById('hoverAvatar');
+            if (hoverImg) hoverImg.src = "/images/CompanyLogo/favicon.ico";
+            document.getElementById('hoverName').textContent = `✨ "${name}"`;
+            document.getElementById('hoverRole').textContent = "New Entity Detected";
+            document.getElementById('hoverStatus').textContent = "Not in Story";
+            document.getElementById('hoverDesc').textContent = `"${name}" is not created in this story yet. Add it without leaving your writing flow.`;
+
+            const footerArea = hoverCard.querySelector('.d-flex.align-items-center.justify-content-between.pt-1');
+            if (footerArea) {
+                footerArea.innerHTML = `
+                    <div class="d-flex flex-wrap gap-1.5 align-items-center w-100 pt-1.5" style="row-gap: 6px;">
+                        <button class="btn btn-xs btn-teal rounded-pill px-2.5 py-1 fw-bold" style="font-size:10px; line-height: 1.2;" onclick="openDrawer('character', '${escapeJsStr(name)}')">+ Character</button>
+                        <button class="btn btn-xs btn-warning text-dark rounded-pill px-2.5 py-1 fw-bold" style="font-size:10px; line-height: 1.2;" onclick="openDrawer('location', '${escapeJsStr(name)}')">+ Location</button>
+                        <button class="btn btn-xs btn-primary rounded-pill px-2.5 py-1 fw-bold" style="font-size:10px; line-height: 1.2;" onclick="openDrawer('world', '${escapeJsStr(name)}')">+ Entity</button>
+                        <button class="btn btn-xs btn-purple text-white rounded-pill px-2.5 py-1 fw-bold" style="font-size:10px; line-height: 1.2;" onclick="openDrawer('timeline', '${escapeJsStr(name)}')">+ Event</button>
+                    </div>
+                `;
+            }
+
+            hoverCard.style.display = 'block';
+        }
+
+        function escapeJsStr(str) {
+            if (!str) return '';
+            return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        // 4. DEBOUNCED MANUSCRIPT ENTITY SCANNER & INTELLIGENCE ENGINE
+        function getEditorPlainText() {
+            if (!editor) return "";
+            let text = editor.innerText || editor.textContent || "";
+            if (text.trim() === "Start writing your chapter here...") {
+                return "";
+            }
+            return text;
+        }
+        window.getEditorPlainText = getEditorPlainText;
+
+        function scheduleDebouncedEntityScan() {
+            clearTimeout(detectionDebounceTimer);
+            detectionDebounceTimer = setTimeout(() => {
+                analyzeManuscriptEntities();
+            }, 450);
+        }
+
+        function analyzeManuscriptEntities() {
+            if (!editor) return;
+            const text = getEditorPlainText();
+            const trimmed = text.trim();
+
+            console.log(`[StoryIntelligence] EDITOR TEXT LENGTH: ${trimmed.length}`);
+            console.log(`[StoryIntelligence] EDITOR TEXT PREVIEW: ${trimmed.substring(0, 300)}`);
+
+            if (trimmed.length < 3) {
+                detectedExistingEntities = [];
+                detectedUnknownEntities = [];
+                detectedAmbiguousEntities = [];
+                console.log(`[StoryIntelligence] CANDIDATE COUNT: 0`);
+                updateRightPanelTabs();
+                updateStoryIntelligenceFlyout();
                 return;
+            }
+
+            // Call Unified Pipeline Engine
+            const detectionResult = StoryIntelligence.detectEntities(text, StoryEntityCache, activeChapterIgnoredCandidates);
+            
+            detectedExistingEntities = detectionResult.existingMatches || [];
+            detectedUnknownEntities = detectionResult.candidates || [];
+            detectedAmbiguousEntities = detectionResult.ambiguousCandidates || [];
+
+            console.log(`[StoryIntelligence] EXISTING MATCHES COUNT: ${detectedExistingEntities.length}`, detectedExistingEntities);
+            console.log(`[StoryIntelligence] HIGH CONFIDENCE CANDIDATES: ${detectedUnknownEntities.length}`, detectedUnknownEntities);
+            console.log(`[StoryIntelligence] AMBIGUOUS CANDIDATES: ${detectedAmbiguousEntities.length}`, detectedAmbiguousEntities);
+
+            updateRightPanelTabs();
+            updateStoryIntelligenceFlyout();
+        }
+
+        function renderAmbiguousCardsHtml(ambiguousList) {
+            if (!ambiguousList || ambiguousList.length === 0) return '';
+            let html = `
+                <div class="p-3 rounded-3 bg-slate-50 border border-slate-200 mb-3 shadow-2xs">
+                    <div class="fw-bold text-slate-800 d-flex align-items-center justify-content-between mb-3" style="font-size: 11px; letter-spacing: 0.04em;">
+                        <div class="d-flex align-items-center gap-1.5">
+                            <span style="font-size:12px;">✨</span>
+                            <span>AMBIGUOUS DETECTED ENTITIES</span>
+                        </div>
+                        <span class="badge bg-slate-200 text-slate-700 px-2 py-0.5 rounded-pill" style="font-size: 9.5px; font-weight: 700;">${ambiguousList.length}</span>
+                    </div>
+            `;
+            ambiguousList.forEach((ac, idx) => {
+                const isLast = idx === ambiguousList.length - 1;
+                html += `
+                    <div class="p-3 rounded-3 bg-white border border-slate-200 shadow-xs ${isLast ? '' : 'mb-3'}">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold text-slate-900 d-flex align-items-center gap-1" style="font-size: 12.5px;">✨ ${escapeHtml(ac.name)}</span>
+                            <div class="d-flex align-items-center gap-1.5">
+                                <span class="badge bg-amber-subtle text-amber-900 px-2 py-0.5 rounded-pill" style="font-size: 9px; font-weight: 700;">Ambiguous</span>
+                                <button class="btn btn-xs btn-light border rounded-circle p-0 d-inline-flex align-items-center justify-content-center text-muted" onclick="ignoreCandidate('${escapeJsStr(ac.name)}')" title="Ignore candidate" style="width: 20px; height: 20px; line-height: 1; font-size: 10px;">✕</button>
+                            </div>
+                        </div>
+                        <div class="text-muted mb-2.5" style="font-size: 10.5px; line-height: 1.35;">Context indicates a story entity. What is it?</div>
+                        <div class="d-flex flex-wrap gap-1.5 align-items-center pt-1" style="row-gap: 6px;">
+                            <button class="btn btn-xs btn-teal rounded-pill px-2.5 py-1 fw-bold text-nowrap" onclick="openDrawer('character', '${escapeJsStr(ac.name)}')" style="font-size:10px; line-height: 1.2;">+ Character</button>
+                            <button class="btn btn-xs btn-amber text-dark rounded-pill px-2.5 py-1 fw-bold text-nowrap" onclick="openDrawer('location', '${escapeJsStr(ac.name)}')" style="font-size:10px; line-height: 1.2;">+ Location</button>
+                            <button class="btn btn-xs btn-primary rounded-pill px-2.5 py-1 fw-bold text-nowrap" onclick="openDrawer('world', '${escapeJsStr(ac.name)}')" style="font-size:10px; line-height: 1.2;">+ Entity</button>
+                            <button class="btn btn-xs btn-purple text-white rounded-pill px-2.5 py-1 fw-bold text-nowrap" onclick="openDrawer('timeline', '${escapeJsStr(ac.name)}')" style="font-size:10px; line-height: 1.2;">+ Event</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        // 5. RIGHT PANEL & TAB UPDATES
+        function updateRightPanelTabs() {
+            // Count Linked & Detected per category
+            const linkedChars = StoryEntityCache.characters.filter(c => c.isLinked);
+            const linkedLocs = StoryEntityCache.locations.filter(l => l.isLinked);
+            const linkedWorld = StoryEntityCache.worldEntities.filter(w => w.isLinked);
+            const linkedTimeline = StoryEntityCache.timelineEvents.filter(t => t.isLinked);
+
+            // Filter existing matched entities in chapter
+            const existingCharMatches = detectedExistingEntities.filter(e => e.type === "character");
+
+            // Filter detected candidate entities (High confidence only)
+            const detectedChars = detectedUnknownEntities.filter(e => e.type === "character");
+            const detectedLocs = detectedUnknownEntities.filter(e => e.type === "location");
+            const detectedWorld = detectedUnknownEntities.filter(e => e.type === "world");
+            const detectedTimeline = detectedUnknownEntities.filter(e => e.type === "timeline");
+
+            // Update Tab Badges
+            const charTabBtn = document.getElementById('tabBtn-characters');
+            if (charTabBtn) charTabBtn.innerHTML = `Characters <span class="context-tab-badge bg-teal-subtle text-teal-800">${linkedChars.length}</span>`;
+
+            const worldTabBtn = document.getElementById('tabBtn-world');
+            if (worldTabBtn) worldTabBtn.innerHTML = `World <span class="context-tab-badge bg-amber-subtle text-amber-800">${linkedLocs.length + linkedWorld.length}</span>`;
+
+            const timelineTabBtn = document.getElementById('tabBtn-timeline');
+            if (timelineTabBtn) timelineTabBtn.innerHTML = `Timeline <span class="context-tab-badge bg-purple-subtle text-purple-800">${linkedTimeline.length}</span>`;
+
+            // ----------------------------------------------------
+            // CHARACTERS TAB RENDER
+            // ----------------------------------------------------
+            const inChapterCharContainer = document.getElementById('inChapterCharacters');
+            if (inChapterCharContainer) {
+                // Combine existing matches and linked characters, deduplicated by id
+                const combinedInChapter = [];
+                const seenIds = new Set();
+
+                existingCharMatches.forEach(m => {
+                    if (m.entity && !seenIds.has(m.entity.id)) {
+                        seenIds.add(m.entity.id);
+                        combinedInChapter.push({ entity: m.entity, occurrences: m.occurrences });
+                    }
+                });
+
+                linkedChars.forEach(c => {
+                    if (!seenIds.has(c.id)) {
+                        seenIds.add(c.id);
+                        combinedInChapter.push({ entity: c, occurrences: 0 });
+                    }
+                });
+
+                if (combinedInChapter.length > 0) {
+                    let html = '';
+                    combinedInChapter.forEach(item => {
+                        const c = item.entity;
+                        const refsText = item.occurrences > 0 ? ` · ${item.occurrences} reference${item.occurrences > 1 ? 's' : ''}` : '';
+                        html += `
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-white border mb-2">
+                                <div class="d-flex align-items-center gap-2 cursor-pointer" onclick="openEntityProfileDrawer('character', '${c.id}')">
+                                    <div class="avatar-circle" style="width:34px;height:34px;font-size:11px;">
+                                        ${c.avatarUrl ? `<img src="${c.avatarUrl}" class="rounded-circle w-100 h-100" style="object-fit:cover;" />` : (c.name || "C").substring(0, Math.min(2, (c.name || "C").length)).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-slate-900" style="font-size: 12.5px;">👤 ${escapeHtml(c.name)}</div>
+                                        <div class="text-muted" style="font-size: 10.5px;">${escapeHtml(c.role || "Character")}${refsText}</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <a href="javascript:void(0)" class="text-teal-700 fw-bold" style="font-size:10.5px;" onclick="openEntityProfileDrawer('character', '${c.id}')">View →</a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    inChapterCharContainer.innerHTML = html;
+                } else {
+                    inChapterCharContainer.innerHTML = `
+                        <div class="text-muted p-3 text-center rounded-3 bg-light border" style="font-size: 11.5px;">
+                            No characters linked to this chapter yet.
+                            <div class="mt-1">
+                                <a href="javascript:void(0)" onclick="openDrawer('character')" class="text-teal-700 font-semibold text-decoration-none">+ Add Character</a>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            const allCharContainer = document.getElementById('allCharactersList');
+            if (allCharContainer) {
+                let html = '';
+
+                // Render AMBIGUOUS CANDIDATES if any
+                html += renderAmbiguousCardsHtml(detectedAmbiguousEntities);
+
+                // Render DETECTED IN WRITING Section if high-confidence character candidates exist
+                if (detectedChars.length > 0) {
+                    html += `
+                        <div class="detected-section-header teal">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white" style="width: 18px; height: 18px; font-size: 10px; background: #0D9488;">✨</span>
+                            <span>DETECTED IN WRITING</span>
+                        </div>
+                    `;
+                    
+                    detectedChars.forEach(dc => {
+                        html += `
+                            <div class="detected-card detected-card-teal">
+                                <div>
+                                    <div class="fw-bold text-teal-950 d-flex align-items-center gap-1.5" style="font-size: 12.5px;">👤 ${escapeHtml(dc.name)}</div>
+                                    <div class="detected-ref-badge">Likely Character • <span class="detected-ref-count text-teal-900">${dc.occurrences} ref${dc.occurrences > 1 ? 's' : ''}</span></div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 ms-2">
+                                    <button class="btn btn-xs btn-teal rounded-pill px-3 py-1 fw-bold text-nowrap" onclick="openDrawer('character', '${escapeJsStr(dc.name)}')" style="font-size: 10.5px;">
+                                        + Add Character
+                                    </button>
+                                    <button class="btn btn-xs btn-light border rounded-circle p-1 text-muted" onclick="ignoreCandidate('${escapeJsStr(dc.name)}')" title="Ignore for this chapter" style="line-height:1;">✕</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Render ALL CHARACTERS IN STORY
+                html += `<div class="mt-3 mb-2 fw-bold text-slate-800 text-uppercase tracking-wider" style="font-size: 10.5px;">ALL CHARACTERS IN STORY</div>`;
+                if (StoryEntityCache.characters.length > 0) {
+                    StoryEntityCache.characters.forEach(c => {
+                        html += `
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-white border mb-1.5" data-name="${c.name.toLowerCase()}">
+                                <div class="d-flex align-items-center gap-2 cursor-pointer" onclick="openEntityProfileDrawer('character', '${c.id}')">
+                                    <div class="avatar-circle" style="width:30px;height:30px;font-size:10px;">
+                                        ${c.avatarUrl ? `<img src="${c.avatarUrl}" class="rounded-circle w-100 h-100" style="object-fit:cover;" />` : c.name.substring(0, Math.min(2, c.name.length)).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-slate-800" style="font-size: 12px;">${escapeHtml(c.name)}</div>
+                                        <div class="text-muted" style="font-size: 10px;">${escapeHtml(c.role || "Character")}</div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-xs ${c.isLinked ? "btn-teal" : "btn-light border"} rounded-pill px-2 py-0.5" onclick="toggleEntityLink('character', '${c.id}')" style="font-size: 10px;">
+                                    ${c.isLinked ? "Linked ✓" : "+ Link"}
+                                </button>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += `<div class="text-muted p-3 text-center rounded-3 bg-light border" style="font-size: 11.5px;">No characters in story database yet.</div>`;
+                }
+                allCharContainer.innerHTML = html;
+            }
+
+            // ----------------------------------------------------
+            // WORLD TAB RENDER (LOCATIONS & WORLD ENTITIES)
+            // ----------------------------------------------------
+            const worldListContainer = document.getElementById('worldEntitiesList');
+            if (worldListContainer) {
+                let html = '';
+
+                // Render AMBIGUOUS CANDIDATES if any
+                html += renderAmbiguousCardsHtml(detectedAmbiguousEntities);
+
+                // Render DETECTED LOCATIONS & WORLD ENTITIES
+                if (detectedLocs.length > 0 || detectedWorld.length > 0) {
+                    html += `
+                        <div class="detected-section-header amber">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-dark" style="width: 18px; height: 18px; font-size: 10px; background: #F59E0B;">✨</span>
+                            <span>DETECTED IN WRITING</span>
+                        </div>
+                    `;
+                    
+                    detectedLocs.forEach(dl => {
+                        html += `
+                            <div class="detected-card detected-card-amber">
+                                <div>
+                                    <div class="fw-bold text-amber-950 d-flex align-items-center gap-1.5" style="font-size: 12.5px;">📍 ${escapeHtml(dl.name)}</div>
+                                    <div class="detected-ref-badge">Likely Location • <span class="detected-ref-count text-amber-900">${dl.occurrences} ref${dl.occurrences > 1 ? 's' : ''}</span></div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 ms-2">
+                                    <button class="btn btn-xs btn-amber rounded-pill px-3 py-1 fw-bold text-nowrap" onclick="openDrawer('location', '${escapeJsStr(dl.name)}')" style="font-size: 10.5px;">
+                                        + Add Location
+                                    </button>
+                                    <button class="btn btn-xs btn-light border rounded-circle p-1 text-muted" onclick="ignoreCandidate('${escapeJsStr(dl.name)}')" title="Ignore for this chapter" style="line-height:1;">✕</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    detectedWorld.forEach(dw => {
+                        html += `
+                            <div class="detected-card detected-card-blue">
+                                <div>
+                                    <div class="fw-bold text-blue-950 d-flex align-items-center gap-1.5" style="font-size: 12.5px;">🌍 ${escapeHtml(dw.name)}</div>
+                                    <div class="detected-ref-badge">Likely World Entity • <span class="detected-ref-count text-blue-900">${dw.occurrences} ref${dw.occurrences > 1 ? 's' : ''}</span></div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 ms-2">
+                                    <button class="btn btn-xs btn-blue text-white rounded-pill px-3 py-1 fw-bold text-nowrap" onclick="openDrawer('world', '${escapeJsStr(dw.name)}')" style="font-size: 10.5px;">
+                                        + Add Entity
+                                    </button>
+                                    <button class="btn btn-xs btn-light border rounded-circle p-1 text-muted" onclick="ignoreCandidate('${escapeJsStr(dw.name)}')" title="Ignore for this chapter" style="line-height:1;">✕</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Render ALL LOCATIONS & WORLD ENTITIES IN STORY
+                html += `<div class="mt-3 mb-2 fw-bold text-slate-800 text-uppercase tracking-wider" style="font-size: 10.5px; letter-spacing: 0.04em;">ALL WORLD & LOCATIONS IN STORY</div>`;
+                const allWorld = [...StoryEntityCache.locations, ...StoryEntityCache.worldEntities];
+                if (allWorld.length > 0) {
+                    allWorld.forEach(w => {
+                        html += `
+                            <div class="context-card p-2.5 rounded-3 bg-white border mb-2 ${w.isLinked ? "border-teal" : ""}" data-name="${w.name.toLowerCase()}">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="cursor-pointer" onclick="openEntityProfileDrawer('${w.typeName === 'Location' ? 'location' : 'world'}', '${w.id}')">
+                                        <span class="badge bg-amber-subtle text-amber-800 fw-bold me-1.5" style="font-size: 9.5px;">${escapeHtml(w.typeName)}</span>
+                                        <span class="fw-bold text-slate-800" style="font-size: 12.5px;">${escapeHtml(w.name)}</span>
+                                    </div>
+                                    <button class="btn btn-xs ${w.isLinked ? "btn-teal" : "btn-light border"} rounded-pill px-2.5 py-1 fw-bold" onclick="toggleEntityLink('world', '${w.id}')" style="font-size: 10.5px;">
+                                        ${w.isLinked ? "Linked ✓" : "+ Link"}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += `
+                        <div class="text-center p-4 rounded-3 border border-dashed bg-light my-2">
+                            <div class="mb-1 text-secondary" style="font-size: 24px;">🌍</div>
+                            <div class="fw-bold text-slate-800 mb-1" style="font-size: 12.5px;">No locations or world entities created yet</div>
+                            <div class="text-muted small mb-3" style="font-size: 11px; max-width: 220px; margin: 0 auto;">Add world entities or start typing in your manuscript to auto-detect places.</div>
+                            <button class="btn btn-xs btn-outline-teal rounded-pill px-3 py-1 fw-bold" onclick="openDrawer('world')" style="font-size: 11px;">
+                                + Add Entity
+                            </button>
+                        </div>
+                    `;
+                }
+                worldListContainer.innerHTML = html;
+            }
+
+            // ----------------------------------------------------
+            // TIMELINE TAB RENDER
+            // ----------------------------------------------------
+            const timelineListContainer = document.getElementById('timelineEventsList');
+            if (timelineListContainer) {
+                let html = '';
+
+                // Render AMBIGUOUS CANDIDATES if any
+                html += renderAmbiguousCardsHtml(detectedAmbiguousEntities);
+
+                // Render DETECTED TIMELINE EVENTS
+                if (detectedTimeline.length > 0) {
+                    html += `
+                        <div class="detected-section-header purple">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white" style="width: 18px; height: 18px; font-size: 10px; background: #7C3AED;">✨</span>
+                            <span>DETECTED IN WRITING</span>
+                        </div>
+                    `;
+                    detectedTimeline.forEach(dt => {
+                        html += `
+                            <div class="detected-card detected-card-purple">
+                                <div>
+                                    <div class="fw-bold text-purple-950 d-flex align-items-center gap-1.5" style="font-size: 12.5px;">⏱ ${escapeHtml(dt.name)}</div>
+                                    <div class="detected-ref-badge">Likely Timeline Event • <span class="detected-ref-count text-purple-900">${dt.occurrences} ref${dt.occurrences > 1 ? 's' : ''}</span></div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 ms-2">
+                                    <button class="btn btn-xs btn-purple text-white rounded-pill px-3 py-1 fw-bold text-nowrap" onclick="openDrawer('timeline', '${escapeJsStr(dt.name)}')" style="font-size: 10.5px;">
+                                        + Add Event
+                                    </button>
+                                    <button class="btn btn-xs btn-light border rounded-circle p-1 text-muted" onclick="ignoreCandidate('${escapeJsStr(dt.name)}')" title="Ignore for this chapter" style="line-height:1;">✕</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Render ALL TIMELINE EVENTS IN STORY
+                html += `<div class="mt-3 mb-2 fw-bold text-slate-800 text-uppercase tracking-wider" style="font-size: 10.5px;">ALL TIMELINE EVENTS IN STORY</div>`;
+                if (StoryEntityCache.timelineEvents.length > 0) {
+                    StoryEntityCache.timelineEvents.forEach(t => {
+                        html += `
+                            <div class="context-card p-2 rounded-3 bg-white border mb-2 ${t.isLinked ? "border-teal" : ""}" data-name="${t.title.toLowerCase()}">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="cursor-pointer" onclick="openEntityProfileDrawer('timeline', '${t.id}')">
+                                        <span class="badge bg-purple-subtle text-purple-800 fw-bold me-1" style="font-size: 9px;">${escapeHtml(t.storyDate || t.category)}</span>
+                                        <div class="fw-bold text-slate-800 mt-0.5" style="font-size: 12.5px;">${escapeHtml(t.title)}</div>
+                                    </div>
+                                    <button class="btn btn-xs ${t.isLinked ? "btn-teal" : "btn-light border"} rounded-pill px-2 py-0.5" onclick="toggleEntityLink('timeline', '${t.id}')" style="font-size: 10px;">
+                                        ${t.isLinked ? "Linked ✓" : "+ Link"}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += `<div class="text-muted p-3 text-center rounded-3 bg-light border" style="font-size: 11.5px;">No timeline events created yet.</div>`;
+                }
+                timelineListContainer.innerHTML = html;
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // 6. STORY INTELLIGENCE FLYOUT PANEL
+        function toggleStoryIntelligenceFlyout() {
+            const flyout = document.getElementById('storyIntelligenceFlyout');
+            if (!flyout) return;
+            const isHidden = flyout.style.display === 'none' || !flyout.style.display;
+            flyout.style.display = isHidden ? 'block' : 'none';
+            if (isHidden) {
+                updateStoryIntelligenceFlyout();
             }
         }
 
-        // Count Updates & Real-time Suggestion Scanning
+        function updateStoryIntelligenceFlyout() {
+            const charsLinked = StoryEntityCache.characters.filter(c => c.isLinked).length;
+            const locsLinked = StoryEntityCache.locations.filter(l => l.isLinked).length;
+            const worldLinked = StoryEntityCache.worldEntities.filter(w => w.isLinked).length;
+            const timelineLinked = StoryEntityCache.timelineEvents.filter(t => t.isLinked).length;
+
+            if (document.getElementById('siCountChars')) document.getElementById('siCountChars').textContent = `${charsLinked} linked`;
+            if (document.getElementById('siCountLocs')) document.getElementById('siCountLocs').textContent = `${locsLinked} linked`;
+            if (document.getElementById('siCountWorld')) document.getElementById('siCountWorld').textContent = `${worldLinked} linked`;
+            if (document.getElementById('siCountTimeline')) document.getElementById('siCountTimeline').textContent = `${timelineLinked} linked`;
+
+            const detHeaderTitle = document.getElementById('siDetectedHeaderTitle');
+            const detList = document.getElementById('siDetectedList');
+
+            if (detList) {
+                const totalDetected = detectedUnknownEntities.length + detectedAmbiguousEntities.length;
+                if (totalDetected > 0) {
+                    if (detHeaderTitle) {
+                        detHeaderTitle.innerHTML = `✨ NEW THINGS DETECTED (${totalDetected} found)`;
+                    }
+                    let html = '';
+                    detectedUnknownEntities.forEach(item => {
+                        const icon = item.type === 'character' ? '👤' : (item.type === 'location' ? '📍' : (item.type === 'world' ? '🌍' : (item.type === 'timeline' ? '⏱' : '✨')));
+                        const label = item.type === 'character' ? 'Character' : (item.type === 'location' ? 'Location' : (item.type === 'world' ? 'World Entity' : (item.type === 'timeline' ? 'Timeline Event' : 'Entity')));
+                        const cardClass = item.type === 'character' ? 'detected-card-teal' : (item.type === 'location' ? 'detected-card-amber' : (item.type === 'world' ? 'detected-card-blue' : (item.type === 'timeline' ? 'detected-card-purple' : 'detected-card-amber')));
+                        const btnClass = item.type === 'character' ? 'btn-teal' : (item.type === 'location' ? 'btn-amber' : (item.type === 'world' ? 'btn-blue' : (item.type === 'timeline' ? 'btn-purple' : 'btn-amber')));
+                        
+                        html += `
+                            <div class="detected-card ${cardClass}">
+                                <div>
+                                    <div class="fw-bold text-slate-900 d-flex align-items-center gap-1.5" style="font-size: 12.5px;">${icon} ${escapeHtml(item.name)}</div>
+                                    <div class="detected-ref-badge">Likely ${label} • <span class="detected-ref-count">${item.occurrences} ref${item.occurrences > 1 ? 's' : ''}</span></div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 ms-2">
+                                    <button class="btn btn-xs ${btnClass} rounded-pill px-3 py-1 fw-bold text-nowrap" onclick="openDrawer('${item.type === 'Unknown' ? 'character' : item.type}', '${escapeJsStr(item.name)}')" style="font-size: 10.5px;">
+                                        + Add ${label}
+                                    </button>
+                                    <button class="btn btn-xs btn-light border rounded-circle p-1 text-muted" onclick="ignoreCandidate('${escapeJsStr(item.name)}')" style="line-height:1;">✕</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    detList.innerHTML = html;
+                } else {
+                    if (detHeaderTitle) {
+                        detHeaderTitle.textContent = 'NEW THINGS DETECTED';
+                    }
+                    detList.innerHTML = `<div class="text-muted fst-italic py-2" style="font-size: 11.5px;">✓ All mentioned entities match your story database!</div>`;
+                }
+            }
+        }
+
+        // 7. CLICK-TO-VIEW ENTITY PROFILE DRAWER
+        async function openEntityProfileDrawer(type, id) {
+            selectionMenu.style.display = 'none';
+            drawerOverlay.classList.add('show');
+
+            drawerContent.innerHTML = `
+                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
+                        <i data-lucide="eye" class="text-teal-600" style="width: 18px; height: 18px;"></i>
+                        Entity Profile
+                    </h6>
+                    <button class="btn-close" onclick="closeDrawer()"></button>
+                </div>
+                <div class="p-4 flex-grow-1 overflow-y-auto text-center" id="entityProfileBody">
+                    <div class="spinner-border text-teal" role="status"><span class="visually-hidden">Loading...</span></div>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const resp = await fetch(`/Chapters/GetEntityPreview?type=${type}&id=${id}&storyId=${storyId}`);
+                const data = await resp.json();
+                if (data.success) {
+                    const body = document.getElementById('entityProfileBody');
+                    body.className = "p-4 flex-grow-1 overflow-y-auto";
+                    body.innerHTML = `
+                        <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                            <img src="${data.avatarUrl || data.coverImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}" class="rounded-3" style="width:64px;height:64px;object-fit:cover;" />
+                            <div>
+                                <h5 class="fw-bold text-slate-900 mb-1">${escapeHtml(data.name || data.title)}</h5>
+                                <div class="badge bg-teal-subtle text-teal-800 fw-bold me-1">${escapeHtml(data.role || data.typeName || data.category || "Entity")}</div>
+                                <span class="small text-muted">${data.status || data.importance || "Active"}</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 text-start">
+                            <label class="fw-bold text-slate-800 small text-uppercase tracking-wider">Description</label>
+                            <p class="text-secondary small mt-1" style="line-height: 1.5;">${escapeHtml(data.description || data.summary || "No description provided.")}</p>
+                        </div>
+
+                        ${data.occupation ? `<div class="mb-2 text-start small"><strong class="text-slate-800">Occupation:</strong> ${escapeHtml(data.occupation)}</div>` : ''}
+                        ${data.age ? `<div class="mb-2 text-start small"><strong class="text-slate-800">Age:</strong> ${escapeHtml(data.age)}</div>` : ''}
+
+                        <div class="p-3 bg-light rounded-3 text-start mt-4 border">
+                            <div class="small fw-bold text-slate-800">Appears in ${data.appearsInChaptersCount || 1} chapter(s)</div>
+                            <div class="small text-muted">This entity is linked to your story universe.</div>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 8. ZERO-RELOAD QUICK CREATE DRAWERS
+        const drawerOverlay = document.getElementById('drawerOverlay');
+        const drawerContent = document.getElementById('drawerContent');
+
+        function openDrawer(type, prefillName = "") {
+            if (selectionMenu) selectionMenu.style.display = 'none';
+            if (drawerOverlay) drawerOverlay.classList.add('show');
+            saveEditorSelection();
+
+            if (type === 'character') {
+                renderCharacterDrawer(prefillName);
+            } else if (type === 'world' || type === 'location') {
+                renderWorldDrawer(prefillName);
+            } else if (type === 'timeline' || type === 'event') {
+                renderTimelineDrawer(prefillName);
+            } else if (type === 'research') {
+                renderResearchDrawer(prefillName);
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeDrawer() {
+            if (drawerOverlay) drawerOverlay.classList.remove('show');
+            restoreEditorSelection();
+        }
+
+        function quickCreateFromSelection(type) {
+            openDrawer(type, selectedText);
+        }
+
+        function renderCharacterDrawer(prefillName = "") {
+            drawerContent.innerHTML = `
+                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
+                        <i data-lucide="user-plus" class="text-teal-600" style="width: 18px; height: 18px;"></i>
+                        Add Character
+                    </h6>
+                    <button class="btn-close" onclick="closeDrawer()"></button>
+                </div>
+                <div class="p-4 flex-grow-1 overflow-y-auto">
+                    <form onsubmit="event.preventDefault(); submitCharacter();">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Character Name *</label>
+                            <input type="text" id="qcName" class="form-control rounded-3" value="${escapeHtml(prefillName)}" required placeholder="e.g. Meera">
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Role</label>
+                                <select id="qcRole" class="form-select rounded-3">
+                                    <option value="Protagonist">Protagonist</option>
+                                    <option value="Antagonist">Antagonist</option>
+                                    <option value="Supporting" selected>Supporting</option>
+                                    <option value="Detective">Detective</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Occupation</label>
+                                <input type="text" id="qcOccupation" class="form-control rounded-3" placeholder="e.g. Scholar">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">One-Line Description</label>
+                            <textarea id="qcDescription" class="form-control rounded-3" rows="3" placeholder="Brief description..."></textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="qcLinkChapter" checked>
+                            <label class="form-check-label small fw-semibold text-slate-700" for="qcLinkChapter">
+                                ✓ Link to this chapter
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
+                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
+                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitCharacter()">Save Character</button>
+                </div>
+            `;
+        }
+
+        async function submitCharacter() {
+            const nameInput = document.getElementById('qcName');
+            if (!nameInput || !nameInput.value.trim()) return;
+            const name = nameInput.value.trim();
+
+            // Duplicate protection check against StoryEntityCache
+            const existing = StoryEntityCache.characters.find(c => c.name.toLowerCase() === name.toLowerCase() || (c.nicknames && c.nicknames.map(n=>n.toLowerCase()).includes(name.toLowerCase())));
+            if (existing) {
+                showToast(`"${existing.name}" already exists in this story.`);
+                return;
+            }
+
+            const dto = {
+                storyId,
+                chapterId,
+                name: name,
+                role: document.getElementById('qcRole').value,
+                occupation: document.getElementById('qcOccupation').value,
+                oneLineDescription: document.getElementById('qcDescription').value
+            };
+
+            try {
+                const resp = await fetch('/Chapters/QuickCreateCharacter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+                const data = await resp.json();
+                if (data.success && data.character) {
+                    // 1. Close drawer
+                    closeDrawer();
+
+                    // 2. Add to StoryEntityCache
+                    StoryEntityCache.characters.push({
+                        id: data.character.id,
+                        name: data.character.name,
+                        role: data.character.role || "Character",
+                        nicknames: data.character.nicknames || [],
+                        oneLineDescription: data.character.oneLineDescription || "",
+                        avatarUrl: data.character.avatarUrl,
+                        age: data.character.age,
+                        occupation: data.character.occupation,
+                        status: data.character.status || "Active",
+                        isLinked: true
+                    });
+
+                    // 3. Update right panel tabs
+                    updateRightPanelTabs();
+
+                    // 4. Restore editor selection & focus
+                    restoreEditorSelection();
+
+                    showToast(data.notification || `${data.character.name} added successfully.`);
+                    setUnsavedState();
+                    scheduleDebouncedAutoSave();
+                    analyzeManuscriptEntities();
+                } else if (data.isDuplicate) {
+                    showToast(data.message || `${name} already exists in story.`);
+                }
+            } catch (e) {
+                console.error("Submit character error:", e);
+            }
+        }
+
+        function renderWorldDrawer(prefillName = "") {
+            drawerContent.innerHTML = `
+                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
+                        <i data-lucide="map-pin" class="text-amber-600" style="width: 18px; height: 18px;"></i>
+                        Add Location / World Entity
+                    </h6>
+                    <button class="btn-close" onclick="closeDrawer()"></button>
+                </div>
+                <div class="p-4 flex-grow-1 overflow-y-auto">
+                    <form onsubmit="event.preventDefault(); submitWorldEntity();">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Location / Entity Name *</label>
+                            <input type="text" id="qwName" class="form-control rounded-3" value="${escapeHtml(prefillName)}" required placeholder="e.g. Ravenfall">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Type</label>
+                            <select id="qwTypeName" class="form-select rounded-3">
+                                <option value="Location" selected>Location</option>
+                                <option value="City">City / Village</option>
+                                <option value="Kingdom">Kingdom / Realm</option>
+                                <option value="Organization">Faction / Organization</option>
+                                <option value="Concept">Concept / Artifact</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Short Summary</label>
+                            <textarea id="qwSummary" class="form-control rounded-3" rows="3" placeholder="Brief summary..."></textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="qwLinkChapter" checked>
+                            <label class="form-check-label small fw-semibold text-slate-700" for="qwLinkChapter">
+                                ✓ Link to this chapter
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
+                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
+                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitWorldEntity()">Save Entity</button>
+                </div>
+            `;
+        }
+
+        async function submitWorldEntity() {
+            const nameInput = document.getElementById('qwName');
+            if (!nameInput || !nameInput.value.trim()) return;
+            const name = nameInput.value.trim();
+            const typeName = document.getElementById('qwTypeName').value;
+
+            // Duplicate check against cache
+            const allWorld = [...StoryEntityCache.locations, ...StoryEntityCache.worldEntities];
+            const existing = allWorld.find(w => w.name.toLowerCase() === name.toLowerCase());
+            if (existing) {
+                showToast(`"${existing.name}" already exists in this story.`);
+                return;
+            }
+
+            const dto = {
+                storyId,
+                chapterId,
+                name: name,
+                typeName: typeName,
+                summary: document.getElementById('qwSummary').value
+            };
+
+            try {
+                const resp = await fetch('/Chapters/QuickCreateWorldEntity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+                const data = await resp.json();
+                if (data.success && data.worldEntity) {
+                    closeDrawer();
+                    const newObj = {
+                        id: data.worldEntity.id,
+                        name: data.worldEntity.name,
+                        typeName: data.worldEntity.typeName || typeName,
+                        summary: data.worldEntity.summary || "",
+                        coverImage: data.worldEntity.coverImage,
+                        importance: data.worldEntity.importance || "Major",
+                        isLinked: true
+                    };
+
+                    if (typeName === "Location" || typeName === "City" || typeName === "Kingdom") {
+                        StoryEntityCache.locations.push(newObj);
+                    } else {
+                        StoryEntityCache.worldEntities.push(newObj);
+                    }
+
+                    updateRightPanelTabs();
+                    restoreEditorSelection();
+                    showToast(data.notification || `${name} created and linked.`);
+                    setUnsavedState();
+                    scheduleDebouncedAutoSave();
+                    analyzeManuscriptEntities();
+                } else if (data.isDuplicate) {
+                    showToast(data.message || `${name} already exists in story.`);
+                }
+            } catch (e) {
+                console.error("Submit world entity error:", e);
+            }
+        }
+
+        function renderTimelineDrawer(prefillTitle = "") {
+            drawerContent.innerHTML = `
+                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
+                        <i data-lucide="clock" class="text-purple-600" style="width: 18px; height: 18px;"></i>
+                        Add Timeline Event
+                    </h6>
+                    <button class="btn-close" onclick="closeDrawer()"></button>
+                </div>
+                <div class="p-4 flex-grow-1 overflow-y-auto">
+                    <form onsubmit="event.preventDefault(); submitTimelineEvent();">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Event Title *</label>
+                            <input type="text" id="qtTitle" class="form-control rounded-3" value="${escapeHtml(prefillTitle)}" required placeholder="e.g. Palace Explosion">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Story Time / Date</label>
+                            <input type="text" id="qtStoryDate" class="form-control rounded-3" placeholder="e.g. Just before midnight">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Description</label>
+                            <textarea id="qtDescription" class="form-control rounded-3" rows="3" placeholder="Event summary..."></textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="qtLinkChapter" checked>
+                            <label class="form-check-label small fw-semibold text-slate-700" for="qtLinkChapter">
+                                ✓ Link to this chapter
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
+                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
+                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitTimelineEvent()">Save Event</button>
+                </div>
+            `;
+        }
+
+        async function submitTimelineEvent() {
+            const titleInput = document.getElementById('qtTitle');
+            if (!titleInput || !titleInput.value.trim()) return;
+            const title = titleInput.value.trim();
+
+            const existing = StoryEntityCache.timelineEvents.find(t => t.title.toLowerCase() === title.toLowerCase());
+            if (existing) {
+                showToast(`"${existing.title}" already exists in timeline.`);
+                return;
+            }
+
+            const dto = {
+                storyId,
+                chapterId,
+                title: title,
+                storyDate: document.getElementById('qtStoryDate').value,
+                description: document.getElementById('qtDescription').value
+            };
+
+            try {
+                const resp = await fetch('/Chapters/QuickCreateTimelineEvent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+                const data = await resp.json();
+                if (data.success && data.timelineEvent) {
+                    closeDrawer();
+                    StoryEntityCache.timelineEvents.push({
+                        id: data.timelineEvent.id,
+                        title: data.timelineEvent.title,
+                        category: data.timelineEvent.category || "General",
+                        storyDate: data.timelineEvent.storyDate || "",
+                        importance: data.timelineEvent.importance || "Medium",
+                        summary: data.timelineEvent.summary || "",
+                        isLinked: true
+                    });
+
+                    updateRightPanelTabs();
+                    restoreEditorSelection();
+                    showToast(data.notification || `${title} added to timeline.`);
+                    setUnsavedState();
+                    scheduleDebouncedAutoSave();
+                    analyzeManuscriptEntities();
+                } else if (data.isDuplicate) {
+                    showToast(data.message || `${title} already exists in story.`);
+                }
+            } catch (e) {
+                console.error("Submit timeline event error:", e);
+            }
+        }
+
+        // 9. ZERO-RELOAD ENTITY LINK TOGGLE
+        async function toggleEntityLink(type, entityId) {
+            if (document.body.classList.contains('read-mode')) return;
+            let endpoint = '';
+            if (type === 'character') endpoint = '/Chapters/ToggleLinkCharacter';
+            else if (type === 'world') endpoint = '/Chapters/ToggleLinkWorldEntity';
+            else if (type === 'timeline') endpoint = '/Chapters/ToggleLinkTimelineEvent';
+
+            try {
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chapterId, entityId })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    // Update cache state
+                    if (type === 'character') {
+                        const item = StoryEntityCache.characters.find(c => c.id === entityId);
+                        if (item) item.isLinked = data.isLinked;
+                    } else if (type === 'world') {
+                        const item = StoryEntityCache.locations.find(l => l.id === entityId) || StoryEntityCache.worldEntities.find(w => w.id === entityId);
+                        if (item) item.isLinked = data.isLinked;
+                    } else if (type === 'timeline') {
+                        const item = StoryEntityCache.timelineEvents.find(t => t.id === entityId);
+                        if (item) item.isLinked = data.isLinked;
+                    }
+
+                    updateRightPanelTabs();
+                    showToast(data.isLinked ? "Linked to chapter!" : "Unlinked from chapter.");
+                }
+            } catch (e) {
+                console.error("Toggle entity link error:", e);
+            }
+        }
+
+        // 10. EDITOR CORE BEHAVIOR (Autosave & Formatting)
         function updateCounts() {
-            const text = editor.innerText || editor.textContent || "";
+            const text = editor ? (editor.innerText || editor.textContent || "") : "";
             const words = text.trim().split(/\s+/).filter(w => w.length > 0);
             const wordCount = words.length;
             const charCount = text.length;
             const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
-            document.getElementById('barWordCount').textContent = wordCount.toLocaleString();
-            document.getElementById('barCharCount').textContent = charCount.toLocaleString();
-            document.getElementById('barReadTime').textContent = `~${readTime} min`;
+            if (document.getElementById('barWordCount')) document.getElementById('barWordCount').textContent = wordCount.toLocaleString();
+            if (document.getElementById('barCharCount')) document.getElementById('barCharCount').textContent = charCount.toLocaleString();
+            if (document.getElementById('barReadTime')) document.getElementById('barReadTime').textContent = `~${readTime} min`;
 
             return { wordCount, charCount };
         }
 
-        // DYNAMIC REAL-TIME MANUSCRIPT SCANNER FOR SUGGESTIONS
-        function scanManuscriptAndBuildSuggestions() {
-            const container = document.getElementById('suggestionsCardContainer');
-            if (!container) return;
-
-            const text = editor.innerText || editor.textContent || "";
-            const trimmed = text.trim();
-
-            if (trimmed.length < 5) {
-                container.innerHTML = `
-                    <div class="text-muted py-3 px-2 d-flex align-items-center gap-2" style="font-size: 12px;" id="suggestionsPrompt">
-                        <i data-lucide="info" style="width: 16px; height: 16px; color: #0D9488;"></i>
-                        <span>Start typing in your manuscript to discover characters, locations, and timeline events live...</span>
-                    </div>
-                `;
-                if (window.lucide) lucide.createIcons();
-                if (document.getElementById('badgeCharCount')) document.getElementById('badgeCharCount').textContent = "0 Characters";
-                if (document.getElementById('badgeLocCount')) document.getElementById('badgeLocCount').textContent = "0 Locations";
-                if (document.getElementById('badgeEvtCount')) document.getElementById('badgeEvtCount').textContent = "0 Events";
-                if (document.getElementById('badgeWorldCount')) document.getElementById('badgeWorldCount').textContent = "0 World Entities";
-                return;
-            }
-
-            const discoveredChars = new Set();
-            const discoveredLocations = new Set();
-            const discoveredEvents = new Set();
-
-            // Set of location noun keywords
-            const locNouns = [
-                "house", "home", "mansion", "manor", "palace", "villa", "resort", "estate", "apartment", "flat",
-                "penthouse", "cottage", "cabin", "tower", "building", "office", "studio", "headquarters", "bunker",
-                "warehouse", "factory", "dockyard", "dock", "harbor", "port", "station", "airport", "hotel", "motel",
-                "inn", "cafe", "restaurant", "bar", "pub", "club", "shop", "store", "market", "mall", "hospital",
-                "clinic", "asylum", "prison", "jail", "school", "college", "university", "academy", "library", "museum",
-                "theatre", "cinema", "stadium", "park", "garden", "street", "avenue", "road", "lane", "drive",
-                "boulevard", "bridge", "alley", "square", "plaza", "river", "lake", "ocean", "sea", "bay", "beach",
-                "valley", "mountain", "hill", "peak", "cave", "cavern", "island", "forest", "woods", "jungle",
-                "desert", "swamp", "marsh", "castle", "fort", "fortress", "temple", "church", "cathedral", "shrine",
-                "hall", "room", "chamber", "dungeon", "village", "town", "city", "county", "country", "kingdom", "realm"
-            ];
-            const locNounSet = new Set(locNouns);
-            const locationWordsInLocPhrases = new Set();
-
-            // 1. SCAN FOR LOCATION PHRASES FIRST (e.g., "Kapoor house", "Baker Street", "Wayne Manor", "Grand Hotel")
-            const locNounPattern = locNouns.join("|");
-            const locPhraseRegex = new RegExp(`\\b([A-Z][a-zA-Z0-9']*(?:\\s+[A-Z][a-zA-Z0-9']*)*)\\s+(${locNounPattern})\\b`, "gi");
-
-            let locMatch;
-            while ((locMatch = locPhraseRegex.exec(text)) !== null) {
-                const prefixStr = locMatch[1].trim(); // e.g. "Kapoor"
-                const nounStr = locMatch[2].trim();   // e.g. "house"
-
-                // Format as Proper Title Case location (e.g., "Kapoor House")
-                const fullLocRaw = `${prefixStr} ${nounStr}`;
-                const formattedLoc = fullLocRaw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-                const lowerLoc = formattedLoc.toLowerCase();
-
-                if (!existingLocationsList.includes(lowerLoc) && !existingLocationsList.includes(fullLocRaw.toLowerCase())) {
-                    discoveredLocations.add(formattedLoc);
-                }
-
-                // Add words from prefix to locationWordsInLocPhrases so they won't be tagged as characters
-                prefixStr.split(/\s+/).forEach(w => locationWordsInLocPhrases.add(w.toLowerCase()));
-            }
-
-            // Also check for standalone major location terms preceded by articles/adjectives (e.g. "abandoned warehouse", "old mansion")
-            const standaloneLocRegex = new RegExp(`\\b(?:an?|the|this|that|old|new|dark|abandoned|secret|hidden|royal|ancient)\\s+(${locNounPattern})\\b`, "gi");
-            let stLocMatch;
-            while ((stLocMatch = standaloneLocRegex.exec(text)) !== null) {
-                const fullLocRaw = stLocMatch[0].trim();
-                const locNoun = stLocMatch[1].trim();
-                const formattedLoc = fullLocRaw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-                if (!existingLocationsList.includes(formattedLoc.toLowerCase()) && !existingLocationsList.includes(locNoun.toLowerCase())) {
-                    discoveredLocations.add(formattedLoc);
-                }
-            }
-
-            // 2. SCAN FOR CHARACTERS (Proper person names)
-            const stopWords = new Set([
-                "The", "There", "This", "That", "They", "Them", "Their", "He", "She", "It", "His", "Her", "Its",
-                "We", "You", "Your", "My", "Our", "When", "What", "Where", "Why", "How", "Who", "Which",
-                "Chapter", "Part", "And", "But", "Or", "So", "If", "Because", "After", "Before", "Dust", "Lights",
-                "Metal", "At", "In", "On", "Start", "Whatever", "Some", "Any", "Many", "Every", "All", "One", "Two",
-                "First", "Second", "Next", "Then", "Now", "Here", "Inside", "Outside", "Near", "Far", "Above", "Below",
-                "Under", "Over", "With", "Without", "From", "To", "Into", "Onto", "Through", "During", "About",
-                "Against", "Between", "Is", "Are", "Was", "Were", "Been", "Being", "Have", "Has", "Had", "Do",
-                "Does", "Did", "Can", "Could", "Shall", "Should", "Will", "Would", "May", "Might", "Must"
-            ]);
-
-            const nameMatches = text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b/g) || [];
-
-            nameMatches.forEach(name => {
-                const lowerName = name.toLowerCase();
-                const words = lowerName.split(/\s+/);
-
-                // Exclude if any word is a location noun or part of a detected location phrase
-                const containsLocWord = words.some(w => locationWordsInLocPhrases.has(w) || locNounSet.has(w));
-
-                if (name.length >= 3 && !stopWords.has(name) && !containsLocWord && !existingCharactersList.includes(lowerName)) {
-                    discoveredChars.add(name);
-                }
-            });
-
-            // 3. SCAN FOR TIMELINE EVENTS & TIME MENTIONS
-            const timeMatches = text.match(/\b\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\b|\b(?:midnight|noon|dawn|dusk)\b/gi) || [];
-            timeMatches.forEach(tm => {
-                discoveredEvents.add(tm);
-            });
-
-            const actionMatches = text.match(/\b(?:explosion|murder|fire|incident|meeting|attack|accident|argument|discovery|climax|battle|party)\b/gi) || [];
-            actionMatches.forEach(act => {
-                if (!existingTimelineEventsList.includes(act.toLowerCase())) {
-                    discoveredEvents.add(act);
-                }
-            });
-
-            // Update Badge Counts
-            document.getElementById('badgeCharCount').textContent = `${discoveredChars.size} Characters`;
-            document.getElementById('badgeLocCount').textContent = `${discoveredLocations.size} Locations`;
-            document.getElementById('badgeEvtCount').textContent = `${discoveredEvents.size} Events`;
-            if (document.getElementById('badgeWorldCount')) document.getElementById('badgeWorldCount').textContent = `0 World Entities`;
-
-            let cardsHtml = "";
-
-            discoveredChars.forEach(cName => {
-                cardsHtml += `
-                    <div class="suggestion-card-box">
-                        <div>
-                            <div class="d-flex align-items-center justify-content-between mb-1.5">
-                                <span class="fw-bold text-slate-900" style="font-size: 13px;">👤 ${cName}</span>
-                                <span class="badge bg-teal-subtle text-teal-800 rounded-pill" style="font-size: 9.5px; font-weight: 600;">Character</span>
-                            </div>
-                            <div class="text-muted mb-3" style="font-size: 11px; line-height: 1.4;">This character doesn't exist in your story.</div>
-                        </div>
-                        <button class="btn-create-suggestion" onclick="openDrawer('character', '${cName}')">+ Create Character</button>
-                    </div>
-                `;
-            });
-
-            discoveredLocations.forEach(locName => {
-                cardsHtml += `
-                    <div class="suggestion-card-box">
-                        <div>
-                            <div class="d-flex align-items-center justify-content-between mb-1.5">
-                                <span class="fw-bold text-slate-900" style="font-size: 13px;">🏛 ${locName}</span>
-                                <span class="badge bg-purple-subtle text-purple-800 rounded-pill" style="font-size: 9.5px; font-weight: 600;">Location</span>
-                            </div>
-                            <div class="text-muted mb-3" style="font-size: 11px; line-height: 1.4;">This location doesn't exist in your story.</div>
-                        </div>
-                        <button class="btn-create-suggestion" onclick="openDrawer('world', '${locName}')">+ Create Location</button>
-                    </div>
-                `;
-            });
-
-            discoveredEvents.forEach(evtName => {
-                cardsHtml += `
-                    <div class="suggestion-card-box">
-                        <div>
-                            <div class="d-flex align-items-center justify-content-between mb-1.5">
-                                <span class="fw-bold text-slate-900" style="font-size: 13px;">⏰ ${evtName}</span>
-                                <span class="badge bg-info-subtle text-info-800 rounded-pill" style="font-size: 9.5px; font-weight: 600;">Event</span>
-                            </div>
-                            <div class="text-muted mb-3" style="font-size: 11px; line-height: 1.4;">This could be an important event.</div>
-                        </div>
-                        <button class="btn-create-suggestion" onclick="openDrawer('timeline', '${evtName}')">+ Create Timeline Event</button>
-                    </div>
-                `;
-            });
-
-            if (cardsHtml.trim().length > 0) {
-                container.innerHTML = cardsHtml;
-            } else {
-                container.innerHTML = `<div class="text-muted py-2 px-1" style="font-size: 11.5px;">✓ All mentioned entities match your story database!</div>`;
-            }
-        }
-
-        function filterSuggestionCards(filterType) {
-            const pills = document.querySelectorAll('.suggestion-filter-pill');
-            pills.forEach(p => p.classList.remove('active'));
-            if (event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
-            }
-
-            const cards = document.querySelectorAll('.suggestion-card-box');
-            cards.forEach(card => {
-                if (filterType === 'all') {
-                    card.style.display = 'flex';
-                } else {
-                    const badge = card.querySelector('.badge');
-                    if (badge && badge.textContent.toLowerCase().includes(filterType.toLowerCase())) {
-                        card.style.display = 'flex';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                }
+        if (editor) {
+            ['input', 'beforeinput', 'paste', 'compositionend', 'change'].forEach(evtType => {
+                editor.addEventListener(evtType, () => {
+                    if (document.body.classList.contains('read-mode')) return;
+                    updateCounts();
+                    setUnsavedState();
+                    scheduleDebouncedAutoSave();
+                    scheduleDebouncedEntityScan();
+                });
             });
         }
 
-        editor.addEventListener('input', () => {
-            if (document.body.classList.contains('read-mode')) return;
-            updateCounts();
-            setUnsavedState();
-            scheduleDebouncedAutoSave();
-            scanManuscriptAndBuildSuggestions();
-        });
-
-        titleInput.addEventListener('input', () => {
-            if (document.body.classList.contains('read-mode')) return;
-            setUnsavedState();
-            scheduleDebouncedAutoSave();
-        });
+        if (titleInput) {
+            titleInput.addEventListener('input', () => {
+                if (document.body.classList.contains('read-mode')) return;
+                setUnsavedState();
+                scheduleDebouncedAutoSave();
+            });
+        }
 
         function setUnsavedState() {
             saveStatus = "unsaved";
-            saveStatusText.textContent = "● Unsaved changes";
-            saveStatusText.style.color = "#D97706";
+            if (saveStatusText) {
+                saveStatusText.textContent = "● Unsaved changes";
+                saveStatusText.style.color = "#D97706";
+            }
         }
 
         function setSavedState() {
             saveStatus = "saved";
-            saveStatusText.textContent = "✓ Saved just now";
-            saveStatusText.style.color = "#0D9488";
+            if (saveStatusText) {
+                saveStatusText.textContent = "✓ Saved just now";
+                saveStatusText.style.color = "#0D9488";
+            }
         }
 
         function scheduleDebouncedAutoSave() {
@@ -2203,105 +3385,72 @@
             }
         }
 
-        let savedEditorRange = null;
+        // View Mode Switcher
+        function switchViewMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+                const icon = btn.querySelector('i');
+                if (icon) icon.style.color = '#334155';
+            });
 
-        function saveEditorSelection() {
-            const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0) {
-                const range = sel.getRangeAt(0);
-                if (editor && editor.contains(range.commonAncestorContainer)) {
-                    savedEditorRange = range.cloneRange();
+            if (mode === 'write') {
+                const btn = document.getElementById('btnModeWrite');
+                if (btn) {
+                    btn.classList.add('active');
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.style.color = '#0E7490';
                 }
+                document.body.classList.remove('focus-mode', 'read-mode');
+                if (editor) editor.contentEditable = "true";
+                if (titleInput) {
+                    titleInput.readOnly = false;
+                    titleInput.style.pointerEvents = "auto";
+                }
+                showToast("✏️ Write mode enabled.");
+            } else if (mode === 'focus') {
+                const btn = document.getElementById('btnModeFocus');
+                if (btn) {
+                    btn.classList.add('active');
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.style.color = '#0E7490';
+                }
+                document.body.classList.remove('read-mode');
+                document.body.classList.add('focus-mode');
+                if (editor) editor.contentEditable = "true";
+                if (titleInput) {
+                    titleInput.readOnly = false;
+                    titleInput.style.pointerEvents = "auto";
+                }
+                showToast("👁 Focus mode enabled.");
+            } else if (mode === 'read') {
+                window.location.href = `/Chapters/Read?storyId=${storyId}&chapterId=${chapterId}`;
+                return;
             }
         }
 
-        function restoreEditorSelection() {
-            if (savedEditorRange) {
-                const sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(savedEditorRange);
-            }
-        }
-
-        document.addEventListener('selectionchange', () => {
-            saveEditorSelection();
-        });
-
-        // MICROSOFT WORD GRADE COMMAND EXECUTION
         function execCmd(command, value = null) {
             if (document.body.classList.contains('read-mode')) return;
-            editor.focus();
+            if (editor) editor.focus();
             restoreEditorSelection();
             document.execCommand(command, false, value);
             saveEditorSelection();
         }
 
-        function applyTextColor(color) {
-            if (document.body.classList.contains('read-mode')) return;
-            editor.focus();
-            restoreEditorSelection();
+        function switchTab(tabName) {
+            document.querySelectorAll('.context-tab-item').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane-content').forEach(pane => pane.classList.add('d-none'));
 
-            const bar = document.getElementById('textColorBar');
-            if (bar) bar.style.background = color;
-
-            document.execCommand('styleWithCSS', false, true);
-            const success = document.execCommand('foreColor', false, color);
-            if (!success) {
-                applyStyleToSelection('color', color);
-            }
-
-            setUnsavedState();
-            scheduleDebouncedAutoSave();
+            const tabBtn = document.getElementById(`tabBtn-${tabName}`);
+            if (tabBtn) tabBtn.classList.add('active');
+            const tabContent = document.getElementById(`tabContent-${tabName}`);
+            if (tabContent) tabContent.classList.remove('d-none');
         }
 
-        function applyHighlightColor(color) {
-            if (document.body.classList.contains('read-mode')) return;
-            editor.focus();
-            restoreEditorSelection();
-
-            const bar = document.getElementById('highlightColorBar');
-            if (bar) bar.style.background = color === 'transparent' ? '#E2E8F0' : color;
-
-            try {
-                document.execCommand('styleWithCSS', false, true);
-                let success = document.execCommand('hiliteColor', false, color);
-                if (!success) {
-                    success = document.execCommand('backColor', false, color);
-                }
-                if (!success) {
-                    applyStyleToSelection('backgroundColor', color);
-                }
-            } catch (e) {
-                applyStyleToSelection('backgroundColor', color);
-            }
-
-            setUnsavedState();
-            scheduleDebouncedAutoSave();
-        }
-
-        function applyStyleToSelection(styleProp, value) {
-            const sel = window.getSelection();
-            if (!sel || !sel.rangeCount || sel.isCollapsed) return;
-
-            const range = sel.getRangeAt(0);
-            const span = document.createElement('span');
-            span.style[styleProp] = value;
-            try {
-                span.appendChild(range.extractContents());
-                range.insertNode(span);
-                sel.removeAllRanges();
-            } catch (e) {
-                console.error("Style apply error:", e);
-            }
-        }
-
-        // MOBILE & TABLET OFF-CANVAS PANEL TOGGLES
         function toggleLeftPanelMobile() {
             const leftPanel = document.getElementById('leftPanel');
             const rightPanel = document.getElementById('rightPanel');
             const backdrop = document.getElementById('mobilePanelBackdrop');
             if (rightPanel) rightPanel.classList.remove('show-mobile');
-
             if (leftPanel) {
                 const isOpen = leftPanel.classList.toggle('show-mobile');
                 if (backdrop) backdrop.classList.toggle('show', isOpen);
@@ -2313,7 +3462,6 @@
             const rightPanel = document.getElementById('rightPanel');
             const backdrop = document.getElementById('mobilePanelBackdrop');
             if (leftPanel) leftPanel.classList.remove('show-mobile');
-
             if (rightPanel) {
                 const isOpen = rightPanel.classList.toggle('show-mobile');
                 if (backdrop) backdrop.classList.toggle('show', isOpen);
@@ -2324,389 +3472,24 @@
             const leftPanel = document.getElementById('leftPanel');
             const rightPanel = document.getElementById('rightPanel');
             const backdrop = document.getElementById('mobilePanelBackdrop');
-
             if (leftPanel) leftPanel.classList.remove('show-mobile');
             if (rightPanel) rightPanel.classList.remove('show-mobile');
             if (backdrop) backdrop.classList.remove('show');
         }
 
-        function changeExactFontSize(pxSize) {
-            if (document.body.classList.contains('read-mode')) return;
-            const selection = window.getSelection();
-            if (!selection.rangeCount || selection.isCollapsed) {
-                editor.style.fontSize = pxSize;
-                return;
-            }
-            const range = selection.getRangeAt(0);
-            const span = document.createElement("span");
-            span.style.fontSize = pxSize;
-            span.appendChild(range.extractContents());
-            range.insertNode(span);
-        }
-
-        function setLineSpacing(lh) {
-            if (document.body.classList.contains('read-mode')) return;
-            editor.style.lineHeight = lh;
-        }
-
-        function insertLinkPrompt() {
-            const url = prompt("Enter URL:");
-            if (url) execCmd('createLink', url);
-        }
-
-        function insertImagePrompt() {
-            const url = prompt("Enter Image URL:");
-            if (url) execCmd('insertImage', url);
-        }
-
-        function insertTablePrompt() {
-            const rows = prompt("Number of rows:", "3");
-            const cols = prompt("Number of columns:", "3");
-            if (rows && cols) {
-                let html = '<table class="table table-bordered my-3" style="width:100%; border-collapse: collapse;"><tbody>';
-                for (let i = 0; i < parseInt(rows); i++) {
-                    html += '<tr>';
-                    for (let j = 0; j < parseInt(cols); j++) {
-                        html += '<td style="border: 1px solid #CBD5E1; padding: 8px;">Cell</td>';
-                    }
-                    html += '</tr>';
-                }
-                html += '</tbody></table><p></p>';
-                execCmd('insertHTML', html);
-            }
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.context-tab-item').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-pane-content').forEach(pane => pane.classList.add('d-none'));
-
-            document.getElementById(`tabBtn-${tabName}`).classList.add('active');
-            document.getElementById(`tabContent-${tabName}`).classList.remove('d-none');
-        }
-
-        function toggleSuggestionsDock() {
-            const dock = document.getElementById('suggestionsDock');
-            dock.style.display = dock.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // Quick Drawers
-        const drawerOverlay = document.getElementById('drawerOverlay');
-        const drawerContent = document.getElementById('drawerContent');
-
-        function openDrawer(type, prefillName = "") {
-            selectionMenu.style.display = 'none';
-            drawerOverlay.classList.add('show');
-
-            if (type === 'character') {
-                renderCharacterDrawer(prefillName);
-            } else if (type === 'world' || type === 'location') {
-                renderWorldDrawer(prefillName);
-            } else if (type === 'timeline' || type === 'event') {
-                renderTimelineDrawer(prefillName);
-            } else if (type === 'research') {
-                renderResearchDrawer(prefillName);
-            }
-            lucide.createIcons();
-        }
-
-        function closeDrawer() {
-            drawerOverlay.classList.remove('show');
-        }
-
-        function quickCreateFromSelection(type) {
-            openDrawer(type, selectedText);
-        }
-
-        function renderCharacterDrawer(prefillName = "") {
-            drawerContent.innerHTML = `
-                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
-                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
-                        <i data-lucide="user-plus" class="text-teal-600" style="width: 18px; height: 18px;"></i>
-                        Create Character
-                    </h6>
-                    <button class="btn-close" onclick="closeDrawer()"></button>
-                </div>
-                <div class="p-4 flex-grow-1 overflow-y-auto">
-                    <form onsubmit="event.preventDefault(); submitCharacter();">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Character Name *</label>
-                            <input type="text" id="qcName" class="form-control rounded-3" value="${prefillName}" required placeholder="e.g. Inspector Arjun Malhotra">
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <label class="form-label fw-bold small">Role</label>
-                                <select id="qcRole" class="form-select rounded-3">
-                                    <option value="Protagonist">Protagonist</option>
-                                    <option value="Antagonist">Antagonist</option>
-                                    <option value="Detective" selected>Detective</option>
-                                    <option value="Supporting">Supporting</option>
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label fw-bold small">Occupation</label>
-                                <input type="text" id="qcOccupation" class="form-control rounded-3" placeholder="e.g. Investigator">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">One-Line Description</label>
-                            <textarea id="qcDescription" class="form-control rounded-3" rows="3" placeholder="Brief character description..."></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
-                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
-                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitCharacter()">Save & Link</button>
-                </div>
-            `;
-        }
-
-        async function submitCharacter() {
-            const name = document.getElementById('qcName').value;
-            if (!name) return;
-
-            const dto = {
-                storyId,
-                chapterId,
-                name: name.trim(),
-                role: document.getElementById('qcRole').value,
-                occupation: document.getElementById('qcOccupation').value,
-                oneLineDescription: document.getElementById('qcDescription').value
-            };
-
-            try {
-                const resp = await fetch('/Chapters/QuickCreateCharacter', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dto)
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    closeDrawer();
-                    showToast(data.notification || "Character created!");
-                    window.location.reload();
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        function renderWorldDrawer(prefillName = "") {
-            drawerContent.innerHTML = `
-                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
-                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
-                        <i data-lucide="map-pin" class="text-amber-600" style="width: 18px; height: 18px;"></i>
-                        Create Location / World Entity
-                    </h6>
-                    <button class="btn-close" onclick="closeDrawer()"></button>
-                </div>
-                <div class="p-4 flex-grow-1 overflow-y-auto">
-                    <form onsubmit="event.preventDefault(); submitWorldEntity();">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Location / Entity Name *</label>
-                            <input type="text" id="qwName" class="form-control rounded-3" value="${prefillName}" required placeholder="e.g. Abandoned Dockyard Warehouse">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Type</label>
-                            <select id="qwTypeName" class="form-select rounded-3">
-                                <option value="Location" selected>Location</option>
-                                <option value="City">City</option>
-                                <option value="Organization">Organization</option>
-                                <option value="Artifact">Artifact</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Summary</label>
-                            <textarea id="qwSummary" class="form-control rounded-3" rows="3" placeholder="Location description..."></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
-                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
-                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitWorldEntity()">Save & Link</button>
-                </div>
-            `;
-        }
-
-        async function submitWorldEntity() {
-            const name = document.getElementById('qwName').value;
-            if (!name) return;
-
-            const dto = {
-                storyId,
-                chapterId,
-                name: name.trim(),
-                typeName: document.getElementById('qwTypeName').value,
-                summary: document.getElementById('qwSummary').value
-            };
-
-            try {
-                const resp = await fetch('/Chapters/QuickCreateWorldEntity', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dto)
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    closeDrawer();
-                    showToast(data.notification || "Location created!");
-                    window.location.reload();
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        function renderTimelineDrawer(prefillTitle = "") {
-            drawerContent.innerHTML = `
-                <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
-                    <h6 class="fw-bold mb-0 text-slate-800 d-flex align-items-center gap-2">
-                        <i data-lucide="clock" class="text-purple-600" style="width: 18px; height: 18px;"></i>
-                        Create Timeline Event
-                    </h6>
-                    <button class="btn-close" onclick="closeDrawer()"></button>
-                </div>
-                <div class="p-4 flex-grow-1 overflow-y-auto">
-                    <form onsubmit="event.preventDefault(); submitTimelineEvent();">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Event Title *</label>
-                            <input type="text" id="qtTitle" class="form-control rounded-3" value="${prefillTitle}" required placeholder="e.g. Warehouse Explosion">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Story Date / Time</label>
-                            <input type="text" id="qtStoryDate" class="form-control rounded-3" placeholder="e.g. 12:03 AM">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small">Description</label>
-                            <textarea id="qtDescription" class="form-control rounded-3" rows="3" placeholder="Event details..."></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="p-3 border-top bg-light d-flex justify-content-end gap-2">
-                    <button class="btn btn-light rounded-3 fw-bold px-3" onclick="closeDrawer()">Cancel</button>
-                    <button class="btn btn-peacock rounded-3 fw-bold px-4" onclick="submitTimelineEvent()">Save & Link</button>
-                </div>
-            `;
-        }
-
-        async function submitTimelineEvent() {
-            const title = document.getElementById('qtTitle').value;
-            if (!title) return;
-
-            const dto = {
-                storyId,
-                chapterId,
-                title: title.trim(),
-                storyDate: document.getElementById('qtStoryDate').value,
-                description: document.getElementById('qtDescription').value
-            };
-
-            try {
-                const resp = await fetch('/Chapters/QuickCreateTimelineEvent', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dto)
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    closeDrawer();
-                    showToast(data.notification || "Event created!");
-                    window.location.reload();
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function toggleEntityLink(type, entityId) {
-            if (document.body.classList.contains('read-mode')) return;
-            let endpoint = '';
-            if (type === 'character') endpoint = '/Chapters/ToggleLinkCharacter';
-            else if (type === 'world') endpoint = '/Chapters/ToggleLinkWorldEntity';
-            else if (type === 'timeline') endpoint = '/Chapters/ToggleLinkTimelineEvent';
-
-            try {
-                const resp = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chapterId, entityId })
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    showToast(data.isLinked ? "Linked to chapter!" : "Unlinked from chapter.");
-                    window.location.reload();
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function createNewChapter(partId) {
-            try {
-                let url = `/Chapters/Create?storyId=${storyId}`;
-                if (partId) {
-                    url += `&partId=${partId}`;
-                }
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const data = await resp.json();
-                if (data.success && data.redirectUrl) {
-                    window.location.href = data.redirectUrl;
-                }
-            } catch (err) {
-                console.error("Create chapter failed:", err);
-            }
-        }
-
-        async function openCreatePartPrompt() {
-            const title = prompt("Enter Part Title (e.g. PART II — The Revelation):");
-            if (!title || !title.trim()) return;
-
-            const formData = new FormData();
-            formData.append("storyId", storyId);
-            formData.append("title", title.trim());
-
-            try {
-                const resp = await fetch('/Chapters/CreatePart', {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    body: formData
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    showToast("✓ Part created successfully!");
-                    window.location.reload();
-                }
-            } catch (e) {
-                console.error("Create part failed:", e);
-            }
-        }
-
-        function filterManuscript() {
-            const q = document.getElementById('manuscriptSearch').value.toLowerCase().trim();
-            document.querySelectorAll('.chapter-tree-item').forEach(item => {
-                item.style.display = item.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
-            });
-        }
-
-        function filterContextItems(tabName, query) {
-            const container = document.getElementById(`${tabName}List`) || document.getElementById('allCharactersList') || document.getElementById('worldEntitiesList') || document.getElementById('timelineEventsList');
-            if (!container) return;
-            const q = query.toLowerCase().trim();
-            container.querySelectorAll('.context-card, div[data-name]').forEach(item => {
-                const name = item.getAttribute('data-name') || item.innerText.toLowerCase();
-                item.style.display = name.includes(q) ? '' : 'none';
-            });
-        }
-
         function showToast(msg) {
             const toast = document.getElementById('svToast');
+            if (!toast) return;
             document.getElementById('svToastMsg').textContent = msg;
             toast.style.display = 'flex';
             setTimeout(() => {
                 toast.style.display = 'none';
             }, 3500);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
         // Keyboard Shortcut Ctrl+S
@@ -2717,9 +3500,10 @@
             }
         });
 
-        // Initialize Counts & Suggestions Scan on Load
+        // Initialize Counts, Right Panel & Entity Scan on Load
         updateCounts();
-        scanManuscriptAndBuildSuggestions();
+        updateRightPanelTabs();
+        analyzeManuscriptEntities();
     </script>
     <script src="~/js/loader.js" asp-append-version="true"></script>
 </body>

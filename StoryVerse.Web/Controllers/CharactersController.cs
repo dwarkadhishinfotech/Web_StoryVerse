@@ -49,12 +49,13 @@ namespace StoryVerse.Web.Controllers
 
             ViewBag.Story = selectedStory;
             var worldLocations = selectedStory != null
-                ? await _context.Locations.Where(l => l.StoryId == selectedStory.Id).OrderBy(l => l.Name).ToListAsync()
+                ? await _context.Locations.AsNoTracking().Where(l => l.StoryId == selectedStory.Id).OrderBy(l => l.Name).ToListAsync()
                 : new List<Location>();
             ViewBag.WorldLocations = worldLocations;
 
             // Base query for characters
             var query = _context.Characters
+                .AsNoTracking()
                 .Include(c => c.Story)
                 .Where(c => c.Story.UserId == user.Id)
                 .AsQueryable();
